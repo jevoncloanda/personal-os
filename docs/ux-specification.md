@@ -1,5 +1,13 @@
 # UX specification
 
+## Phase 3 Schedule and notification timing
+
+Schedule defaults to an agenda with overdue items, the selected date's next seven days and undated reminders. Month mode shows a six-week grid with distinct selected/today states and commitment markers, followed by selected-day content. Date navigation and Today are explicit. Events, reminder checkboxes and unpaid subscription forecasts remain visibly distinct; forecast taps open Subscriptions. Completing a reminder updates Schedule/Today reactively. Event/reminder links retain the exact nominal occurrence date.
+
+Quick Add contains working New event and New reminder actions alongside existing Money and Subscription actions; Library remains explicitly a preview. Event forms support timed/all-day, multi-day ranges, notes/location, zone and bounded recurrence. Reminder forms support optional date/time, notes, recurrence and individual completion/reopen. Shared full-screen editors retain Save, discard confirmation, IME insets and restored drafts; native date/time pickers supplement typed input. Edit/delete controls explicitly apply to the entire series. Single-occurrence event editing and week mode are deferred.
+
+Each record's Notification timing opens a shared preference editor, with on/off, multiple lead times, bounded custom minutes where relevant and local date-based time. Existing records start off. The screen explains best-effort delivery and why alerts help before a user presses Enable Android notifications; it does not request permission at first launch. Blocked permission/category status has Android settings access. Returning from Settings reconciles schedules. Reminders continue working without alerts; undated reminders cannot configure notifications. Subscription alerts never record payments or cancel services.
+
 ## Phase 2 subscriptions
 
 Subscriptions is a Money child route, also reached from Upcoming payments in Today. Each Today renewal opens its detail; Quick Add → New subscription opens the editor. Four primary navigation destinations remain. List search and active/inactive/all filters sit below currency-separated monthly/annual billing-rate equivalents. These are labeled forecasts, never recorded spending. Detail groups billing/defaults, upcoming unpaid dates and paid history. Shared Inter, atmospheric panels, outline fallback icons and scrolling ledger rows retain the existing visual system.

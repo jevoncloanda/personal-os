@@ -1,6 +1,10 @@
 # Personal OS — product specification
 
-## Phase 2 delivered scope
+## Phase 3 delivered scope
+
+Schedule adds local event and reminder management, month/agenda views, anchored recurring dates, individual reminder occurrence completion, and precise Today navigation. Configurable local notifications share one permission-aware inexact AlarmManager scheduler across subscriptions, events and reminders. Multiple lead times, per-record off, date-based local alert time, reboot/time/zone recovery and restore reconciliation are supported without a backend or exact-time guarantee. Room v4 and backup format 3 preserve all portable schedule data and older backup readers remain. Calendar synchronization, week mode, single-occurrence event edits, push services, exact-alarm access, widgets and Library workflows remain deferred. [Phase 3 handover](phase-3-handover.md) distinguishes executed validation from unverified delivery conditions.
+
+## Historical: Phase 2 delivered scope
 
 Persistent subscriptions support creation/editing, optional description/notes/account/category defaults, custom daily/weekly/monthly/yearly intervals, active/inactive lifecycle and payment history. Currency-separated billing-rate equivalents and bounded unpaid renewals help plan; only explicitly recorded payments create actual Money expenses. Payment/link writes, corrections and undo are atomic. Today reacts to unpaid renewals and payment changes. Room v3 and backup format 2 preserve every new field; format 1 imports remain supported. See [Phase 2 handover](phase-2-handover.md) for policies and actual validation. Notifications, automatic debits, provider cancellation, bank integration and cloud synchronization remain deferred.
 

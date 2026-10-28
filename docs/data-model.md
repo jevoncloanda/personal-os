@@ -1,6 +1,16 @@
 # Data model
 
-## Current: Phase 2 subscription and payment contract
+## Current: Phase 3 scheduling
+
+Room v4 nondestructively extends events with notes/revision, reminders with notes/zoneId/dateOnly/revision, and adds `reminder_completions`, `alert_preferences` and nonportable `alert_state`. Existing timestamps/IDs, Money and Subscription relationships remain. Old reminders default to timed UTC semantics; no due instant shifts. Old all-day event dates derive using their existing stored zone and exclusive end.
+
+Recurring completion primary key is `(reminderId,revision,occurrenceEpochDay)` with cascading series deletion; duplicate completion is idempotent. Schedule changes increment revision, old completion rows remain and only current-revision keys affect future occurrences. One-off/undated completion uses the existing timestamp and survives due-date edits. Legacy repeating-template completion is treated as the first occurrence and preserved as history when its schedule changes.
+
+Alert preferences reference exactly one owner through nullable FK columns, unique owner/lead indexes, leadMinutes and minuteOfDay. Zero preferences disables a record. Subscription presets are 14/7/3/1/0 calendar days; event/reminder presets and custom notice support at most six alerts within fourteen days. Date-based alerts apply the local clock time after calendar-day subtraction, retaining that hour across DST. Timed notices subtract elapsed minutes. Paid/inactive subscription occurrences and completed reminders are excluded. Runtime receipts/queues are derived, excluded from portable backup and cleared on full restoration.
+
+Backup format 3/schema mapping 4 includes all eleven portable tables; formats 1/schema2 and 2/schema3 remain readable with explicit defaults and empty new collections. Missing/unknown fields, invalid owners, duplicate preference/completion identities, future revisions and invalid current occurrence relationships fail before replacement. Permission state and OS identities are never imported. Existing 8 MiB/20,000-record validation and financial invariants remain.
+
+## Historical: Phase 2 subscription and payment contract
 
 Room is version 3. Migration 2→3 preserves existing rows and links, adds `subscriptions.description` and `notes` (empty text defaults), optional `accountId`/`categoryId` with RESTRICT foreign keys and indexes. Payments keep unique `(subscriptionId,dueEpochDay)` and unique `entryId`; expenses remain ordinary positive integer-minor-unit ledger rows. Subscription currency is fixed after payment history exists. A referenced default account cannot change currency. Historical archived references remain legal; new payment selection requires active matching-currency accounts and expense-compatible categories.
 

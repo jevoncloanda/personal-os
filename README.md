@@ -1,8 +1,10 @@
 # Personal OS — Android foundation
 
-A local-first Kotlin/Compose personal app with persistent Money, hybrid Today, the approved blue/Inter design system, versioned backup/restore and usable subscriptions. Phase 2 adds recurring forecasts and explicit payments linked atomically to Money, including correction, undo and retained history after cancellation. Schedule and Library editors remain deferred.
+A local-first Kotlin/Compose personal app with persistent Money, hybrid Today, the approved blue/Inter design system, versioned backup/restore, subscriptions and Schedule. Events and reminders support anchored recurrence, per-occurrence reminder completion and configurable best-effort local alerts shared with subscriptions. Library editors remain deferred.
 
-Current features, policies and actual verification: [Phase 2 handover](docs/phase-2-handover.md). Recovery format and security foundations: [Phase 1.7 handover](docs/phase-1.7-handover.md). Current exports use backup format 2; valid format 1 backups remain readable. Backups are unencrypted and need trusted storage.
+Current scheduling, notification policies and verification: [Phase 3 handover](docs/phase-3-handover.md). Current exports use backup format 3; formats 1 and 2 remain readable. Android notification permission is contextual; no backend or exact-time delivery guarantee.
+
+Earlier Subscription policies and verification: [Phase 2 handover](docs/phase-2-handover.md). Recovery security foundations: [Phase 1.7 handover](docs/phase-1.7-handover.md). Backups are unencrypted and need trusted storage.
 
 Start with [the Phase 1.5 handover](docs/phase-1.5-handover.md), [Phase 1 history](docs/phase-1-handover.md), [product specification](docs/product-specification.md), [architecture](docs/architecture.md), [data model](docs/data-model.md), [UX specification](docs/ux-specification.md), and [widget strategy](docs/widget-strategy.md).
 

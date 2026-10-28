@@ -1,5 +1,15 @@
 # Architecture
 
+## Phase 3 scheduling and shared alerts
+
+`ScheduleDao` extends the existing DAO chain. Events/reminders keep their original identities and timestamp fields, with notes, reminder zone/date-only semantics and schedule revisions added by Room 3→4. `reminder_completions` uniquely records reminder/revision/nominal-date completion. Schedule edits preserve old history while starting a new revision; title/notes changes preserve occurrence identity. One-off completion stays on the reminder. Legacy repeating-template completion means its first occurrence, not every future occurrence.
+
+`ScheduleModel` owns direct calendar seeking, bounded event/reminder projections and explicit DST gap/overlap behavior. Subscriptions delegate calendar seeking to the same helper and Schedule calls existing `upcomingRenewals`. `ScheduleViewModel` reads coherent Room ranges; dated, overdue and undated reminder candidates are bounded separately so old completed history cannot hide current work. Today carries exact occurrence keys and observes completion invalidation. Schedule offers agenda and month selection; editors and notification settings reuse the existing native design system.
+
+One shared `alert_preferences` table has exactly one event/reminder/subscription owner, enforced by DAO/backup validation and real foreign keys. `LocalAlerts` reconciles next alerts against Room, using a private nonportable `alert_state` ledger and a single stable inexact AlarmManager wakeup. Explicit immutable broadcast/activity PendingIntents carry stable identities. Delivery revalidates current owners, revision, completion/payment and preferences. Runtime permission and channel checks precede posting. Source invalidation, app start/resume, boot/package replacement, time/zone broadcasts and restore drive reconciliation; no continuously running service or exact-alarm permission is used. Restore clears derived runtime state atomically and invalidation rebuilds it. There is no transaction spanning SQLite and Android NotificationManager; stable tags/onlyAlertOnce reduce replay effects but are not a universal exactly-once delivery guarantee.
+
+Backup format 3/schema mapping 4 includes completion history and notification preferences, with explicit readers for formats 1 and 2. OS alarm identities, notification receipts and device permission state are excluded. Old all-day/date-only calendar meaning derives in the stored zone; timed recurrence retains wall-clock times in that zone. Full policies and actual verification are recorded in [Phase 3 handover](phase-3-handover.md). Prior phase sections below remain historical where superseded.
+
 ## Phase 2 subscriptions
 
 `SubscriptionDao` extends `MoneyDao` and is inherited by `PersonalDao`. It owns subscription validation, occurrence uniqueness, expense/payment-link transactions, correction and undo. Recording delegates to the ordinary ledger writer inside the same Room transaction; corrections temporarily detach/reinsert the same link within that transaction. Direct Money edit/delete stays blocked for linked expenses, with a route hint. No shadow balance or automatic debit exists.
