@@ -31,6 +31,12 @@ data class ReminderOccurrence(val reminder: ReminderEntity, val day: Long?, val 
 
 fun eventBaseDate(event: EventEntity): LocalDate = Instant.ofEpochMilli(event.startsAtMillis).atZone(ZoneId.of(event.zoneId)).toLocalDate()
 fun reminderBaseDate(reminder: ReminderEntity): LocalDate? = reminder.dueAtMillis?.let { Instant.ofEpochMilli(it).atZone(ZoneId.of(reminder.zoneId)).toLocalDate() }
+/** Old backups could mark a repeating template complete. Interpret that as its first occurrence only. */
+fun legacyCompletionDay(reminder:ReminderEntity):Long? {
+    if(reminder.recurrence.frequency==null || reminder.completedAtMillis==null)return null
+    val base=reminderBaseDate(reminder)?.toEpochDay()?:return null
+    return calendarDateOnOrAfter(reminder.recurrence,base,base)
+}
 
 fun eventOccurrence(event: EventEntity, day: Long, viewingZone: ZoneId): EventOccurrence {
     val zone = ZoneId.of(event.zoneId)
@@ -53,7 +59,7 @@ fun reminderOccurrence(reminder: ReminderEntity, day: Long?, completions: Set<Pa
         if (reminder.dateOnly) date.atStartOfDay(viewingZone).toInstant().toEpochMilli()
         else date.atTime(Instant.ofEpochMilli(reminder.dueAtMillis).atZone(zone).toLocalTime()).atZone(zone).toInstant().toEpochMilli()
     }
-    val complete = if (reminder.recurrence.frequency == null) reminder.completedAtMillis != null else (reminder.revision to day) in completions
+    val complete = if (reminder.recurrence.frequency == null) reminder.completedAtMillis != null else (reminder.revision to day) in completions || day==legacyCompletionDay(reminder)
     return ReminderOccurrence(reminder, day, due, complete)
 }
 
@@ -78,9 +84,9 @@ fun reminderOccurrences(reminder: ReminderEntity, completions: List<ReminderComp
     require(limit in 1..512 && until >= from && ChronoUnit.DAYS.between(from, until) <= 366)
     val base = reminderBaseDate(reminder) ?: return listOf(reminderOccurrence(reminder, null, emptySet(), zone))
     val paid = completions.map { it.revision to it.occurrenceEpochDay }.toSet()
-    var day = calendarDateOnOrAfter(reminder.recurrence, base.toEpochDay(), from.minusDays(1).toEpochDay())
+    var day = calendarDateOnOrAfter(reminder.recurrence, base.toEpochDay(), from.minusDays(2).toEpochDay())
     val result = ArrayList<ReminderOccurrence>()
-    while (day != null && day < until.plusDays(1).toEpochDay() && result.size < limit) {
+    while (day != null && day < until.plusDays(2).toEpochDay() && result.size < limit) {
         val item = reminderOccurrence(reminder, day, paid, zone)
         val localDay = if (reminder.dateOnly) day else Instant.ofEpochMilli(requireNotNull(item.due)).atZone(zone).toLocalDate().toEpochDay()
         if (localDay >= from.toEpochDay() && localDay < until.toEpochDay()) result += item
@@ -92,7 +98,7 @@ fun reminderOccurrences(reminder: ReminderEntity, completions: List<ReminderComp
 fun oldestUncompleted(reminder: ReminderEntity, completions: List<ReminderCompletionEntity>, zone: ZoneId): ReminderOccurrence? {
     if (reminder.recurrence.frequency == null) return reminderOccurrence(reminder, reminderBaseDate(reminder)?.toEpochDay(), emptySet(), zone).takeUnless { it.completed }
     val base = reminderBaseDate(reminder) ?: return null
-    val completed = completions.filter { it.revision == reminder.revision }.map { it.occurrenceEpochDay }.toSet()
+    val completed = completions.filter { it.revision == reminder.revision }.map { it.occurrenceEpochDay }.toSet()+listOfNotNull(legacyCompletionDay(reminder))
     var day = calendarDateOnOrAfter(reminder.recurrence, base.toEpochDay(), base.toEpochDay())
     repeat(completed.size + 1) {
         val current = day ?: return null

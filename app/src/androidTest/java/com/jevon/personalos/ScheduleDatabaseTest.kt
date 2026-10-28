@@ -4,6 +4,7 @@ import androidx.room.Room
 import androidx.test.platform.app.InstrumentationRegistry
 import com.jevon.personalos.data.*
 import com.jevon.personalos.backup.*
+import com.jevon.personalos.schedule.*
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Test
@@ -11,6 +12,17 @@ import java.time.*
 import java.io.ByteArrayInputStream
 
 class ScheduleDatabaseTest {
+    @Test fun completedHistoryDoesNotHideCurrentOrUndatedAndMonthForecastCoversLastDays()=isolated {db,dao->
+        db.backupDao().reminders((1..1001).map{ReminderEntity("old-$it","Old",0,completedAtMillis=1)})
+        dao.saveReminder(ReminderEntity("current","Current",instant,zoneId="Asia/Jakarta"),true)
+        dao.saveReminder(ReminderEntity("undated","Undated",null),true)
+        val first=LocalDate.parse("2026-09-28").toEpochDay()
+        dao.saveSubscription(SubscriptionEntity("s","Daily",100,"USD",first,recurrence=Recurrence(Frequency.DAILY,1,first)),true)
+        val snapshot=dao.scheduleRange(LocalDate.ofEpochDay(first),LocalDate.parse("2026-11-09"),ZonedDateTime.ofInstant(Instant.ofEpochMilli(instant),ZoneId.of("Asia/Jakarta")))
+        assertTrue(snapshot.reminders.any{it.reminder.id=="current"});assertTrue(snapshot.reminders.any{it.reminder.id=="undated"})
+        assertTrue(snapshot.forecasts.any{it.day==LocalDate.parse("2026-10-31").toEpochDay()})
+        assertTrue(snapshot.forecasts.any{it.day==LocalDate.parse("2026-10-30").toEpochDay()})
+    }
     private val day=LocalDate.parse("2026-10-28").toEpochDay()
     private val instant=Instant.parse("2026-10-28T02:00:00Z").toEpochMilli()
     private fun reminder()=ReminderEntity("r","Daily reminder",instant,recurrence=Recurrence(Frequency.DAILY,1,day),notes="Notes",zoneId="Asia/Jakarta")
@@ -47,7 +59,9 @@ class ScheduleDatabaseTest {
     @Test fun undatedCompletionAndAlertGuards()=isolated { _,dao ->
         dao.saveReminder(ReminderEntity("u","Undated",null),true)
         dao.completeReminder("u",0,null,true,instant); assertEquals(instant,dao.reminder("u")!!.completedAtMillis)
-        dao.completeReminder("u",0,null,false,instant); assertNull(dao.reminder("u")!!.completedAtMillis)
+        dao.saveReminder(dao.reminder("u")!!.copy(dueAtMillis=instant),false); assertEquals(instant,dao.reminder("u")!!.completedAtMillis)
+        dao.completeReminder("u",1,day,false,instant); assertNull(dao.reminder("u")!!.completedAtMillis)
+        dao.saveReminder(dao.reminder("u")!!.copy(dueAtMillis=null),false)
         reject { dao.saveAlerts("REMINDER","u",setOf(0),540) }
         reject { dao.saveReminder(ReminderEntity("bad","Repeat undated",null,recurrence=Recurrence(Frequency.WEEKLY)),true) }
     }

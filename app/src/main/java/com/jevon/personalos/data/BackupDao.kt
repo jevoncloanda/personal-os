@@ -21,6 +21,7 @@ internal interface BackupDao {
     @Insert suspend fun alerts(rows: List<AlertPreferenceEntity>)
     @Query("DELETE FROM reminder_completions") suspend fun clearCompletions()
     @Query("DELETE FROM alert_preferences") suspend fun clearAlerts()
+    @Query("DELETE FROM alert_state") suspend fun clearAlertRuntime()
     @Query("SELECT * FROM accounts ORDER BY id") suspend fun accounts(): List<AccountEntity>
     @Query("SELECT * FROM categories ORDER BY id") suspend fun categories(): List<CategoryEntity>
     @Query("SELECT * FROM entries ORDER BY id") suspend fun entries(): List<EntryEntity>

@@ -6,6 +6,14 @@ import org.junit.Test
 import java.time.*
 
 class ScheduleModelTest {
+    @Test fun extremeViewingZonesDoNotLoseTimedReminders() {
+        for((stored,viewed,date,time) in listOf(listOf("Etc/GMT+12","Pacific/Kiritimati","2026-10-28","23:30"),listOf("Pacific/Kiritimati","Etc/GMT+12","2026-10-30","00:30"))) {
+            val due=LocalDate.parse(date).atTime(LocalTime.parse(time)).atZone(ZoneId.of(stored))
+            val r=ReminderEntity("r","Reminder",due.toInstant().toEpochMilli(),zoneId=stored)
+            val visible=due.withZoneSameInstant(ZoneId.of(viewed)).toLocalDate()
+            assertEquals(1,reminderOccurrences(r,emptyList(),visible,visible.plusDays(1),ZoneId.of(viewed)).size)
+        }
+    }
     private val zone=ZoneId.of("America/New_York")
     private fun millis(s:String)=LocalDateTime.parse(s).atZone(zone).toInstant().toEpochMilli()
     private fun event(start:String="2026-03-07T02:30",end:String="2026-03-07T03:30",r:Frequency?=Frequency.DAILY)=EventEntity("e","Event",millis(start),millis(end),zone.id,recurrence=Recurrence(r,1,LocalDateTime.parse(start).toLocalDate().toEpochDay()))
@@ -40,6 +48,7 @@ class ScheduleModelTest {
         assertEquals(day+1,oldestUncompleted(r,completions,zone)!!.day)
         assertFalse(reminderOccurrences(r.copy(revision=1),completions,LocalDate.ofEpochDay(day),LocalDate.ofEpochDay(day+1),zone).single().completed)
         assertNull(oldestUncompleted(ReminderEntity("u","Undated",null),emptyList(),zone)!!.due)
+        assertEquals(day+1,oldestUncompleted(r.copy(completedAtMillis=1),emptyList(),zone)!!.day)
     }
     @Test fun monthEndLeapAndUntilRemainAnchored() {
         val anchor=LocalDate.parse("2024-01-31").toEpochDay()

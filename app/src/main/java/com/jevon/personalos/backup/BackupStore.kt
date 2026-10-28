@@ -18,7 +18,7 @@ internal class BackupStore(private val database: PersonalDatabase) {
         database.withTransaction {
             currentCoroutineContext().ensureActive()
             val dao = database.backupDao()
-            dao.clearAlerts(); dao.clearCompletions(); dao.clearPayments(); dao.clearEntries(); dao.clearBudgets(); dao.clearSubscriptions()
+            dao.clearAlertRuntime(); dao.clearAlerts(); dao.clearCompletions(); dao.clearPayments(); dao.clearEntries(); dao.clearBudgets(); dao.clearSubscriptions()
             dao.clearAccounts(); dao.clearCategories(); dao.clearEvents(); dao.clearReminders(); dao.clearLibrary()
             val data = prepared.data
             dao.accounts(data.accounts); dao.categories(data.categories); dao.subscriptions(data.subscriptions)

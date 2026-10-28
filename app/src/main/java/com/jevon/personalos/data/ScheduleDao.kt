@@ -6,10 +6,14 @@ import java.time.*
 
 @Dao
 abstract class ScheduleDao : SubscriptionDao() {
-    @Query("SELECT * FROM events WHERE startsAtMillis<:end AND (endsAtMillis>:start OR repeat_frequency IS NOT NULL) ORDER BY startsAtMillis,id LIMIT 1001")
-    abstract suspend fun eventCandidates(start: Long, end: Long): List<EventEntity>
-    @Query("SELECT * FROM reminders WHERE dueAtMillis IS NULL OR dueAtMillis<:end OR repeat_frequency IS NOT NULL ORDER BY dueAtMillis IS NULL,dueAtMillis,id LIMIT 1001")
-    abstract suspend fun reminderCandidates(end: Long): List<ReminderEntity>
+    @Query("SELECT * FROM events WHERE startsAtMillis<:end AND (endsAtMillis>:start OR (repeat_frequency IS NOT NULL AND (repeat_untilEpochDay IS NULL OR repeat_untilEpochDay+((endsAtMillis-startsAtMillis)/86400000)+2>=:fromDay))) ORDER BY startsAtMillis,id LIMIT 1001")
+    abstract suspend fun eventCandidates(start: Long, end: Long,fromDay:Long=Long.MIN_VALUE): List<EventEntity>
+    @Query("SELECT * FROM reminders WHERE (dueAtMillis>=:start AND dueAtMillis<:end) OR (repeat_frequency IS NOT NULL AND dueAtMillis<:end AND (repeat_untilEpochDay IS NULL OR repeat_untilEpochDay>=:fromDay)) ORDER BY dueAtMillis,id LIMIT 1001")
+    abstract suspend fun reminderCandidates(start:Long,end: Long,fromDay:Long): List<ReminderEntity>
+    @Query("SELECT * FROM reminders WHERE repeat_frequency IS NULL AND completedAtMillis IS NULL AND dueAtMillis<:before ORDER BY dueAtMillis,id LIMIT 21")
+    abstract suspend fun overdueReminderCandidates(before:Long):List<ReminderEntity>
+    @Query("SELECT * FROM reminders WHERE dueAtMillis IS NULL ORDER BY completedAtMillis IS NOT NULL,title,id LIMIT 101")
+    abstract suspend fun undatedReminderCandidates():List<ReminderEntity>
     @Query("SELECT * FROM events WHERE id=:id") abstract suspend fun event(id: String): EventEntity?
     @Query("SELECT * FROM reminders WHERE id=:id") abstract suspend fun reminder(id: String): ReminderEntity?
     @Query("SELECT * FROM reminder_completions WHERE reminderId=:id") abstract suspend fun completions(id: String): List<ReminderCompletionEntity>
@@ -28,6 +32,7 @@ abstract class ScheduleDao : SubscriptionDao() {
     @Insert protected abstract suspend fun insertAlerts(values: List<AlertPreferenceEntity>)
     @Query("SELECT * FROM alert_state WHERE delivered=0") abstract suspend fun pendingAlerts(): List<AlertStateEntity>
     @Query("SELECT delivered FROM alert_state WHERE `key`=:key") abstract suspend fun alertDelivered(key: String): Boolean?
+    @Query("SELECT * FROM alert_state WHERE `key`=:key") abstract suspend fun alertState(key: String): AlertStateEntity?
     @Insert(onConflict = OnConflictStrategy.REPLACE) abstract suspend fun saveAlertState(value: AlertStateEntity)
     @Query("DELETE FROM alert_state WHERE delivered=0") abstract suspend fun clearPendingAlerts()
 
@@ -57,8 +62,9 @@ abstract class ScheduleDao : SubscriptionDao() {
         recurrence(value.recurrence,reminderBaseDate(value))
         val old = if (create) null else requireNotNull(reminder(value.id)) { "Reminder no longer exists" }
         val changed = old != null && (old.dueAtMillis != value.dueAtMillis || old.zoneId != value.zoneId || old.dateOnly != value.dateOnly || old.recurrence != value.recurrence)
+        if(changed)legacyCompletionDay(old!!)?.let {insertCompletion(ReminderCompletionEntity(old.id,old.revision,it,requireNotNull(old.completedAtMillis)))}
         val saved = value.copy(revision = if (changed) Math.addExact(old!!.revision,1) else old?.revision ?: 0,
-            completedAtMillis = if (value.recurrence.frequency != null || changed) null else old?.completedAtMillis)
+            completedAtMillis = if(value.recurrence.frequency!=null){if(changed)null else old?.completedAtMillis}else old?.takeIf{it.recurrence.frequency==null}?.completedAtMillis)
         if (create) insertReminder(saved) else check(updateReminder(saved)==1)
         if(saved.dueAtMillis==null) clearAlerts("REMINDER",saved.id)
     }
@@ -66,10 +72,12 @@ abstract class ScheduleDao : SubscriptionDao() {
         val value = requireNotNull(reminder(id)) { "Reminder no longer exists" }
         require(value.revision == revision) { "This series changed. Open its current occurrence" }
         if (value.recurrence.frequency == null) {
+            require(day==reminderBaseDate(value)?.toEpochDay()) { "This reminder date changed. Open its current occurrence" }
             check(updateReminder(value.copy(completedAtMillis = if (complete) value.completedAtMillis ?: nowMillis else null))==1)
         } else {
             val base = requireNotNull(reminderBaseDate(value)).toEpochDay()
             require(day != null && calendarDateOnOrAfter(value.recurrence,base,day)==day) { "Choose an occurrence in the current series" }
+            if(!complete && day==legacyCompletionDay(value))check(updateReminder(value.copy(completedAtMillis=null))==1)
             if (complete) insertCompletion(ReminderCompletionEntity(id,revision,day,nowMillis)) else removeCompletion(id,revision,day)
         }
     }
