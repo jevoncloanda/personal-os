@@ -6,12 +6,38 @@ import com.jevon.personalos.data.*
 import com.jevon.personalos.backup.*
 import com.jevon.personalos.schedule.*
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.collect
 import org.junit.Assert.*
 import org.junit.Test
 import java.time.*
 import java.io.ByteArrayInputStream
 
 class ScheduleDatabaseTest {
+    @Test fun todayKeepsExactOccurrenceAndReactsToCompletion()=isolated {db,dao->
+        val now=ZonedDateTime.ofInstant(Instant.ofEpochMilli(instant),ZoneId.of("Asia/Jakarta"))
+        dao.saveReminder(ReminderEntity("r","Daily",instant-86400000,recurrence=Recurrence(Frequency.DAILY,1,day-1),zoneId="Asia/Jakarta"),true)
+        coroutineScope{
+            val seen=java.util.concurrent.CopyOnWriteArrayList<com.jevon.personalos.today.TodayContent>()
+            val job=launch{db.observeToday(now).collect{seen+=it}}
+            suspend fun await(condition:()->Boolean){withTimeout(5000){while(!condition())delay(10)}}
+            await{seen.isNotEmpty()&&seen.last().scheduleReminders.any{it.day==day}}
+            val current=seen.last().scheduleReminders.single{it.day==day}
+            dao.completeReminder(current.reminder.id,current.reminder.revision,current.day,true,instant)
+            await{seen.last().scheduleReminders.none{it.day==day}}
+            assertTrue(seen.last().scheduleReminders.any{it.day==day-1})
+            job.cancelAndJoin()
+        }
+    }
+    @Test fun legacyCompletedSeriesKeepsAnchorAndMaterializesHistoryOnScheduleChange()=isolated {db,dao->
+        val r=reminder().copy(completedAtMillis=instant,recurrence=Recurrence(Frequency.MONTHLY,1,LocalDate.parse("2026-09-28").toEpochDay()))
+        db.backupDao().reminders(listOf(r))
+        dao.saveReminder(r.copy(notes="Changed notes"),false)
+        assertEquals(r.recurrence,dao.reminder("r")!!.recurrence);assertEquals(0L,dao.reminder("r")!!.revision)
+        assertTrue(oldestUncompleted(dao.reminder("r")!!,emptyList(),ZoneId.of("Asia/Jakarta"))!!.day!!>day)
+        dao.saveReminder(dao.reminder("r")!!.copy(dueAtMillis=instant+86400000,recurrence=Recurrence(Frequency.MONTHLY,1,day+1)),false)
+        assertEquals(1L,dao.reminder("r")!!.revision);assertEquals(day,dao.completions("r").single().occurrenceEpochDay)
+    }
     @Test fun completedHistoryDoesNotHideCurrentOrUndatedAndMonthForecastCoversLastDays()=isolated {db,dao->
         db.backupDao().reminders((1..1001).map{ReminderEntity("old-$it","Old",0,completedAtMillis=1)})
         dao.saveReminder(ReminderEntity("current","Current",instant,zoneId="Asia/Jakarta"),true)

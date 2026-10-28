@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.map
 import java.time.YearMonth
 import java.time.ZonedDateTime
 import com.jevon.personalos.subscriptions.nextUnpaid
+import com.jevon.personalos.schedule.scheduleRange
 
 private val moneyTables = arrayOf("accounts", "categories", "entries", "budgets")
 fun PersonalDatabase.observeMoney(month: YearMonth, kind: String, account: String, category: String, currency: String, search: String, page: Int) =
@@ -21,18 +22,22 @@ fun PersonalDatabase.observeMoney(month: YearMonth, kind: String, account: Strin
     }
 
 fun PersonalDatabase.observeToday(now: ZonedDateTime) =
-    invalidationTracker.createFlow(*moneyTables, "events", "reminders", "subscriptions", "subscription_payments", "library_items").map {
+    invalidationTracker.createFlow(*moneyTables, "events", "reminders", "reminder_completions", "subscriptions", "subscription_payments", "library_items").map {
         withTransaction {
             val dao = personalDao()
             val date = now.toLocalDate()
             val end = date.plusDays(1).atStartOfDay(now.zone).toInstant().toEpochMilli()
             val month = YearMonth.from(date)
+            val schedule=dao.scheduleRange(date,date.plusDays(7),now)
+            val due=(schedule.overdue+schedule.reminders.filter {!it.completed && (it.due==null || java.time.Instant.ofEpochMilli(it.due).atZone(now.zone).toLocalDate()<=date)})
+                .distinctBy{it.key}.sortedWith(compareBy<com.jevon.personalos.schedule.ReminderOccurrence>{it.due==null}.thenBy{it.due}.thenBy{it.reminder.id}).take(4)
+            val events=schedule.events.filter{it.end>now.toInstant().toEpochMilli()}.take(4).map{it.event.copy(startsAtMillis=it.start,endsAtMillis=it.end)}
             val payments = dao.subscriptionPayments().groupBy { it.subscriptionId }
             val renewals = dao.subscriptions().asSequence().filter { it.active }.mapNotNull { s ->
                 nextUnpaid(s, payments[s.id].orEmpty().map { it.dueEpochDay }.toSet())?.let { s.copy(nextDueEpochDay = it) }
             }.filter { it.nextDueEpochDay <= date.plusDays(7).toEpochDay() }.sortedWith(compareBy<SubscriptionEntity> { it.nextDueEpochDay }.thenBy { it.id }).take(4).toList()
-            TodayContent(date, now, dao.todayEvents(now.toInstant().toEpochMilli(), end), dao.todayReminders(end),
+            TodayContent(date, now, events, due.map{it.reminder.copy(dueAtMillis=it.due)},
                 dao.todayBudget(month.atDay(1).toEpochDay(), month.plusMonths(1).atDay(1).toEpochDay())?.summary(),
-                renewals, dao.todayLibrary())
+                renewals, dao.todayLibrary(),due,schedule.events.filter{it.end>now.toInstant().toEpochMilli()}.take(4))
         }
     }

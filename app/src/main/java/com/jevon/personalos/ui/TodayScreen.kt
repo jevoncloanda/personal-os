@@ -1,6 +1,7 @@
 package com.jevon.personalos.ui
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -19,7 +20,7 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
 @Composable
-fun TodayScreen(state: TodayState, retry: () -> Unit, open: (String) -> Unit) {
+fun TodayScreen(state: TodayState, retry: () -> Unit, open: (String) -> Unit, complete:((com.jevon.personalos.schedule.ReminderOccurrence)->Unit)?=null) {
     when (state) {
         TodayState.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator(Modifier.semantics { contentDescription = "Loading today" })
@@ -29,12 +30,12 @@ fun TodayScreen(state: TodayState, retry: () -> Unit, open: (String) -> Unit) {
             Text("Your local data has not been changed. Try opening it again.", Modifier.padding(vertical = 12.dp))
             Button(onClick = retry) { Text("Try again") }
         }
-        is TodayState.Ready -> TodayBody(state.content, open)
+        is TodayState.Ready -> TodayBody(state.content, open,complete)
     }
 }
 
 @Composable
-private fun TodayBody(content: TodayContent, open: (String) -> Unit) {
+private fun TodayBody(content: TodayContent, open: (String) -> Unit,complete:((com.jevon.personalos.schedule.ReminderOccurrence)->Unit)?) {
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val expanded = maxWidth >= 720.dp
         Column(
@@ -47,16 +48,16 @@ private fun TodayBody(content: TodayContent, open: (String) -> Unit) {
                 style = MaterialTheme.typography.headlineLarge, modifier = Modifier.padding(bottom = 16.dp))
             if (expanded) {
                 Row(horizontalArrangement = Arrangement.spacedBy(40.dp)) {
-                    Column(Modifier.weight(1f)) { Agenda(content, open) }
-                    Column(Modifier.weight(1f)) { MoneyAndLibrary(content, open) }
+                    Column(Modifier.weight(1f)) { Agenda(content, open,complete) }
+                    Column(Modifier.weight(1f)) { MoneyAndLibrary(content, open,complete) }
                 }
-            } else { Agenda(content, open); MoneyAndLibrary(content, open) }
+            } else { Agenda(content, open,complete); MoneyAndLibrary(content, open,complete) }
         }
     }
 }
 
 @Composable
-private fun Agenda(content: TodayContent, open: (String) -> Unit) {
+private fun Agenda(content: TodayContent, open: (String) -> Unit,complete:((com.jevon.personalos.schedule.ReminderOccurrence)->Unit)?) {
     val imminent = content.events.filter { it.startsAtMillis <= content.now.plusHours(1).toInstant().toEpochMilli() }
     val dueSoon = content.reminders.filter { it.dueAtMillis != null }
     if (imminent.isEmpty() && dueSoon.isEmpty()) {
@@ -75,26 +76,28 @@ private fun Agenda(content: TodayContent, open: (String) -> Unit) {
     }
     FrostedPanel {
     SectionHeading("Priorities", "Schedule", { open("schedule") })
-    dueSoon.forEach { reminder ->
+    if(content.scheduleReminders.isNotEmpty()&&complete!=null)content.scheduleReminders.filter{it.due!=null}.forEach{item->ReminderRow(item,content.now,false,{complete(item)},{open("reminder/${android.net.Uri.encode(item.reminder.id)}?day=${item.day}")})}
+    else dueSoon.forEach { reminder ->
         val due = Instant.ofEpochMilli(requireNotNull(reminder.dueAtMillis)).atZone(content.now.zone)
         val overdue = due.isBefore(content.now)
         ContentRow(AppIcons.RadioButtonUnchecked, reminder.title,
             if (overdue) "Overdue · ${due.format(DateTimeFormatter.ofPattern("d MMM, HH:mm"))}" else "Today · ${due.format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT))}",
             supportingColor = if (overdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
     }
-    EventRows(imminent, content)
+    EventRows(imminent, content,open)
     }
     Spacer(Modifier.height(16.dp))
 }
 
 @Composable
-private fun EventRows(events: List<EventEntity>, content: TodayContent) {
+private fun EventRows(events: List<EventEntity>, content: TodayContent,open:(String)->Unit) {
     events.forEachIndexed { index, event ->
         val start = Instant.ofEpochMilli(event.startsAtMillis).atZone(content.now.zone)
         val ongoing = event.startsAtMillis <= content.now.toInstant().toEpochMilli()
-        Row(Modifier.fillMaxWidth().padding(vertical = 12.dp).semantics(mergeDescendants = true) {}, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        val nominal=content.scheduleEvents.firstOrNull{it.event.id==event.id&&it.start==event.startsAtMillis}?.day
+        Row(Modifier.fillMaxWidth().clickable{open("event/${android.net.Uri.encode(event.id)}${nominal?.let{"?day=$it"}.orEmpty()}")}.heightIn(min=48.dp).padding(vertical = 12.dp).semantics(mergeDescendants = true) {}, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             Column(Modifier.widthIn(min = 58.dp)) {
-                Text(if (event.allDay) "All day" else start.format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)),
+                Text(if (event.allDay) "All day" else start.format(DateTimeFormatter.ofPattern(if(start.toLocalDate()==content.date)"HH:mm" else "d MMM\nHH:mm")),
                     style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
                 if (ongoing) Text("Now", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
             }
@@ -108,7 +111,7 @@ private fun EventRows(events: List<EventEntity>, content: TodayContent) {
 }
 
 @Composable
-private fun MoneyAndLibrary(content: TodayContent, open: (String) -> Unit) {
+private fun MoneyAndLibrary(content: TodayContent, open: (String) -> Unit,complete:((com.jevon.personalos.schedule.ReminderOccurrence)->Unit)?) {
     SectionHeading("This month", "Money", { open("money") })
     val summary = content.budget
     if (summary == null) {
@@ -126,8 +129,8 @@ private fun MoneyAndLibrary(content: TodayContent, open: (String) -> Unit) {
     Spacer(Modifier.height(16.dp))
     val later = content.events.filter { it.startsAtMillis > content.now.plusHours(1).toInstant().toEpochMilli() }
     if (later.isNotEmpty()) {
-        SectionHeading("Later today", "Schedule", { open("schedule") })
-        EventRows(later, content)
+        SectionHeading("Coming up", "Schedule", { open("schedule") })
+        EventRows(later, content,open)
         Spacer(Modifier.height(16.dp))
     }
     SectionHeading("Upcoming payments", "Subscriptions", { open("subscriptions") })
@@ -156,7 +159,8 @@ private fun MoneyAndLibrary(content: TodayContent, open: (String) -> Unit) {
     if (undated.isNotEmpty()) {
         Spacer(Modifier.height(16.dp))
         SectionHeading("When you have a moment", "Reminders", { open("schedule") })
-        undated.forEach { ContentRow(AppIcons.RadioButtonUnchecked, it.title, "No due date") }
+        if(complete!=null&&content.scheduleReminders.isNotEmpty())content.scheduleReminders.filter{it.due==null}.forEach{item->ReminderRow(item,content.now,false,{complete(item)},{open("reminder/${android.net.Uri.encode(item.reminder.id)}")})}
+        else undated.forEach { ContentRow(AppIcons.RadioButtonUnchecked, it.title, "No due date") }
     }
 }
 

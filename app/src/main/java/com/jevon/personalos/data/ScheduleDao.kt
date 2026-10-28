@@ -45,7 +45,7 @@ abstract class ScheduleDao : SubscriptionDao() {
         require(base != null || value.frequency == null) { "Repeating reminders need a due date" }
         if (base != null) require(base.year in 1..9999) { "Choose a date from year 1 to 9999" }
         value.untilEpochDay?.let { require(base != null && it >= base.toEpochDay()) { "Repeat end must not precede the first date" }; LocalDate.ofEpochDay(it) }
-        if (value.frequency != null) require(value.anchorEpochDay == base!!.toEpochDay()) { "The series must start at its anchor date" }
+        LocalDate.ofEpochDay(value.anchorEpochDay)
     }
     @Transaction open suspend fun saveEvent(value: EventEntity, create: Boolean) {
         text(value.id,value.title,value.notes); require(value.location.length <= 8192)

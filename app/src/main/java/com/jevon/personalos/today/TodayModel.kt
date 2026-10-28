@@ -39,6 +39,8 @@ data class TodayContent(
     val budget: BudgetSummary?,
     val subscriptions: List<SubscriptionEntity>,
     val library: List<LibraryItemEntity>,
+    val scheduleReminders: List<com.jevon.personalos.schedule.ReminderOccurrence> = emptyList(),
+    val scheduleEvents: List<com.jevon.personalos.schedule.EventOccurrence> = emptyList(),
 )
 
 fun Snapshot.forToday(now: ZonedDateTime): TodayContent {

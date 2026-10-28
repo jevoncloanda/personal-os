@@ -60,7 +60,7 @@ class FoundationTest {
         compose.onNodeWithText("Your recurring plans").assertIsDisplayed()
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithText("Schedule").performClick()
-        compose.onNodeWithText("A little more space in your day").assertIsDisplayed()
+        compose.onNodeWithText("New event").assertIsDisplayed()
         compose.onNodeWithText("Library").performClick()
         compose.onNodeWithText("Make time for what you love").assertIsDisplayed()
         compose.onAllNodesWithText("Today").filter(hasClickAction()).onFirst().performClick()

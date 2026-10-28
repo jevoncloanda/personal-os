@@ -50,7 +50,7 @@ class SubscriptionReviewActivity : ComponentActivity() {
                             listOf("subscriptions", "money", "today", "backup").forEach { target -> TextButton(onClick = { route = target }) { Text(target.replaceFirstChar(Char::uppercase)) } }
                         }
                         Box(Modifier.weight(1f)) { when (route) {
-                            "subscriptions" -> SubscriptionScreen(subscriptions, request) { request = null }
+                            "subscriptions" -> SubscriptionScreen(subscriptions, request, { request = null })
                             "money" -> MoneyScreen(money, null, {}, { route = "subscriptions" })
                             "today" -> TodayScreen(today?.let { TodayState.Ready(it) } ?: TodayState.Loading, {}, { target ->
                                 route = "subscriptions"; request = target.takeIf { it.startsWith("subscription/") }?.substringAfter('/')

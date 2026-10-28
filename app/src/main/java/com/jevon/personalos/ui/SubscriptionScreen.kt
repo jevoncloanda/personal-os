@@ -20,7 +20,7 @@ import java.util.Locale
 import java.util.UUID
 
 @Composable
-fun SubscriptionScreen(model: SubscriptionViewModel, requested: String?, handled: () -> Unit) {
+fun SubscriptionScreen(model: SubscriptionViewModel, requested: String?, handled: () -> Unit, configureAlerts:(String)->Unit={}) {
     val data by model.state.collectAsStateWithLifecycle()
     val today by model.today.collectAsStateWithLifecycle()
     val busy by model.busy.collectAsStateWithLifecycle()
@@ -93,6 +93,7 @@ fun SubscriptionScreen(model: SubscriptionViewModel, requested: String?, handled
                     OutlinedButton(enabled = !busy, onClick = { model.clearError(); editor = "subscription" }) { Text("Edit subscription") }
                 }
                 TextButton(enabled = !busy, onClick = { if (value.active) cancel = true else model.active(value.id, true) }) { Text(if (value.active) "Cancel subscription" else "Reactivate subscription") }
+                OutlinedButton(onClick={configureAlerts(value.id)}){Text("Notification timing")}
             } }
             item { Text("Upcoming renewals", style = MaterialTheme.typography.titleLarge)
                 Text("Unpaid forecasts only. Missed cycles remain unpaid; edit the next date to explicitly reschedule them.", style = MaterialTheme.typography.bodySmall) }
@@ -191,7 +192,7 @@ private fun PaymentEditor(value: SubscriptionEntity, link: SubscriptionPaymentEn
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun BillingDateField(label: String, value: String, enabled: Boolean, change: (String) -> Unit) {
+internal fun BillingDateField(label: String, value: String, enabled: Boolean, change: (String) -> Unit) {
     var picker by remember { mutableStateOf(false) }
     val dirty = LocalMarkDraftDirty.current
     Field("$label (YYYY-MM-DD)", value, enabled) { change(it) }
