@@ -7,12 +7,20 @@ import androidx.room.Query
 /** Bulk recovery access only. BackupStore owns validation and the encompassing transaction. */
 @Dao
 internal interface BackupDao {
-    @Query("SELECT (SELECT COUNT(*) FROM accounts)+(SELECT COUNT(*) FROM categories)+(SELECT COUNT(*) FROM entries)+(SELECT COUNT(*) FROM budgets)+(SELECT COUNT(*) FROM events)+(SELECT COUNT(*) FROM reminders)+(SELECT COUNT(*) FROM subscriptions)+(SELECT COUNT(*) FROM subscription_payments)+(SELECT COUNT(*) FROM library_items)")
+    @Query("SELECT (SELECT COUNT(*) FROM accounts)+(SELECT COUNT(*) FROM categories)+(SELECT COUNT(*) FROM entries)+(SELECT COUNT(*) FROM budgets)+(SELECT COUNT(*) FROM events)+(SELECT COUNT(*) FROM reminders)+(SELECT COUNT(*) FROM subscriptions)+(SELECT COUNT(*) FROM subscription_payments)+(SELECT COUNT(*) FROM library_items)+(SELECT COUNT(*) FROM reminder_completions)+(SELECT COUNT(*) FROM alert_preferences)")
     suspend fun recordCount(): Long
     @Query("SELECT COALESCE(SUM(bytes),0) FROM (SELECT length(CAST(id||name||currencyCode||type||notes AS BLOB)) AS bytes FROM accounts UNION ALL SELECT length(CAST(id||name||COALESCE(kind,'') AS BLOB)) FROM categories UNION ALL SELECT length(CAST(id||kind||currencyCode||COALESCE(fromAccountId,'')||COALESCE(toAccountId,'')||COALESCE(categoryId,'')||note AS BLOB)) FROM entries UNION ALL SELECT length(CAST(id||name||currencyCode||COALESCE(categoryId,'') AS BLOB)) FROM budgets UNION ALL SELECT length(CAST(id||title||zoneId||location||COALESCE(repeat_frequency,'') AS BLOB)) FROM events UNION ALL SELECT length(CAST(id||title||COALESCE(repeat_frequency,'') AS BLOB)) FROM reminders UNION ALL SELECT length(CAST(id||name||currencyCode||COALESCE(repeat_frequency,'') AS BLOB)) FROM subscriptions UNION ALL SELECT length(CAST(id||subscriptionId||entryId AS BLOB)) FROM subscription_payments UNION ALL SELECT length(CAST(id||title||kind||status AS BLOB)) FROM library_items)")
     suspend fun textBytes(): Long
     @Query("SELECT COALESCE(SUM(length(CAST(description||notes||COALESCE(accountId,'')||COALESCE(categoryId,'') AS BLOB))),0) FROM subscriptions")
     suspend fun subscriptionTextBytes(): Long
+    @Query("SELECT (SELECT COALESCE(SUM(length(CAST(notes AS BLOB))),0) FROM events)+(SELECT COALESCE(SUM(length(CAST(notes||zoneId AS BLOB))),0) FROM reminders)+(SELECT COALESCE(SUM(length(CAST(reminderId AS BLOB))),0) FROM reminder_completions)+(SELECT COALESCE(SUM(length(CAST(id||COALESCE(eventId,'')||COALESCE(reminderId,'')||COALESCE(subscriptionId,'') AS BLOB))),0) FROM alert_preferences)")
+    suspend fun scheduleTextBytes(): Long
+    @Query("SELECT * FROM reminder_completions ORDER BY reminderId,revision,occurrenceEpochDay") suspend fun completions(): List<ReminderCompletionEntity>
+    @Query("SELECT * FROM alert_preferences ORDER BY id") suspend fun alerts(): List<AlertPreferenceEntity>
+    @Insert suspend fun completions(rows: List<ReminderCompletionEntity>)
+    @Insert suspend fun alerts(rows: List<AlertPreferenceEntity>)
+    @Query("DELETE FROM reminder_completions") suspend fun clearCompletions()
+    @Query("DELETE FROM alert_preferences") suspend fun clearAlerts()
     @Query("SELECT * FROM accounts ORDER BY id") suspend fun accounts(): List<AccountEntity>
     @Query("SELECT * FROM categories ORDER BY id") suspend fun categories(): List<CategoryEntity>
     @Query("SELECT * FROM entries ORDER BY id") suspend fun entries(): List<EntryEntity>

@@ -12,10 +12,12 @@ internal data class BackupData(
     val events: List<EventEntity> = emptyList(), val reminders: List<ReminderEntity> = emptyList(),
     val subscriptions: List<SubscriptionEntity> = emptyList(), val payments: List<SubscriptionPaymentEntity> = emptyList(),
     val library: List<LibraryItemEntity> = emptyList(),
+    val completions: List<ReminderCompletionEntity> = emptyList(), val alerts: List<AlertPreferenceEntity> = emptyList(),
 ) {
     val counts get() = linkedMapOf("Accounts" to accounts.size, "Categories" to categories.size, "Transactions" to entries.size,
         "Budgets" to budgets.size, "Events" to events.size, "Reminders" to reminders.size,
-        "Subscriptions" to subscriptions.size, "Payment links" to payments.size, "Library items" to library.size)
+        "Subscriptions" to subscriptions.size, "Payment links" to payments.size, "Library items" to library.size,
+        "Reminder completions" to completions.size, "Alert preferences" to alerts.size)
 
     /** Historical restore: archived references and legacy budget intervals are legal.
      * Current editor restrictions on selecting archived records are not historical constraints.
@@ -78,8 +80,31 @@ internal data class BackupData(
             require(budget.limitMinor > 0 && budget.endExclusiveEpochDay > budget.startEpochDay) { "Invalid budget interval or limit." }
             budget.categoryId?.let { id -> require(categoryMap.containsKey(id) && categoryMap[id]?.kind != "INCOME") { "A budget category is missing or incompatible." } }
         }
-        events.forEach { text(it.title, true); text(it.location); timestamp(it.startsAtMillis); timestamp(it.endsAtMillis); require(it.endsAtMillis > it.startsAtMillis); ZoneId.of(it.zoneId); recurrence(it.recurrence) }
-        reminders.forEach { text(it.title, true); it.dueAtMillis?.let(::timestamp); it.completedAtMillis?.let(::timestamp); recurrence(it.recurrence) }
+        events.forEach { text(it.title, true); text(it.location); text(it.notes); require(it.revision>=0); timestamp(it.startsAtMillis); timestamp(it.endsAtMillis); require(it.endsAtMillis > it.startsAtMillis); ZoneId.of(it.zoneId); recurrence(it.recurrence) }
+        reminders.forEach { text(it.title, true); text(it.notes); ZoneId.of(it.zoneId); require(it.revision>=0); it.dueAtMillis?.let(::timestamp); it.completedAtMillis?.let(::timestamp); recurrence(it.recurrence) }
+        val reminderMap=reminders.associateBy { it.id }; val eventIds=events.map { it.id }.toSet()
+        val completionKeys=HashSet<Triple<String,Long,Long>>()
+        completions.forEach { c ->
+            val r=requireNotNull(reminderMap[c.reminderId]) { "Completion reminder is missing." }
+            day(c.occurrenceEpochDay); timestamp(c.completedAtMillis)
+            require(c.revision in 0..r.revision && completionKeys.add(Triple(c.reminderId,c.revision,c.occurrenceEpochDay))) { "Invalid or duplicate reminder completion." }
+            if(c.revision==r.revision) {
+                val base=requireNotNull(com.jevon.personalos.schedule.reminderBaseDate(r)) { "A recurring completion needs a dated reminder." }.toEpochDay()
+                require(r.recurrence.frequency!=null && com.jevon.personalos.schedule.calendarDateOnOrAfter(r.recurrence,base,c.occurrenceEpochDay)==c.occurrenceEpochDay) { "Completion does not belong to the current series." }
+            }
+        }
+        identities(alerts) { it.id }
+        val alertKeys=HashSet<Triple<String,String,Int>>(); val alertCounts=HashMap<Pair<String,String>,Int>()
+        alerts.forEach { a ->
+            require(listOfNotNull(a.eventId,a.reminderId,a.subscriptionId).size==1 && a.leadMinutes in 0..20160 && a.minuteOfDay in 0..1439) { "Invalid alert preference." }
+            val owner=when {
+                a.eventId!=null -> { require(a.eventId in eventIds); "EVENT" to a.eventId }
+                a.reminderId!=null -> { require(reminderMap[a.reminderId]?.dueAtMillis!=null) { "Undated reminders cannot send alerts." }; "REMINDER" to a.reminderId }
+                else -> { require(subscriptionMap.containsKey(a.subscriptionId) && a.leadMinutes in setOf(0,1440,4320,10080,20160)); "SUBSCRIPTION" to requireNotNull(a.subscriptionId) }
+            }
+            require(alertKeys.add(Triple(owner.first,owner.second,a.leadMinutes))) { "Duplicate alert lead time." }
+            val count=(alertCounts[owner]?:0)+1; require(count<=6); alertCounts[owner]=count
+        }
         subscriptions.forEach { s ->
             text(s.name, true); text(s.description); text(s.notes); currency(s.currencyCode)
             require(s.amountMinor > 0); day(s.nextDueEpochDay); recurrence(s.recurrence)

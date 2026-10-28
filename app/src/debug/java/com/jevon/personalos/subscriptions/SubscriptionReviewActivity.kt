@@ -68,7 +68,7 @@ class SubscriptionReviewActivity : ComponentActivity() {
 class SubscriptionReviewHost(app: Application, id: String) : AndroidViewModel(app) {
     init { require(runCatching { UUID.fromString(id) }.isSuccess) }
     internal val database = Room.databaseBuilder(app, PersonalDatabase::class.java, "phase2-review-$id.db")
-        .addMigrations(PersonalDatabase.MIGRATION_1_2, PersonalDatabase.MIGRATION_2_3).build()
+        .addMigrations(PersonalDatabase.MIGRATION_1_2, PersonalDatabase.MIGRATION_2_3, PersonalDatabase.MIGRATION_3_4).build()
     init { runBlocking {
         val dao = database.personalDao()
         if (dao.balances().isEmpty()) {

@@ -13,6 +13,7 @@ import org.junit.Assert.*
 class MigrationTest {
     @Test fun versionOneRecordsSurviveWithSafeDefaults() = migrated(1)
     @Test fun versionTwoSubscriptionsAndPaymentLinksSurvive() = migrated(2)
+    @Test fun versionThreeScheduleGainsSafeDefaultsWithoutDataLoss() = migrated(3)
     private fun migrated(version: Int) = runBlocking {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
@@ -41,12 +42,12 @@ class MigrationTest {
             execSQL("INSERT INTO entries (id,kind,amountMinor,currencyCode,occurredOnEpochDay,fromAccountId,toAccountId,categoryId,note) VALUES ('transfer','TRANSFER',50,'USD',20000,'bank','cash',NULL,'Old transfer')")
             execSQL("INSERT INTO entries (id,kind,amountMinor,currencyCode,occurredOnEpochDay,fromAccountId,toAccountId,categoryId,note) VALUES ('expense','EXPENSE',10,'USD',20000,'bank',NULL,'food','Old expense')")
             execSQL("INSERT INTO budgets VALUES ('budget','Old plan','USD',500,19999,20030,NULL)")
-            execSQL("INSERT INTO reminders VALUES ('reminder','Old reminder',NULL,NULL,NULL,1,0,NULL)")
-            execSQL("INSERT INTO subscriptions VALUES ('plan','Old plan',10,'USD',20000,1,'MONTHLY',1,20000,NULL)")
+            execSQL("INSERT INTO reminders (id,title,dueAtMillis,completedAtMillis,repeat_frequency,repeat_interval,repeat_anchorEpochDay,repeat_untilEpochDay) VALUES ('reminder','Old reminder',NULL,NULL,NULL,1,0,NULL)")
+            execSQL("INSERT INTO subscriptions (id,name,amountMinor,currencyCode,nextDueEpochDay,active,repeat_frequency,repeat_interval,repeat_anchorEpochDay,repeat_untilEpochDay) VALUES ('plan','Old plan',10,'USD',20000,1,'MONTHLY',1,20000,NULL)")
             execSQL("INSERT INTO subscription_payments VALUES ('link','plan',20000,'expense')")
         }
         helper.close()
-        val db = Room.databaseBuilder(context, PersonalDatabase::class.java, name).addMigrations(PersonalDatabase.MIGRATION_1_2, PersonalDatabase.MIGRATION_2_3).build()
+        val db = Room.databaseBuilder(context, PersonalDatabase::class.java, name).addMigrations(PersonalDatabase.MIGRATION_1_2, PersonalDatabase.MIGRATION_2_3, PersonalDatabase.MIGRATION_3_4).build()
         try {
             val dao = db.personalDao()
             val bank = dao.balances().first { it.account.id == "bank" }
@@ -57,6 +58,8 @@ class MigrationTest {
             assertEquals(0, dao.findEntry("transfer")!!.minuteOfDay); assertEquals(50L, dao.findEntry("transfer")!!.amountMinor)
             assertEquals(1, dao.budgetProjections(20000).size)
             assertNull(dao.todayReminders(Long.MAX_VALUE).single().dueAtMillis)
+            assertEquals("UTC",dao.reminder("reminder")!!.zoneId); assertFalse(dao.reminder("reminder")!!.dateOnly)
+            assertTrue(dao.alertPreferences().isEmpty()); assertTrue(dao.completions("reminder").isEmpty())
             val plan = dao.subscription("plan")!!
             assertEquals("", plan.description); assertEquals("", plan.notes)
             assertNull(plan.accountId); assertNull(plan.categoryId)

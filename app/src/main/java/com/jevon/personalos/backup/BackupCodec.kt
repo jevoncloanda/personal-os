@@ -13,7 +13,7 @@ internal object BackupCodec {
     fun encode(data: BackupData, appVersion: String, created: Instant = Instant.now()): ByteArray {
         data.validate()
         checkedBackupText(appVersion)
-        val content = linkedMapOf<String, Any?>("format" to FORMAT, "version" to 2L, "schemaVersion" to 3L,
+        val content = linkedMapOf<String, Any?>("format" to FORMAT, "version" to 3L, "schemaVersion" to 4L,
             "createdAt" to created.toString(), "appVersion" to appVersion, "data" to encodeData(data))
         val bytes = BackupJson.canonical(content + ("integrity" to record("algorithm" to "SHA-256", "digest" to BackupJson.hash(content)))).toByteArray(Charsets.UTF_8)
         require(bytes.size <= MAX_BACKUP_BYTES) { "Backup exceeds the 8 MiB limit. No data was changed." }
@@ -24,8 +24,8 @@ internal object BackupCodec {
         root.fields("format", "version", "schemaVersion", "createdAt", "appVersion", "data", "integrity")
         require(root.string("format") == FORMAT) { "This is not a Personal OS backup." }
         val version = root.long("version")
-        require(version in 1L..2L) { "This backup format is not supported. Use an app version that supports it." }
-        require(root.long("schemaVersion") == if (version == 1L) 2L else 3L) { "This backup uses an unsupported data schema." }
+        require(version in 1L..3L) { "This backup format is not supported. Use an app version that supports it." }
+        require(root.long("schemaVersion") == version + 1L) { "This backup uses an unsupported data schema." }
         val integrity = root.obj("integrity").also { it.fields("algorithm", "digest") }
         require(integrity.string("algorithm") == "SHA-256") { "Unsupported backup checksum." }
         val digest = integrity.string("digest")
@@ -44,25 +44,30 @@ internal object BackupCodec {
         "categories" to data.categories.sortedBy { it.id }.map { record("id" to it.id, "name" to it.name, "kind" to it.kind, "archived" to it.archived) },
         "entries" to data.entries.sortedBy { it.id }.map { record("id" to it.id, "kind" to it.kind.name, "amountMinor" to it.amountMinor, "currencyCode" to it.currencyCode, "occurredOnEpochDay" to it.occurredOnEpochDay, "fromAccountId" to it.fromAccountId, "toAccountId" to it.toAccountId, "categoryId" to it.categoryId, "note" to it.note, "minuteOfDay" to it.minuteOfDay) },
         "budgets" to data.budgets.sortedBy { it.id }.map { record("id" to it.id, "name" to it.name, "currencyCode" to it.currencyCode, "limitMinor" to it.limitMinor, "startEpochDay" to it.startEpochDay, "endExclusiveEpochDay" to it.endExclusiveEpochDay, "categoryId" to it.categoryId) },
-        "events" to data.events.sortedBy { it.id }.map { record("id" to it.id, "title" to it.title, "startsAtMillis" to it.startsAtMillis, "endsAtMillis" to it.endsAtMillis, "zoneId" to it.zoneId, "allDay" to it.allDay, "location" to it.location, "recurrence" to repeat(it.recurrence)) },
-        "reminders" to data.reminders.sortedBy { it.id }.map { record("id" to it.id, "title" to it.title, "dueAtMillis" to it.dueAtMillis, "completedAtMillis" to it.completedAtMillis, "recurrence" to repeat(it.recurrence)) },
+        "events" to data.events.sortedBy { it.id }.map { record("id" to it.id, "title" to it.title, "startsAtMillis" to it.startsAtMillis, "endsAtMillis" to it.endsAtMillis, "zoneId" to it.zoneId, "allDay" to it.allDay, "location" to it.location, "recurrence" to repeat(it.recurrence), "notes" to it.notes,"revision" to it.revision) },
+        "reminders" to data.reminders.sortedBy { it.id }.map { record("id" to it.id, "title" to it.title, "dueAtMillis" to it.dueAtMillis, "completedAtMillis" to it.completedAtMillis, "recurrence" to repeat(it.recurrence),"notes" to it.notes,"zoneId" to it.zoneId,"dateOnly" to it.dateOnly,"revision" to it.revision) },
         "subscriptions" to data.subscriptions.sortedBy { it.id }.map { record("id" to it.id, "name" to it.name, "amountMinor" to it.amountMinor, "currencyCode" to it.currencyCode, "nextDueEpochDay" to it.nextDueEpochDay, "active" to it.active, "recurrence" to repeat(it.recurrence), "description" to it.description, "notes" to it.notes, "accountId" to it.accountId, "categoryId" to it.categoryId) },
         "subscriptionPayments" to data.payments.sortedBy { it.id }.map { record("id" to it.id, "subscriptionId" to it.subscriptionId, "dueEpochDay" to it.dueEpochDay, "entryId" to it.entryId) },
         "libraryItems" to data.library.sortedBy { it.id }.map { record("id" to it.id, "title" to it.title, "kind" to it.kind.name, "status" to it.status.name, "progress" to it.progress, "total" to it.total, "updatedAtMillis" to it.updatedAtMillis) },
+        "reminderCompletions" to data.completions.sortedWith(compareBy<ReminderCompletionEntity>{it.reminderId}.thenBy{it.revision}.thenBy{it.occurrenceEpochDay}).map { record("reminderId" to it.reminderId,"revision" to it.revision,"occurrenceEpochDay" to it.occurrenceEpochDay,"completedAtMillis" to it.completedAtMillis) },
+        "alertPreferences" to data.alerts.sortedBy { it.id }.map { record("id" to it.id,"eventId" to it.eventId,"reminderId" to it.reminderId,"subscriptionId" to it.subscriptionId,"leadMinutes" to it.leadMinutes,"minuteOfDay" to it.minuteOfDay) },
     )
     private fun decodeData(data: Map<String, Any?>, version: Long): BackupData {
-        data.fields("accounts", "categories", "entries", "budgets", "events", "reminders", "subscriptions", "subscriptionPayments", "libraryItems")
+        val sections=listOf("accounts", "categories", "entries", "budgets", "events", "reminders", "subscriptions", "subscriptionPayments", "libraryItems") + if(version==3L)listOf("reminderCompletions","alertPreferences") else emptyList()
+        data.fields(*sections.toTypedArray())
         require(data.values.sumOf { (it as? List<*>)?.size ?: throw IllegalArgumentException("Missing backup data section.") } <= MAX_RECORDS) { "Too many backup records." }
         return BackupData(
             accounts = data.rows("accounts", "id,name,currencyCode,openingBalanceMinor,archived,type,notes") { AccountEntity(it.string("id"), it.string("name"), it.string("currencyCode"), it.long("openingBalanceMinor"), it.bool("archived"), it.string("type"), it.string("notes")) },
             categories = data.rows("categories", "id,name,kind,archived") { CategoryEntity(it.string("id"), it.string("name"), it.nullString("kind"), it.bool("archived")) },
             entries = data.rows("entries", "id,kind,amountMinor,currencyCode,occurredOnEpochDay,fromAccountId,toAccountId,categoryId,note,minuteOfDay") { EntryEntity(it.string("id"), EntryKind.valueOf(it.string("kind")), it.long("amountMinor"), it.string("currencyCode"), it.long("occurredOnEpochDay"), it.nullString("fromAccountId"), it.nullString("toAccountId"), it.nullString("categoryId"), it.string("note"), it.int("minuteOfDay")) },
             budgets = data.rows("budgets", "id,name,currencyCode,limitMinor,startEpochDay,endExclusiveEpochDay,categoryId") { BudgetEntity(it.string("id"), it.string("name"), it.string("currencyCode"), it.long("limitMinor"), it.long("startEpochDay"), it.long("endExclusiveEpochDay"), it.nullString("categoryId")) },
-            events = data.rows("events", "id,title,startsAtMillis,endsAtMillis,zoneId,allDay,location,recurrence") { EventEntity(it.string("id"), it.string("title"), it.long("startsAtMillis"), it.long("endsAtMillis"), it.string("zoneId"), it.bool("allDay"), it.string("location"), recurrence(it.obj("recurrence"))) },
-            reminders = data.rows("reminders", "id,title,dueAtMillis,completedAtMillis,recurrence") { ReminderEntity(it.string("id"), it.string("title"), it.nullLong("dueAtMillis"), it.nullLong("completedAtMillis"), recurrence(it.obj("recurrence"))) },
-            subscriptions = data.rows("subscriptions", "id,name,amountMinor,currencyCode,nextDueEpochDay,active,recurrence" + if (version == 2L) ",description,notes,accountId,categoryId" else "") { SubscriptionEntity(it.string("id"), it.string("name"), it.long("amountMinor"), it.string("currencyCode"), it.long("nextDueEpochDay"), it.bool("active"), recurrence(it.obj("recurrence")), if (version == 2L) it.string("description") else "", if (version == 2L) it.string("notes") else "", if (version == 2L) it.nullString("accountId") else null, if (version == 2L) it.nullString("categoryId") else null) },
+            events = data.rows("events", "id,title,startsAtMillis,endsAtMillis,zoneId,allDay,location,recurrence"+if(version==3L)",notes,revision" else "") { EventEntity(it.string("id"), it.string("title"), it.long("startsAtMillis"), it.long("endsAtMillis"), it.string("zoneId"), it.bool("allDay"), it.string("location"), recurrence(it.obj("recurrence")),if(version==3L)it.string("notes") else "",if(version==3L)it.long("revision") else 0) },
+            reminders = data.rows("reminders", "id,title,dueAtMillis,completedAtMillis,recurrence"+if(version==3L)",notes,zoneId,dateOnly,revision" else "") { ReminderEntity(it.string("id"), it.string("title"), it.nullLong("dueAtMillis"), it.nullLong("completedAtMillis"), recurrence(it.obj("recurrence")),if(version==3L)it.string("notes") else "",if(version==3L)it.string("zoneId") else "UTC",if(version==3L)it.bool("dateOnly") else false,if(version==3L)it.long("revision") else 0) },
+            subscriptions = data.rows("subscriptions", "id,name,amountMinor,currencyCode,nextDueEpochDay,active,recurrence" + if (version >= 2L) ",description,notes,accountId,categoryId" else "") { SubscriptionEntity(it.string("id"), it.string("name"), it.long("amountMinor"), it.string("currencyCode"), it.long("nextDueEpochDay"), it.bool("active"), recurrence(it.obj("recurrence")), if (version >= 2L) it.string("description") else "", if (version >= 2L) it.string("notes") else "", if (version >= 2L) it.nullString("accountId") else null, if (version >= 2L) it.nullString("categoryId") else null) },
             payments = data.rows("subscriptionPayments", "id,subscriptionId,dueEpochDay,entryId") { SubscriptionPaymentEntity(it.string("id"), it.string("subscriptionId"), it.long("dueEpochDay"), it.string("entryId")) },
             library = data.rows("libraryItems", "id,title,kind,status,progress,total,updatedAtMillis") { LibraryItemEntity(it.string("id"), it.string("title"), LibraryKind.valueOf(it.string("kind")), LibraryStatus.valueOf(it.string("status")), it.int("progress"), it.nullLong("total")?.let { n -> exactInt(n) }, it.long("updatedAtMillis")) },
+            completions = if(version==3L)data.rows("reminderCompletions","reminderId,revision,occurrenceEpochDay,completedAtMillis") { ReminderCompletionEntity(it.string("reminderId"),it.long("revision"),it.long("occurrenceEpochDay"),it.long("completedAtMillis")) } else emptyList(),
+            alerts = if(version==3L)data.rows("alertPreferences","id,eventId,reminderId,subscriptionId,leadMinutes,minuteOfDay") { AlertPreferenceEntity(it.string("id"),it.nullString("eventId"),it.nullString("reminderId"),it.nullString("subscriptionId"),it.int("leadMinutes"),it.int("minuteOfDay")) } else emptyList(),
         )
     }
     private fun recurrence(obj: Map<String, Any?>): Recurrence {

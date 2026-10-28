@@ -8,23 +8,7 @@ import java.time.temporal.ChronoUnit
 
 /** Only subscription billing. Dates derive from the original anchor, never a clamped prior date. */
 fun renewalOnOrAfter(value: SubscriptionEntity, day: Long): Long? {
-    val r = value.recurrence
-    val start = maxOf(day, value.nextDueEpochDay)
-    if (r.frequency == null) return value.nextDueEpochDay.takeIf { it >= start && (r.untilEpochDay == null || it <= r.untilEpochDay) }
-    val anchor = LocalDate.ofEpochDay(r.anchorEpochDay)
-    val target = LocalDate.ofEpochDay(maxOf(start, r.anchorEpochDay))
-    val units = when (r.frequency) {
-        Frequency.DAILY -> ChronoUnit.DAYS.between(anchor, target)
-        Frequency.WEEKLY -> ChronoUnit.WEEKS.between(anchor, target)
-        Frequency.MONTHLY -> ChronoUnit.MONTHS.between(anchor.withDayOfMonth(1), target.withDayOfMonth(1))
-        Frequency.YEARLY -> (target.year - anchor.year).toLong()
-    }
-    var index = (units / r.interval).coerceAtLeast(0)
-    return try {
-        var date = occurrenceDate(anchor, r.frequency, r.interval, index)
-        if (date < target) date = occurrenceDate(anchor, r.frequency, r.interval, ++index)
-        date.toEpochDay().takeIf { date.year in 1..9999 && (r.untilEpochDay == null || it <= r.untilEpochDay) }
-    } catch (_: java.time.DateTimeException) { null } catch (_: ArithmeticException) { null }
+    return com.jevon.personalos.schedule.calendarDateOnOrAfter(value.recurrence, value.nextDueEpochDay, maxOf(day,value.nextDueEpochDay))
 }
 
 fun nextUnpaid(value: SubscriptionEntity, paid: Set<Long>, from: Long = value.nextDueEpochDay): Long? {

@@ -52,13 +52,16 @@ class BackupCodecTest {
         rejected(mutate { it["createdAt"] = "2026-99-99T00:00:00Z" })
     }
     @Test fun futureFormatAndSchemaAreRejected() {
-        rejected(mutate { it["version"] = 3L }); rejected(mutate { it["schemaVersion"] = 4L })
+        rejected(mutate { it["version"] = 4L }); rejected(mutate { it["schemaVersion"] = 5L })
     }
     @Suppress("UNCHECKED_CAST")
     @Test fun legacyV1ReadsWithExplicitDefaultsAndNewFieldsRoundTrip() {
         val legacy = mutate { root ->
             root["version"] = 1L; root["schemaVersion"] = 2L
             val data = (root["data"] as Map<String, Any?>).toMutableMap()
+            data.remove("reminderCompletions"); data.remove("alertPreferences")
+            data["events"] = (data["events"] as List<Map<String,Any?>>).map { it-setOf("notes","revision") }
+            data["reminders"] = (data["reminders"] as List<Map<String,Any?>>).map { it-setOf("notes","zoneId","dateOnly","revision") }
             data["subscriptions"] = (data["subscriptions"] as List<Map<String, Any?>>).map { it - setOf("description", "notes", "accountId", "categoryId") }
             root["data"] = data
         }
@@ -67,6 +70,29 @@ class BackupCodecTest {
         assertEquals(enriched.subscriptions.toSet(), decode(bytes(enriched)).data.subscriptions.toSet())
         assertThrows(IllegalArgumentException::class.java) { bytes(enriched.copy(subscriptions = enriched.subscriptions.map { it.copy(accountId = "missing") })) }
         rejected(mutate { it["version"] = 1L; it["schemaVersion"] = 2L }) // v1 cannot silently absorb new fields
+    }
+    @Suppress("UNCHECKED_CAST")
+    @Test fun formatTwoDefaultsAndFormatThreeSchedulingHistoryAreComplete() {
+        val legacy=mutate { root ->
+            root["version"]=2L; root["schemaVersion"]=3L
+            val data=(root["data"] as Map<String,Any?>).toMutableMap()
+            data.remove("reminderCompletions"); data.remove("alertPreferences")
+            data["events"]=(data["events"] as List<Map<String,Any?>>).map { it-setOf("notes","revision") }
+            data["reminders"]=(data["reminders"] as List<Map<String,Any?>>).map { it-setOf("notes","zoneId","dateOnly","revision") }
+            root["data"]=data
+        }
+        assertEquals(original.events,decode(legacy).data.events)
+        assertEquals(original.reminders.toSet(),decode(legacy).data.reminders.toSet())
+        val reminder=original.reminders.first { it.dueAtMillis!=null }.let { it.copy(notes="Repeat notes",zoneId="Asia/Jakarta",dateOnly=true,revision=2,completedAtMillis=null,recurrence=Recurrence(Frequency.DAILY,1,java.time.Instant.ofEpochMilli(it.dueAtMillis!!).atZone(java.time.ZoneId.of("Asia/Jakarta")).toLocalDate().toEpochDay())) }
+        val data=original.copy(events=original.events.map { it.copy(notes="Event details",revision=4) },reminders=listOf(reminder),
+            completions=listOf(ReminderCompletionEntity(reminder.id,2,reminder.recurrence.anchorEpochDay,123)),
+            alerts=listOf(AlertPreferenceEntity("alert",reminderId=reminder.id,leadMinutes=15,minuteOfDay=600)))
+        val restored=decode(bytes(data)).data
+        assertEquals(data.events,restored.events); assertEquals(data.reminders,restored.reminders)
+        assertEquals(data.completions,restored.completions); assertEquals(data.alerts,restored.alerts)
+        assertThrows(IllegalArgumentException::class.java) { bytes(data.copy(completions=data.completions+data.completions)) }
+        assertThrows(IllegalArgumentException::class.java) { bytes(data.copy(alerts=data.alerts.map { it.copy(eventId=original.events.first().id) })) }
+        assertThrows(IllegalArgumentException::class.java) { bytes(data.copy(completions=data.completions.map { it.copy(revision=3) })) }
     }
     @Test fun duplicatesBrokenReferencesAndInvalidDomainFieldsAreRejected() {
         assertThrows(IllegalArgumentException::class.java) { bytes(original.copy(accounts = original.accounts + original.accounts.first())) }

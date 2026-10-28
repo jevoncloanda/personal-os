@@ -99,6 +99,8 @@ data class EventEntity(
     val allDay: Boolean = false,
     val location: String = "",
     @Embedded(prefix = "repeat_") val recurrence: Recurrence = Recurrence(null),
+    @ColumnInfo(defaultValue = "''") val notes: String = "",
+    @ColumnInfo(defaultValue = "0") val revision: Long = 0,
 ) { init { require(endsAtMillis > startsAtMillis) } }
 
 @Entity(tableName = "reminders", indices = [Index("dueAtMillis")])
@@ -108,7 +110,28 @@ data class ReminderEntity(
     val dueAtMillis: Long?,
     val completedAtMillis: Long? = null,
     @Embedded(prefix = "repeat_") val recurrence: Recurrence = Recurrence(null),
+    @ColumnInfo(defaultValue = "''") val notes: String = "",
+    @ColumnInfo(defaultValue = "'UTC'") val zoneId: String = "UTC",
+    @ColumnInfo(defaultValue = "0") val dateOnly: Boolean = false,
+    @ColumnInfo(defaultValue = "0") val revision: Long = 0,
 )
+
+@Entity(tableName = "reminder_completions", primaryKeys = ["reminderId", "revision", "occurrenceEpochDay"],
+    foreignKeys = [ForeignKey(entity = ReminderEntity::class, parentColumns = ["id"], childColumns = ["reminderId"], onDelete = ForeignKey.CASCADE)])
+data class ReminderCompletionEntity(val reminderId: String, val revision: Long, val occurrenceEpochDay: Long, val completedAtMillis: Long)
+
+@Entity(tableName = "alert_preferences", foreignKeys = [
+    ForeignKey(entity = EventEntity::class, parentColumns = ["id"], childColumns = ["eventId"], onDelete = ForeignKey.CASCADE),
+    ForeignKey(entity = ReminderEntity::class, parentColumns = ["id"], childColumns = ["reminderId"], onDelete = ForeignKey.CASCADE),
+    ForeignKey(entity = SubscriptionEntity::class, parentColumns = ["id"], childColumns = ["subscriptionId"], onDelete = ForeignKey.CASCADE),
+], indices = [Index(value = ["eventId", "leadMinutes"], unique = true), Index(value = ["reminderId", "leadMinutes"], unique = true), Index(value = ["subscriptionId", "leadMinutes"], unique = true)])
+data class AlertPreferenceEntity(@PrimaryKey val id: String, val eventId: String? = null, val reminderId: String? = null,
+    val subscriptionId: String? = null, val leadMinutes: Int, val minuteOfDay: Int = 540)
+
+/** Derived device-local delivery state. Never included in a portable backup. */
+@Entity(tableName = "alert_state", indices = [Index("delivered")])
+data class AlertStateEntity(@PrimaryKey val key: String, val domain: String, val recordId: String, val revision: Long,
+    val occurrenceEpochDay: Long, val leadMinutes: Int, val triggerAtMillis: Long, val delivered: Boolean = false)
 
 @Entity(tableName = "subscriptions", indices = [Index("nextDueEpochDay"), Index("accountId"), Index("categoryId")], foreignKeys = [
     ForeignKey(entity = AccountEntity::class, parentColumns = ["id"], childColumns = ["accountId"], onDelete = ForeignKey.RESTRICT),

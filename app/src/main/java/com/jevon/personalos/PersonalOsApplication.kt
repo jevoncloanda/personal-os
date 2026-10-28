@@ -7,7 +7,7 @@ import com.jevon.personalos.data.SettingsStore
 
 class PersonalOsApplication : Application() {
     val database by lazy {
-        Room.databaseBuilder(this, PersonalDatabase::class.java, "personal-os.db").addMigrations(PersonalDatabase.MIGRATION_1_2, PersonalDatabase.MIGRATION_2_3).build()
+        Room.databaseBuilder(this, PersonalDatabase::class.java, "personal-os.db").addMigrations(PersonalDatabase.MIGRATION_1_2, PersonalDatabase.MIGRATION_2_3, PersonalDatabase.MIGRATION_3_4).build()
     }
     val settings by lazy { SettingsStore(this) }
 }
