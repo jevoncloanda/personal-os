@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <activity android:name=".subscriptions.SubscriptionReviewActivity" android:exported="false" />
+        <activity android:name=".backup.BackupReviewActivity" android:exported="false" />
+        <provider android:name=".backup.BackupFailureProvider" android:authorities="${applicationId}.backup-review" android:exported="false" android:grantUriPermissions="true" />
+    </application>
+</manifest>
