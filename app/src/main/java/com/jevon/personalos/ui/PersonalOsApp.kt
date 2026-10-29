@@ -90,7 +90,9 @@ fun PersonalOsApp(model: TodayViewModel, settings: Settings, externalTarget:Reco
             restoreState = true
         }
     }
-    LaunchedEffect(externalTarget){externalTarget?.let{target->if(target.domain=="SUBSCRIPTION"){requestedSubscription=target.id;navigate("subscriptions")}else{requestSchedule(target);navigate("schedule")};externalHandled()}}
+    // A cold notification launch can compose before NavHost installs its graph.
+    // Retain the target until the initial back-stack entry proves navigation is ready.
+    LaunchedEffect(externalTarget,backStack){if(backStack!=null)externalTarget?.let{target->if(target.domain=="SUBSCRIPTION"){requestedSubscription=target.id;navigate("subscriptions")}else{requestSchedule(target);navigate("schedule")};externalHandled()}}
     LaunchedEffect(settingsError) { if (settingsError) snackbars.showSnackbar("Appearance settings couldn’t be saved. Please try again.") }
 
     AtmosphericBackground { BoxWithConstraints(Modifier.fillMaxSize()) {
