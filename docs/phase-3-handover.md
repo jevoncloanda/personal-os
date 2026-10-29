@@ -63,6 +63,16 @@ Visual review remains **fix / pending rendered proof**. Reminder button padding/
 
 ## Remaining physical gates
 
+### Final-verification attempt — 29 October 2026
+
+Starting from `e0e4636`, inspected the outstanding notification harness, prior reports and screenshots. The Samsung wireless service was discovered and connected once, but the first lock-state check reported `showing=true`. No UI/notification case was launched, no permission was changed, and no dependent checks were retried. The corrected harness remains compile-validated only and deliberately uncommitted. No new production defect was established by this attempt.
+
+One independent final gate passed: debug/Android-test/unsigned-release builds, **54 JVM tests (zero failures/errors/skips)** and lint **0 errors / 19 warnings**. Gradle reused matching task results where valid. One physical data run passed **all 45 cases** together: Schedule 8, alerts 4, migrations 3, subscriptions 9, backup database 6, backup I/O 3, Money 10, routing 1 and read-only personal audit 1. These repeat the existing distinct coverage; they do not increase the cumulative total. APKs were installed as updates without storage clearing. Reports: `app/build/reports/phase-3-final-closeout-data.txt` and `phase-3-final-closeout-app-log.txt`. The inspected own-UID error log contained no application fatal.
+
+Reinspection of the older reminder screenshot confirmed clipped leading glyphs and old recurrence copy; current source fixes still require recapture. The older permission screenshot displays blocked status and remains unsuitable as granted-state proof. Fresh screenshots, large text, UI regressions, settings-return permission refresh, event/reminder notification taps and the corrected full notification run are still blocked by the locked phone. Actual delivery evidence remains the earlier four background alerts and subscription tap; real reboot and Doze remain untested. **Phase 3 is not ready to close.**
+
+The original five commits are unchanged, ending at `e0e4636` (`docs: record Phase 3 verification and remaining device gates`). This attempt changes only this handover, committed as `docs: record blocked Phase 3 final verification`. No push, personal-record modification or phone security/power/timeout change occurred. Working-tree exception remains the untracked `NotificationDeviceTest.kt`; retaining it preserves the unfinished work honestly.
+
 The Samsung locked. Following the user's overnight instruction, UI attempts stopped without repeated retries or unlock requests. Remaining gates are:
 
 - Event/reminder notification taps and a complete passing corrected notification-device case.
