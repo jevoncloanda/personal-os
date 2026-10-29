@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -22,7 +23,6 @@ import com.jevon.personalos.alerts.*
 import com.jevon.personalos.data.*
 import com.jevon.personalos.schedule.RecordTarget
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.delay
 import java.time.LocalTime
 
 @Composable
@@ -32,17 +32,13 @@ internal fun AlertSettingsScreen(database:PersonalDatabase,delivery:LocalAlerts,
     var prefs by remember(target){mutableStateOf<List<AlertPreferenceEntity>?>(null)}
     var error by remember {mutableStateOf<String?>(null)}
     var busy by remember {mutableStateOf(false)}
-    var status by remember {mutableStateOf(delivery.status(target.domain))}
-    LaunchedEffect(target){try {prefs=database.personalDao().alertPreferences().filter{it.domain==target.domain && it.recordId==target.id}}catch(_:Exception){error="Couldn't load alert preferences. Close and try again."}}
-    val permission=rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()){granted->scope.launch {
-        // Permission and notification app-op state can settle on different frames after the system dialog.
-        repeat(10){delivery.reconcile();status=delivery.status(target.domain);if(!granted||delivery.enabled(target.domain))return@launch;delay(200)}
-    }}
-    val owner=LocalLifecycleOwner.current
-    DisposableEffect(owner,delivery,target) {
-        val observer=LifecycleEventObserver {_,event->if(event==Lifecycle.Event.ON_RESUME)scope.launch {delivery.reconcile();status=delivery.status(target.domain)}}
-        owner.lifecycle.addObserver(observer);onDispose{owner.lifecycle.removeObserver(observer)}
+    var status by remember(delivery,target.domain) {mutableStateOf(delivery.status(target.domain))}
+    fun refreshStatus() {
+        status=delivery.status(target.domain)
+        scope.launch {delivery.reconcile();status=delivery.status(target.domain)}
     }
+    LaunchedEffect(target){try {prefs=database.personalDao().alertPreferences().filter{it.domain==target.domain && it.recordId==target.id}}catch(_:Exception){error="Couldn't load alert preferences. Close and try again."}}
+    val permission=rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()){refreshStatus()}
     val loaded=prefs
     if(loaded==null){Column(Modifier.padding(20.dp)){if(error!=null)Text(error!!) else CircularProgressIndicator();TextButton(onClick=close){Text("Back")}};return}
     var enabled by rememberSaveable(target.id,target.domain){mutableStateOf(loaded.isNotEmpty())}
@@ -59,10 +55,27 @@ internal fun AlertSettingsScreen(database:PersonalDatabase,delivery:LocalAlerts,
         scope.launch {try {database.personalDao().saveAlerts(target.domain,target.id,leads,local.hour*60+local.minute);delivery.reconcile();close()}
             catch(e:IllegalArgumentException){error=e.message} catch(_:Exception){error="Couldn't save alert preferences. Try again."}finally{busy=false}}
     }) {
+        // This is the editor Dialog's view. Its focus returns after a permission dialog or
+        // Settings, including cases where Activity ON_RESUME precedes platform settlement.
+        val view=LocalView.current
+        val owner=LocalLifecycleOwner.current
+        val refresh by rememberUpdatedState(::refreshStatus)
+        DisposableEffect(view,owner,delivery,target.domain) {
+            val update=Runnable{refresh()}
+            val focus=android.view.ViewTreeObserver.OnWindowFocusChangeListener{focused->if(focused)view.post(update)}
+            val observer=LifecycleEventObserver{_,event->if(event==Lifecycle.Event.ON_RESUME)view.post(update)}
+            view.viewTreeObserver.addOnWindowFocusChangeListener(focus)
+            owner.lifecycle.addObserver(observer)
+            view.post(update)
+            onDispose{
+                if(view.viewTreeObserver.isAlive)view.viewTreeObserver.removeOnWindowFocusChangeListener(focus)
+                owner.lifecycle.removeObserver(observer);view.removeCallbacks(update)
+            }
+        }
         val dirty=LocalMarkDraftDirty.current
         Row(Modifier.fillMaxWidth().toggleable(enabled,enabled=!busy,role=Role.Checkbox,onValueChange={dirty();enabled=it}).heightIn(min=56.dp),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){Checkbox(enabled,onCheckedChange=null);Text("Alerts for this record",Modifier.padding(start=12.dp))}
-        Text("$status",style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
-        if(!delivery.enabled(target.domain))Button(onClick={if(Build.VERSION.SDK_INT>=33 && context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=android.content.pm.PackageManager.PERMISSION_GRANTED)permission.launch(Manifest.permission.POST_NOTIFICATIONS) else context.startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE,context.packageName))}){Text("Enable Android notifications")}
+        Text(status.message,style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
+        if(!status.enabled)Button(onClick={if(Build.VERSION.SDK_INT>=33 && context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=android.content.pm.PackageManager.PERMISSION_GRANTED)permission.launch(Manifest.permission.POST_NOTIFICATIONS) else context.startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE,context.packageName))}){Text("Enable Android notifications")}
         TextButton(onClick={context.startActivity(Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE,context.packageName).putExtra(Settings.EXTRA_CHANNEL_ID,"personal-os-${target.domain.lowercase()}"))}){Text("Android category settings")}
         Text("Choose when this device should alert you. Saving a reminder or payment forecast never records a Money expense.",style=MaterialTheme.typography.bodySmall)
         val values=selected.split(',').mapNotNull{it.toIntOrNull()}.toSet()

@@ -17,6 +17,8 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.time.Clock
 
+data class AlertStatus(val enabled:Boolean,val message:String)
+
 class LocalAlerts(private val context:Context, private val database:PersonalDatabase, private val namespace:String="personal",
     private val receiver:Class<out BroadcastReceiver> = AlertReceiver::class.java, private val clock:Clock?=null, private val deliveryAllowed:((String)->Boolean)?=null,
     private val recordIntent:(AlertStateEntity)->Intent = { target -> Intent(context,MainActivity::class.java).putExtra("recordDomain",target.domain).putExtra("recordId",target.recordId).putExtra("occurrenceDay",target.occurrenceEpochDay) }) {
@@ -28,7 +30,10 @@ class LocalAlerts(private val context:Context, private val database:PersonalData
     fun createChannels() { listOf("EVENT" to "Calendar events","REMINDER" to "Reminders","SUBSCRIPTION" to "Subscription renewals").forEach { (id,name)->manager.createNotificationChannel(NotificationChannel(channel(id),name,NotificationManager.IMPORTANCE_DEFAULT).apply { description="Local Personal OS alerts · best-effort timing"; lockscreenVisibility=Notification.VISIBILITY_PRIVATE }) } }
     private fun channel(domain:String)="personal-os-${domain.lowercase()}"
     fun enabled(domain:String):Boolean = deliveryAllowed?.invoke(domain) ?: ((Build.VERSION.SDK_INT<33 || context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)==PackageManager.PERMISSION_GRANTED) && manager.areNotificationsEnabled() && manager.getNotificationChannel(channel(domain))?.let{it.importance!=NotificationManager.IMPORTANCE_NONE}==true)
-    fun status(domain:String):String = when {lastError!=null->lastError!!; !enabled(domain)->"Alerts are blocked by notification permission or this category. Your records still work. Enable alerts or review Android settings."; else->"Best-effort local alerts. Android may delay delivery under battery restrictions."}
+    fun status(domain:String):AlertStatus {
+        val allowed=enabled(domain)
+        return AlertStatus(allowed,when {lastError!=null->lastError!!; !allowed->"Alerts are blocked by notification permission or this category. Your records still work. Enable alerts or review Android settings."; else->"Best-effort local alerts. Android may delay delivery under battery restrictions."})
+    }
     private fun alarmIntent()=Intent(context,receiver).setAction("com.jevon.personalos.ALERT_TICK").setData(Uri.Builder().scheme("personalos").authority("alarm").appendPath(namespace).build())
     private fun pending()=PendingIntent.getBroadcast(context,0,alarmIntent(),PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
     fun cancelAlarm() { alarms.cancel(pending());nextScheduledAt=null }
