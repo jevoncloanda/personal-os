@@ -38,7 +38,7 @@ Delivery is best effort and can be delayed by Android/device power management. C
 
 Room v4 adds event/reminder fields, reminder completion history, shared alert preferences and a derived alert ledger through explicit 3→4 migration. Earlier migrations remain registered. Backup format 3/schema mapping 4 includes all eleven portable tables and accepts formats 1/schema2 and 2/schema3 with explicit defaults. Graph, recurrence and occurrence relationships are validated before replacement. Restore remains atomic; failure rolls back. Derived alert state is cleared atomically and rebuilt through database invalidation, never imported as durable OS identifiers. Permission state is not portable.
 
-## Executed validation — 28–29 October 2026
+## Initial validation — 28–29 October 2026
 
 - Debug, Android-test and unsigned release builds passed. The final debug APK was installed without clearing data. The last recurrence-copy change compiled after the full gate run.
 - JVM: **54 tests passed**. Android lint: **0 errors, 19 advisory warnings** on the final functional build; the subsequent wording-only change was compile-checked without repeating lint/full suites.
@@ -53,7 +53,7 @@ Local, ignored evidence: `app/build/reports/phase-3-data.txt`, `phase-3-closeout
 
 Validation entry points: `tools/gradle.ps1 assembleDebug assembleDebugAndroidTest testDebugUnitTest lintDebug assembleRelease --console plain`; device classes run through `tools/run-phase1-device.ps1` with isolated fixtures, using `-DataOnly` where no UI was required. No emulator, personal restore, phone reboot, security/power-setting change or personal test-record insertion was used. The original denied notification grant state was restored and verified (`granted=false`); this does not assert restoration of every Android permission flag.
 
-## Screenshots and review
+## Initial screenshots and review
 
 Meaningful local captures are under `docs/screenshots/phase-3/`: `schedule-empty.png`, `schedule-agenda.png`, `schedule-month-light.png`, `schedule-month-dark.png`, `selected-day.png`, `event-detail.png`, `recurring-reminder-completed.png`, `today-real-schedule.png` and `notification-open-subscription.png`. Screenshots stay ignored to protect personal/device evidence. The file named `notification-settings-granted.png` shows a transition with blocked status, not settled permission proof.
 
@@ -61,26 +61,31 @@ Independent code review found six material issues: completion loss, DST day lead
 
 Visual review remains **fix / pending rendered proof**. Reminder button padding/shape and natural recurrence wording were corrected in source and compiled after capture; fresh screenshots were unavailable. Existing design tokens, `DESIGN.md` and `.impeccable/design.json` were preserved.
 
-## Remaining physical gates
+## Final physical verification — 29 October 2026
 
-### Final-verification attempt — 29 October 2026
+The earlier locked-device attempt (`3ecc2e1`) passed one independent gate: debug/Android-test/unsigned-release builds, **54 JVM tests (zero failures/errors/skips)** and lint **0 errors / 19 warnings**, plus **45 physical data tests** together (Schedule 8, alerts 4, migrations 3, subscriptions 9, backup database 6, backup I/O 3, Money 10, routing 1 and read-only personal audit 1). Reports: `phase-3-final-closeout-data.txt` and `phase-3-final-closeout-app-log.txt` under `app/build/reports/`. These matching production results were reused during the resumed physical session rather than rerunning data/JVM/release suites.
 
-Starting from `e0e4636`, inspected the outstanding notification harness, prior reports and screenshots. The Samsung wireless service was discovered and connected once, but the first lock-state check reported `showing=true`. No UI/notification case was launched, no permission was changed, and no dependent checks were retried. The corrected harness remains compile-validated only and deliberately uncommitted. No new production defect was established by this attempt.
+With the Samsung unlocked, the corrected notification test ran first. **Four actual background alerts were observed again**, two event lead times plus reminder and subscription, scheduled at **22:08:02 WIB** and observed at **22:11:29 WIB** (15:08:02 / 15:11:29 UTC). Stable-tag reconciliation did not add duplicates; the edited/disabled disposable alert was absent. The subscription notification opened its correct detail. The test then **failed finding the reminder notification row in Samsung's shade**; the event tap was not reached. The prior cleanup exception no longer masked the failure. Report: `app/build/reports/phase-3-notification-final.txt`. This proves background delivery, not exact timing or a fully passing notification workflow.
 
-One independent final gate passed: debug/Android-test/unsigned-release builds, **54 JVM tests (zero failures/errors/skips)** and lint **0 errors / 19 warnings**. Gradle reused matching task results where valid. One physical data run passed **all 45 cases** together: Schedule 8, alerts 4, migrations 3, subscriptions 9, backup database 6, backup I/O 3, Money 10, routing 1 and read-only personal audit 1. These repeat the existing distinct coverage; they do not increase the cumulative total. APKs were installed as updates without storage clearing. Reports: `app/build/reports/phase-3-final-closeout-data.txt` and `phase-3-final-closeout-app-log.txt`. The inspected own-UID error log contained no application fatal.
+No production change was made from that failure alone. The harness now asserts whether an alert is still posted before tapping and writes local tray diagnostics if a row is missing, to distinguish cancellation from native grouping/selection. Those diagnostic changes compiled but have not run. A focused denied/granted/category-Settings-return test also compiled, but the lock guard blocked its launch. `NotificationDeviceTest.kt` remains untracked and uncommitted because it has not passed as a whole.
 
-Reinspection of the older reminder screenshot confirmed clipped leading glyphs and old recurrence copy; current source fixes still require recapture. The older permission screenshot displays blocked status and remains unsuitable as granted-state proof. Fresh screenshots, large text, UI regressions, settings-return permission refresh, event/reminder notification taps and the corrected full notification run are still blocked by the locked phone. Actual delivery evidence remains the earlier four background alerts and subscription tap; real reboot and Doze remain untested. **Phase 3 is not ready to close.**
+**All six targeted UI cases passed** in `app/build/reports/phase-3-ui-closeout.txt`:
 
-The original five commits are unchanged, ending at `e0e4636` (`docs: record Phase 3 verification and remaining device gates`). This attempt changes only this handover, committed as `docs: record blocked Phase 3 final verification`. No push, personal-record modification or phone security/power/timeout change occurred. Working-tree exception remains the untracked `NotificationDeviceTest.kt`; retaining it preserves the unfinished work honestly.
+- Schedule workflow: agenda/month/date selection, event/reminder management, recurring occurrence completion with future dates retained, Today updates, light/dark and Activity recreation.
+- New `Phase3ShellTest`: all six Quick Add routes; event/reminder unsaved drafts survive recreation; Back → Keep editing and Cancel → Discard; agenda/month/Today navigation. Full portable personal snapshot equality verified no entity changes.
+- Backup Settings smoke: navigation, light/dark, restored subscription draft and discard, with full personal snapshot equality. No personal export/restore.
+- Existing app-local **1.5× text** test: Today/Money/navigation/Quick Add. No device font/display setting changed.
+- Both isolated Subscription workflows: paid-cursor/calendar handling and create/pay/correct/cancel/reopen.
 
-The Samsung locked. Following the user's overnight instruction, UI attempts stopped without repeated retries or unlock requests. Remaining gates are:
+Fresh local screenshots replaced the earlier Schedule captures. Inspected `recurring-reminder-completed.png`: leading glyphs are intact and **“Repeats daily”** is rendered correctly; button padding is corrected. Also inspected `schedule-month-dark.png` and `large-text-today.png`; no material clipping in these views. Light/month, selected-day, agenda, event detail, Today, Settings and enlarged-text captures are available under `docs/screenshots/phase-3/`. Personal screenshots remain ignored and are not committed.
 
-- Event/reminder notification taps and a complete passing corrected notification-device case.
-- Fresh reminder-row clipping/copy captures; settled granted/revoked status and return-from-Settings verification.
-- Integrated shipping-shell, Quick Add, draft and general UI regression rerun against Phase 3. Earlier suite history is not proof for this build.
-- Enlarged text, TalkBack, RTL/tablet checks and real reboot/process-kill/Doze delivery conditions.
+The fresh `notification-settings-granted.png` still displays blocked copy immediately after granting. It is **not granted-status proof**. The dedicated permission-transition test was prepared to verify whether the rendered status settles and whether Android category Settings return refreshes it; its launch was prevented by the phone locking. This remains a potential status-refresh defect requiring focused runtime diagnosis, not a claimed fix.
 
-Production implementation and independent automated checks are validated as above; **Phase 3 physical and visual verification is incomplete**. Existing personal records were preserved. No push or publication occurred. Close these hardware/accessibility gates before starting another product domain.
+After the six UI cases, the phone locked. Further dependent tests stopped. The app's original denied notification grant was restored and verified (`granted=false`); no category setting was changed because the Settings test never launched. Personal records were preserved; isolated databases were used for saved fixtures, and no personal storage clear/restore, phone reboot, security/power/timeout change, emulator or push occurred.
+
+Necessary post-test checks: Android-test APK compiled, lint passed again (**0 errors / 19 warnings**); inspected own-UID error log contained no application fatal (`app/build/reports/phase-3-physical-closeout-app-log.txt`). Production source is unchanged. Cumulative distinct passing physical coverage is **45 data + 6 UI = 51 cases**; the notification case failed and is not counted. JVM coverage remains **54 passed**.
+
+**Phase 3 is not ready to close.** Remaining core gates: complete the diagnostic notification run and real reminder/event taps; verify denied/granted/revoked UI and category Settings return; resolve or disprove stale granted-status copy. Optional coverage still unverified: Schedule-specific enlarged text, TalkBack, RTL/tablet, real reboot/process-kill/Doze delivery. Resume these focused hardware gates before another product domain.
 
 ## Local Git history
 
@@ -88,6 +93,9 @@ Production implementation and independent automated checks are validated as abov
 - `df42c8e` — persistence/migration/backup, `feat: persist schedule series completions and portable alert preferences`.
 - `b968eb5` — recurrence/projections/shared alerts, `feat: reconcile shared local alerts and bounded schedule projections`.
 - `f817db3` — UI/Today/Quick Add and validated integration, `feat: connect Schedule workflows and notification settings to Today`.
-- Final documentation commit: `docs: record Phase 3 verification and remaining device gates` (resolve with `git log -1`; its own hash cannot be embedded in the same commit).
+- `e0e4636` — original Phase 3 verification handover.
+- `3ecc2e1` — independent validation and first locked-device closeout attempt.
+- `80758ed` — validated Quick Add and Schedule draft-restoration regression test.
+- Latest handover update: `docs: record Phase 3 physical verification results` (resolve with `git log -1`; its own hash cannot be embedded in the same commit).
 
 Only coherent validated work was committed. The unfinished notification-device harness remains visible and uncommitted; generated APKs, disposable data and private evidence are excluded.
