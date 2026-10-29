@@ -1,5 +1,7 @@
 # Phase 3 — calendar, reminders and local alerts
 
+Current outcome: **functional Phase 3 is closed** under the notification-closeout acceptance criteria. See the final notification closeout below for production-path evidence and remaining device-condition limitations. Earlier blocked results are historical.
+
 ## Plan and decisions — 28 October 2026
 
 Baseline `049c5f3` captures verified Phase 2. Private screenshots/reports/exports, local SDK/JDK/cache, database files and signing material are ignored; original handovers containing device/audit metadata remain preserved under ignored `.tools/baseline-original-docs`. Source, tests, Room schemas, wrapper, licensed assets and approved design reference are committed. No push/publication.
@@ -85,7 +87,27 @@ After the six UI cases, the phone locked. Further dependent tests stopped. The a
 
 Necessary post-test checks: Android-test APK compiled, lint passed again (**0 errors / 19 warnings**); inspected own-UID error log contained no application fatal (`app/build/reports/phase-3-physical-closeout-app-log.txt`). Production source is unchanged. Cumulative distinct passing physical coverage is **45 data + 6 UI = 51 cases**; the notification case failed and is not counted. JVM coverage remains **54 passed**.
 
-**Phase 3 is not ready to close.** Remaining core gates: complete the diagnostic notification run and real reminder/event taps; verify denied/granted/revoked UI and category Settings return; resolve or disprove stale granted-status copy. Optional coverage still unverified: Schedule-specific enlarged text, TalkBack, RTL/tablet, real reboot/process-kill/Doze delivery. Resume these focused hardware gates before another product domain.
+At that point, Phase 3 was not ready to close. The following notification closeout supersedes those remaining core gates. Optional coverage remained unverified: Schedule-specific enlarged text, TalkBack, RTL/tablet and real reboot/process-kill/Doze delivery.
+
+## Notification closeout — 29 October 2026
+
+Fixed notification status ownership: one sampled `AlertStatus` supplies both the displayed message and enable action. Refresh runs on the runtime permission result, Activity resume and the **editor Dialog's own window-focus return**, posted after native focus dispatch. Activity resume can precede permission/Settings settlement; the old implementation also read platform state separately for the message and button. The repeated 200 ms polling loop is removed. Runtime permission, NotificationManager app enablement (including AppOps) and category importance remain authoritative; no independent guessed permission flag is stored.
+
+The initial grant check passed, then its native Settings selector failed because Samsung exposes six checkable controls. Inspected the app-owned category page and selected its actual master `sesl_switchbar_switch`. **`NotificationPermissionTest` passed** for contextual grant, category disable → return → blocked UI, and category enable → return → enabled UI. A second invocation after controlled external `pm revoke` **passed** for the settled revoked state: blocked copy/action, preserved preferences, queued occurrence and no armed alarm. External revocation is necessary because revoking the instrumented app from itself kills its process; that case explicitly skips when its denied-state fixture is absent. Both cases ran and passed under their required fixtures during closeout.
+
+Production routing verification exposed and fixed a genuine cold-start crash: `PersonalOsApp` consumed an external notification target before NavHost installed its graph (`You must call setGraph() before calling getGraph()`). The target now stays pending until the initial back-stack entry exists; no timer is used.
+
+**`NotificationRoutingTest` passed** through notifications actually built and posted by production `LocalAlerts`, using its default `MainActivity` destination. It obtains the attached `contentIntent` from app-owned notification identities and sends that exact PendingIntent; it does not reconstruct an Intent or call the parser as a substitute for delivery. Event, reminder and subscription reached the shipping Activity with exact domain/UUID/nominal occurrence date, including a cold launch, and their corresponding destination rendered. The UUID records exist only in an isolated database, so the shipping personal database correctly displays its unavailable-record state. This verifies exact-key production routing without inserting test entities into personal storage; it does not claim a persisted personal record detail was rendered. Earlier isolated Schedule workflows separately verify real record details and occurrence actions.
+
+The same test passed stable-tag duplicate protection, obsolete event-alert cancellation after edits/deletion, individual recurring-reminder completion cancelling its alert while retaining the next occurrence, and inactive-subscription cancellation. The full portable personal snapshot was equal before/after. **`Phase3ShellTest` also passed again** after the navigation fix.
+
+These are **attached-PendingIntent activation tests, not real notification-shade finger taps**. Prior physical evidence remains four actual background AlarmManager alerts and a successful subscription shade tap. The older shade-text harness could not locate the reminder row; exact Samsung grouping/scroll-selection behavior remains unclassified, and real reminder/event shade taps are not certified. It remains untracked/uncommitted as `NotificationDeviceTest.kt`. Its brittle selector failure is not treated as a production routing failure. No new timing guarantee is inferred from immediate controlled-clock notification posting in the routing test.
+
+Final focused reports: `app/build/reports/phase-3-notification-validated.txt` (**3 passed**, permission/Settings, routing/cancellation and shell) and `phase-3-notification-revoked.txt` (**1 passed**). New distinct cases are permission/Settings, revoked-state and production routing: cumulative **54 distinct passing device cases** (45 data + 9 UI/integration), alongside the existing **54 JVM tests**. Earlier broad data/JVM suites were reused; they were not unnecessarily repeated. Debug/Android-test and unsigned-release builds passed, lint passed **0 errors / 19 warnings**. A final test-fixture precondition/cleanup adjustment was compile-checked after these runs. No new app fatal appeared after the fixed routing verification in the inspected own-UID log (`phase-3-notification-closeout-app-log.txt`); the earlier reproduced navigation crash is explicitly accounted for above.
+
+Fresh, visually inspected captures under ignored `docs/screenshots/phase-3/`: `notification-settings-granted.png` now shows the enabled message/action consistently; `notification-settings-category-disabled.png` shows blocked status; `notification-settings-return-enabled.png` shows the refreshed enabled state. `notification-settings-revoked.png` captures the final denied state. These replace the previously stale granted capture as current evidence.
+
+The original denied notification grant is restored (`granted=false`, AppOps `POST_NOTIFICATION: ignore`); the event category was restored enabled. No personal entity writes/restore/storage clear, unrelated settings changes, phone reboot, emulator or push occurred. No significant known functional Schedule/notification defect remains after these focused checks. **Functional Phase 3 closeout criteria are met.** Real reboot/Doze/process-kill timing and broader accessibility/device layouts remain unverified limitations, not gates claimed as passed. No Phase 4 work was started.
 
 ## Local Git history
 
@@ -96,6 +118,9 @@ Necessary post-test checks: Android-test APK compiled, lint passed again (**0 er
 - `e0e4636` — original Phase 3 verification handover.
 - `3ecc2e1` — independent validation and first locked-device closeout attempt.
 - `80758ed` — validated Quick Add and Schedule draft-restoration regression test.
-- Latest handover update: `docs: record Phase 3 physical verification results` (resolve with `git log -1`; its own hash cannot be embedded in the same commit).
+- `d55e88e` — prior physical verification results.
+- `3c6d4df` — event-driven notification permission-status refresh and focused tests.
+- `054c9e7` — cold-start notification navigation fix and production PendingIntent regression.
+- Latest handover update: `docs: close functional Phase 3 notification verification` (resolve with `git log -1`; its own hash cannot be embedded in the same commit).
 
 Only coherent validated work was committed. The unfinished notification-device harness remains visible and uncommitted; generated APKs, disposable data and private evidence are excluded.
