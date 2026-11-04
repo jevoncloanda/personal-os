@@ -92,8 +92,10 @@ class MoneyDatabaseTest {
     @Test fun reactiveTodayAndMoneyEmitCommittedTotals() = runBlocking {
         dao.saveBudget(BudgetEntity("z", "October", "USD", 10000, day, day + 31), true)
         val now = ZonedDateTime.parse("2026-10-12T12:00:00+07:00[Asia/Jakarta]")
-        assertEquals(0L, db.observeToday(now).first().budget!!.spentMinor)
-        val update = async(start = CoroutineStart.UNDISPATCHED) { withTimeout(10000) { db.observeToday(now).first { it.budget?.spentMinor == 1200L } } }
+        val settings = Settings(preferredCurrency = "USD")
+        assertNull(db.observeToday(now).first().budget) // IDR default does not select this USD fixture.
+        assertEquals(0L, db.observeToday(now, settings).first().budget!!.spentMinor)
+        val update = async(start = CoroutineStart.UNDISPATCHED) { withTimeout(10000) { db.observeToday(now, settings).first { it.budget?.spentMinor == 1200L } } }
         dao.recordEntry(expense())
         assertEquals(8800L, update.await().budget!!.remainingMinor)
         val money = db.observeMoney(month, "", "", "", "", "", 0).first()

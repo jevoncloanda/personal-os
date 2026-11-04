@@ -49,7 +49,7 @@ class FoundationTest {
         compose.onNodeWithContentDescription("Developer previews").performClick()
         compose.onNodeWithText("Empty", useUnmergedTree = true).performClick()
         compose.onNodeWithText("Nothing urgent").assertExists()
-        compose.onNodeWithText("Give your spending a plan").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Create an overall monthly budget, or choose an existing budget in another currency.").performScrollTo().assertIsDisplayed()
         compose.onNodeWithContentDescription("Quick add").performClick()
         compose.onNodeWithText("Transfer").performClick()
         compose.onNodeWithText("Add transfer").assertIsDisplayed()

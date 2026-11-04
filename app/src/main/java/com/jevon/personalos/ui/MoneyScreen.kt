@@ -24,7 +24,7 @@ import java.util.UUID
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
-fun MoneyScreen(model: MoneyViewModel, requested: String?, handled: () -> Unit, subscriptions: () -> Unit) {
+fun MoneyScreen(model: MoneyViewModel, requested: String?, handled: () -> Unit, subscriptions: () -> Unit, preferredCurrency: String = DEFAULT_CURRENCY) {
     val state by model.state.collectAsStateWithLifecycle()
     val filter by model.filter.collectAsStateWithLifecycle()
     val busy by model.busy.collectAsStateWithLifecycle()
@@ -34,9 +34,11 @@ fun MoneyScreen(model: MoneyViewModel, requested: String?, handled: () -> Unit, 
     var editId by rememberSaveable { mutableStateOf<String?>(null) }
     var newKind by rememberSaveable { mutableStateOf("EXPENSE") }
     var showFilters by rememberSaveable { mutableStateOf(false) }
-    var overviewCurrency by rememberSaveable { mutableStateOf(DEFAULT_CURRENCY) }
+    var showTestReview by rememberSaveable { mutableStateOf(false) }
+    var expandedCandidate by rememberSaveable { mutableStateOf<String?>(null) }
+    var overviewCurrency by rememberSaveable(preferredCurrency) { mutableStateOf(preferredCurrency) }
     fun edit(type: String, id: String? = null) { model.clearError(); editId = id; editor = type }
-    LaunchedEffect(requested) { requested?.let { newKind = it; edit("entry"); handled() } }
+    LaunchedEffect(requested) { requested?.let { if (it == "BUDGETS") { section = "Budgets"; model.setFilter(filter.copy(month = java.time.YearMonth.now(), page = 0)) } else { newKind = it; edit("entry") }; handled() } }
     when (val s = state) {
         MoneyState.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) { CircularProgressIndicator() }
         MoneyState.Error -> Column(Modifier.padding(24.dp)) {
@@ -46,7 +48,7 @@ fun MoneyScreen(model: MoneyViewModel, requested: String?, handled: () -> Unit, 
         is MoneyState.Ready -> {
             val data = s.snapshot
             val currencyBalances = activeCurrencyBalances(data.accounts)
-            val displayCurrency = overviewCurrency.takeIf { code -> currencyBalances.any { it.code == code } } ?: currencyBalances.firstOrNull()?.code ?: DEFAULT_CURRENCY
+            val displayCurrency = overviewCurrency.takeIf { code -> currencyBalances.any { it.code == code } } ?: currencyBalances.firstOrNull()?.code ?: preferredCurrency
             LazyColumn(Modifier.fillMaxSize().testTag("MoneyList"), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 0.dp, bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 if (section == "Overview") item { BalanceHeader(data, displayCurrency, { overviewCurrency = it }, { edit("account") }) }
                 item {
@@ -60,6 +62,9 @@ fun MoneyScreen(model: MoneyViewModel, requested: String?, handled: () -> Unit, 
                                 unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
+                }
+                if (section in listOf("Accounts", "History", "Budgets", "Categories")) item {
+                    TextButton(onClick = { showTestReview = true }) { Text("Review possible test records") }
                 }
                 if (section in listOf("History", "Budgets")) item { MonthSelector(filter.month,
                     { model.setFilter(filter.copy(month = filter.month.minusMonths(1), page = 0)) }, { model.setFilter(filter.copy(month = filter.month.plusMonths(1), page = 0)) }) }
@@ -118,6 +123,42 @@ fun MoneyScreen(model: MoneyViewModel, requested: String?, handled: () -> Unit, 
                     }
                 }
             }
+            if (showTestReview) ModalBottomSheet(onDismissRequest = { showTestReview = false }) {
+                val review by model.testReview.collectAsStateWithLifecycle()
+                LazyColumn(Modifier.fillMaxWidth().testTag("TestRecordReviewList"), contentPadding = PaddingValues(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    item {
+                        Text("Possible test records", style = MaterialTheme.typography.titleLarge)
+                        Text("Only exact P1 test / P15 restore labels from earlier device tests are flagged. A label is a hint, not proof. Related records may be personal. Nothing is deleted here.")
+                        Text("Use the existing editors to archive accounts/categories or review individual deletions. Subscription payments must be corrected in Subscriptions. There is no bulk cleanup.", style = MaterialTheme.typography.bodyMedium)
+                    }
+                    val result = review
+                    when {
+                        result == null -> item { CircularProgressIndicator() }
+                        result.isFailure -> item { Text("Could not load the review. Close and reopen it to try again. Your records are unchanged.") }
+                        result.getOrThrow().isEmpty() -> item { Text("No records with these known development labels.") }
+                        else -> result.getOrThrow().forEach { candidate ->
+                            val candidateKey = "${candidate.section}/${candidate.id}"
+                            item(key = candidateKey) {
+                                Text(candidate.title, style = MaterialTheme.typography.titleMedium)
+                                Text("${candidate.section} · ${candidate.id}", style = MaterialTheme.typography.bodySmall)
+                                TextButton(onClick = { expandedCandidate = if (expandedCandidate == candidateKey) null else candidateKey }) {
+                                    Text(if (expandedCandidate == candidateKey) "Hide details" else "Review details and relationships (${candidate.details.size})")
+                                }
+                            }
+                            if (expandedCandidate == candidateKey) {
+                                items(candidate.details.size, key = { "$candidateKey/detail/$it" }) { index ->
+                                    Text(candidate.details[index], style = MaterialTheme.typography.bodyMedium)
+                                }
+                                item(key = "$candidateKey/open") {
+                                    TextButton(onClick = { section = candidate.section; showTestReview = false }) { Text("Open ${candidate.section}") }
+                                }
+                            }
+                            item(key = "$candidateKey/divider") { HorizontalDivider() }
+                        }
+                    }
+                    item { TextButton(onClick = { showTestReview = false }) { Text("Close review") } }
+                }
+            }
             val close = { editor = null; editId = null; model.clearError() }
             if (editor != null) key(editor, editId) {
                 val id = rememberSaveable { editId ?: UUID.randomUUID().toString() }
@@ -132,10 +173,10 @@ fun MoneyScreen(model: MoneyViewModel, requested: String?, handled: () -> Unit, 
                 if (missing) AlertDialog(onDismissRequest = close, title = { Text("Record unavailable") },
                     text = { Text("Close this draft and find the record again. Nothing has been saved.") }, confirmButton = { TextButton(onClick = close) { Text("Close") } })
                 else when (editor) {
-                    "account" -> AccountEditor(oldAccount, id, busy, error, close, model::account)
+                    "account" -> AccountEditor(oldAccount, id, busy, error, close, model::account, preferredCurrency)
                     "entry" -> EntryEditor(oldEntry, id, EntryKind.valueOf(newKind), data, busy, error, close, model::entry, model::deleteEntry)
                     "category" -> CategoryEditor(oldCategory, id, busy, error, close, model::category)
-                    "budget" -> BudgetEditor(oldBudget, id, filter.month, data.categories, data.accounts.map { it.account.currencyCode }.distinct().sorted(), busy, error, close, model::budget, model::deleteBudget)
+                    "budget" -> BudgetEditor(oldBudget, id, filter.month, data.categories, data.accounts.map { it.account.currencyCode }.distinct().sorted(), busy, error, close, model::budget, model::deleteBudget, preferredCurrency)
                 }
             }
         }

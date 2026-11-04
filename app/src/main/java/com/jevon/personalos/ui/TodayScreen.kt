@@ -5,7 +5,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -20,7 +21,9 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
 @Composable
-fun TodayScreen(state: TodayState, retry: () -> Unit, open: (String) -> Unit, complete:((com.jevon.personalos.schedule.ReminderOccurrence)->Unit)?=null) {
+fun TodayScreen(state: TodayState, retry: () -> Unit, open: (String) -> Unit, selectBudget: ((String?) -> Unit)? = null,
+    complete:((com.jevon.personalos.schedule.ReminderOccurrence)->Unit)?=null) {
+    var choosing by rememberSaveable { mutableStateOf(false) }
     when (state) {
         TodayState.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator(Modifier.semantics { contentDescription = "Loading today" })
@@ -30,12 +33,31 @@ fun TodayScreen(state: TodayState, retry: () -> Unit, open: (String) -> Unit, co
             Text("Your local data has not been changed. Try opening it again.", Modifier.padding(vertical = 12.dp))
             Button(onClick = retry) { Text("Try again") }
         }
-        is TodayState.Ready -> TodayBody(state.content, open,complete)
+        is TodayState.Ready -> {
+            TodayBody(state.content, open,complete, if (selectBudget == null) null else { { choosing = true } })
+            if (choosing && selectBudget != null) AlertDialog(onDismissRequest = { choosing = false },
+                title = { Text("Today budget") },
+                text = { Column(Modifier.verticalScroll(rememberScrollState())) {
+                    Text("Choose an overall budget for ${YearMonth.from(state.content.date)}. Automatic uses ${state.content.preferredCurrency} only.")
+                    if (state.content.requestedBudgetId != null && state.content.eligibleBudgets.none { it.id == state.content.requestedBudgetId })
+                        Text("Your saved choice is no longer eligible this month. The automatic fallback is shown.", Modifier.padding(vertical = 8.dp))
+                    val options = listOf<String?>(null) + state.content.eligibleBudgets.sortedWith(compareBy<BudgetEntity> { it.currencyCode != state.content.preferredCurrency }.thenBy { it.id }).map { it.id }
+                    options.forEach { id ->
+                        val budget = state.content.eligibleBudgets.firstOrNull { it.id == id }
+                        TextButton(onClick = { selectBudget(id); choosing = false }, modifier = Modifier.fillMaxWidth()) {
+                            Text((if (id == state.content.requestedBudgetId) "Selected: " else "") +
+                                (budget?.let { "${it.name} · ${it.currencyCode}" } ?: "Automatic · ${state.content.preferredCurrency}"))
+                        }
+                    }
+                } },
+                confirmButton = { TextButton(onClick = { choosing = false; open("money-budgets") }) { Text("Manage budgets") } },
+                dismissButton = { TextButton(onClick = { choosing = false }) { Text("Close") } })
+        }
     }
 }
 
 @Composable
-private fun TodayBody(content: TodayContent, open: (String) -> Unit,complete:((com.jevon.personalos.schedule.ReminderOccurrence)->Unit)?) {
+private fun TodayBody(content: TodayContent, open: (String) -> Unit,complete:((com.jevon.personalos.schedule.ReminderOccurrence)->Unit)?, choose: (() -> Unit)?) {
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val expanded = maxWidth >= 720.dp
         Column(
@@ -49,9 +71,9 @@ private fun TodayBody(content: TodayContent, open: (String) -> Unit,complete:((c
             if (expanded) {
                 Row(horizontalArrangement = Arrangement.spacedBy(40.dp)) {
                     Column(Modifier.weight(1f)) { Agenda(content, open,complete) }
-                    Column(Modifier.weight(1f)) { MoneyAndLibrary(content, open,complete) }
+                    Column(Modifier.weight(1f)) { MoneyAndLibrary(content, open,complete,choose) }
                 }
-            } else { Agenda(content, open,complete); MoneyAndLibrary(content, open,complete) }
+            } else { Agenda(content, open,complete); MoneyAndLibrary(content, open,complete,choose) }
         }
     }
 }
@@ -111,15 +133,16 @@ private fun EventRows(events: List<EventEntity>, content: TodayContent,open:(Str
 }
 
 @Composable
-private fun MoneyAndLibrary(content: TodayContent, open: (String) -> Unit,complete:((com.jevon.personalos.schedule.ReminderOccurrence)->Unit)?) {
+private fun MoneyAndLibrary(content: TodayContent, open: (String) -> Unit,complete:((com.jevon.personalos.schedule.ReminderOccurrence)->Unit)?, choose: (() -> Unit)?) {
     SectionHeading("This month", "Money", { open("money") })
     val summary = content.budget
+    if (choose != null) TextButton(onClick = choose) { Text("Choose Today budget") }
     if (summary == null) {
-        EmptyMessage("Give your spending a plan", "Set a monthly budget to see actual spending and what remains.")
-        TextButton(onClick = { open("money") }) { Text("Set up in Money") }
+        EmptyMessage("No ${content.preferredCurrency} budget this month", "Create an overall monthly budget, or choose an existing budget in another currency.")
+        TextButton(onClick = { open("money-budgets") }) { Text("Manage budgets") }
     }
     else FrostedPanel {
-            Text(summary.budget.name, style = MaterialTheme.typography.titleSmall)
+            Text("${summary.budget.name} · ${summary.budget.currencyCode}", style = MaterialTheme.typography.titleSmall)
             val remaining = summary.remainingMinor
             Text("${formatMoney(kotlin.math.abs(remaining), summary.budget.currencyCode)} ${if (remaining >= 0) "left" else "over budget"}",
                 Modifier.padding(top = 2.dp, bottom = 8.dp), style = MaterialTheme.typography.headlineMedium,

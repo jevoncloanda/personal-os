@@ -34,9 +34,9 @@ class TodayViewModel(application: Application, private val savedState: SavedStat
     val state: StateFlow<TodayState> = combine(mode, retryCount) { mode, _ -> mode }.flatMapLatest { selected ->
         flow<TodayState> {
             emit(TodayState.Loading)
-            clock.flatMapLatest { now ->
-                if (selected == DataMode.PERSONAL) app.database.observeToday(now)
-                else flowOf((if (selected == DataMode.DEMO && DemoCatalog.available) DemoCatalog.snapshot(now.toLocalDate(), now.zone) else Snapshot()).forToday(now))
+            combine(clock, settings) { now, prefs -> now to prefs }.flatMapLatest { (now, prefs) ->
+                if (selected == DataMode.PERSONAL) app.database.observeToday(now, prefs)
+                else flowOf((if (selected == DataMode.DEMO && DemoCatalog.available) DemoCatalog.snapshot(now.toLocalDate(), now.zone) else Snapshot()).forToday(now, prefs))
             }.collect { emit(TodayState.Ready(it)) }
         }.catch { emit(TodayState.Error) }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TodayState.Loading)
@@ -45,6 +45,8 @@ class TodayViewModel(application: Application, private val savedState: SavedStat
     fun retry() { retryCount.value += 1 }
     fun setTheme(value: ThemeMode) = saveSetting { app.settings.setTheme(value) }
     fun setDynamicColor(value: Boolean) = saveSetting { app.settings.setDynamicColor(value) }
+    fun setPreferredCurrency(value: String) = saveSetting { app.settings.setPreferredCurrency(value) }
+    fun setTodayBudget(value: String?) = saveSetting { app.settings.setTodayBudget(value) }
     private fun saveSetting(write: suspend () -> Unit) {
         viewModelScope.launch {
             try { write(); settingsError.value = false }

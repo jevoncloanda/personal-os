@@ -41,9 +41,23 @@ data class TodayContent(
     val library: List<LibraryItemEntity>,
     val scheduleReminders: List<com.jevon.personalos.schedule.ReminderOccurrence> = emptyList(),
     val scheduleEvents: List<com.jevon.personalos.schedule.EventOccurrence> = emptyList(),
+    val eligibleBudgets: List<BudgetEntity> = emptyList(),
+    val preferredCurrency: String = DEFAULT_CURRENCY,
+    val requestedBudgetId: String? = null,
 )
 
-fun Snapshot.forToday(now: ZonedDateTime): TodayContent {
+/** Exact calendar-month overall budgets only. Stable ID tie-break also handles legacy imports. */
+fun eligibleTodayBudgets(budgets: List<BudgetEntity>, date: LocalDate): List<BudgetEntity> {
+    val month = YearMonth.from(date)
+    return budgets.filter { it.categoryId == null && it.startEpochDay == month.atDay(1).toEpochDay() &&
+        it.endExclusiveEpochDay == month.plusMonths(1).atDay(1).toEpochDay() }.sortedBy { it.id }
+}
+
+fun selectTodayBudget(eligible: List<BudgetEntity>, settings: Settings): BudgetEntity? =
+    eligible.firstOrNull { it.id == settings.todayBudgetId }
+        ?: eligible.filter { it.currencyCode == settings.preferredCurrency }.minByOrNull { it.id }
+
+fun Snapshot.forToday(now: ZonedDateTime, settings: Settings = Settings()): TodayContent {
     val date = now.toLocalDate()
     val end = date.plusDays(1).atStartOfDay(now.zone).toInstant().toEpochMilli()
     return TodayContent(
@@ -51,10 +65,12 @@ fun Snapshot.forToday(now: ZonedDateTime): TodayContent {
         events.filter { it.endsAtMillis > now.toInstant().toEpochMilli() && it.startsAtMillis < end }.sortedBy { it.startsAtMillis }.take(4),
         reminders.filter { it.completedAtMillis == null && (it.dueAtMillis == null || it.dueAtMillis < end) }
             .sortedWith(compareBy<ReminderEntity> { it.dueAtMillis == null }.thenBy { it.dueAtMillis }).take(4),
-        budgets.firstOrNull { it.categoryId == null && date.toEpochDay() >= it.startEpochDay && date.toEpochDay() < it.endExclusiveEpochDay }
+        selectTodayBudget(eligibleTodayBudgets(budgets, date), settings)
             ?.let { summarizeBudget(it, entries) },
         subscriptions.filter { it.active && it.nextDueEpochDay <= date.plusDays(7).toEpochDay() }.sortedBy { it.nextDueEpochDay }.take(4),
         library.filter { it.status == LibraryStatus.ACTIVE }.sortedByDescending { it.updatedAtMillis }.take(3),
+        eligibleBudgets = eligibleTodayBudgets(budgets, date), preferredCurrency = settings.preferredCurrency,
+        requestedBudgetId = settings.todayBudgetId,
     )
 }
 

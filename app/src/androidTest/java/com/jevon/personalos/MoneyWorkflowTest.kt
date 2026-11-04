@@ -102,8 +102,11 @@ class MoneyWorkflowTest {
             navigate("Today")
             compose.onNodeWithContentDescription("Developer previews").performClick(); click("Personal")
             compose.onNodeWithText("This month").performScrollTo()
-            // Today deterministically chooses the first overall currency; inspect its actual projection.
-            runBlocking { assertNotNull(app.database.observeToday(java.time.ZonedDateTime.now()).first().budget) }
+            // A nonpreferred fixture must be selected deliberately; never expect an arbitrary fallback.
+            runBlocking {
+                val plan = app.database.personalDao().budgetProjections(YearMonth.now().atDay(1).toEpochDay()).first { it.budget.name == budgetName }
+                assertEquals(plan.budget.id, app.database.observeToday(java.time.ZonedDateTime.now(), Settings(todayBudgetId = plan.budget.id)).first().budget!!.budget.id)
+            }
             screenshot("today-personal-light")
             runBlocking { app.settings.setTheme(ThemeMode.DARK) }
             compose.waitUntil(5000) { runBlocking { app.settings.settings.first().theme == ThemeMode.DARK } }

@@ -77,6 +77,7 @@ fun PersonalOsApp(model: TodayViewModel, settings: Settings, externalTarget:Reco
     fun configureAlerts(target:RecordTarget){alertDomain=target.domain;alertId=target.id;nav.navigate("alerts"){launchSingleTop=true}}
     fun navigate(destination: String) {
         val target = when {
+            destination == "money-budgets" -> { requestedMoney = "BUDGETS"; "money" }
             destination.startsWith("subscription/")-> {requestedSubscription=destination.substringAfter('/');"subscriptions"}
             destination.startsWith("event/")-> {requestSchedule(RecordTarget("EVENT",android.net.Uri.decode(destination.substringAfter('/').substringBefore('?')),destination.substringAfter("?day=","").toLongOrNull()));"schedule"}
             destination.startsWith("reminder/")-> {requestSchedule(RecordTarget("REMINDER",android.net.Uri.decode(destination.substringAfter('/').substringBefore('?')),destination.substringAfter("?day=","").toLongOrNull()));"schedule"}
@@ -93,7 +94,7 @@ fun PersonalOsApp(model: TodayViewModel, settings: Settings, externalTarget:Reco
     // A cold notification launch can compose before NavHost installs its graph.
     // Retain the target until the initial back-stack entry proves navigation is ready.
     LaunchedEffect(externalTarget,backStack){if(backStack!=null)externalTarget?.let{target->if(target.domain=="SUBSCRIPTION"){requestedSubscription=target.id;navigate("subscriptions")}else{requestSchedule(target);navigate("schedule")};externalHandled()}}
-    LaunchedEffect(settingsError) { if (settingsError) snackbars.showSnackbar("Appearance settings couldn’t be saved. Please try again.") }
+    LaunchedEffect(settingsError) { if (settingsError) snackbars.showSnackbar("Settings couldn’t be saved. Please try again.") }
 
     AtmosphericBackground { BoxWithConstraints(Modifier.fillMaxSize()) {
         val rail = maxWidth >= 600.dp
@@ -144,10 +145,10 @@ fun PersonalOsApp(model: TodayViewModel, settings: Settings, externalTarget:Reco
                 Column(Modifier.fillMaxSize().padding(padding)) {
                     if (DemoCatalog.available && mode != DataMode.PERSONAL && route == "today") Text("Developer preview · sample data, never saved", Modifier.padding(horizontal = 24.dp), style = MaterialTheme.typography.labelMedium)
                     NavHost(navController = nav, startDestination = "today", modifier = Modifier.weight(1f)) {
-                        composable("today") { TodayScreen(state, model::retry, ::navigate) {schedule.complete(it,!it.completed)} }
-                        composable("money") { MoneyScreen(money, requestedMoney, { requestedMoney = null }, { nav.navigate("subscriptions") }) }
+                        composable("today") { TodayScreen(state, model::retry, ::navigate, selectBudget = model::setTodayBudget) {schedule.complete(it,!it.completed)} }
+                        composable("money") { MoneyScreen(money, requestedMoney, { requestedMoney = null }, { nav.navigate("subscriptions") }, settings.preferredCurrency) }
                         composable("backup") { BackupScreen(backup) }
-                        composable("subscriptions") { SubscriptionScreen(subscriptions, requestedSubscription, { requestedSubscription = null }, {configureAlerts(RecordTarget("SUBSCRIPTION",it))}) }
+                        composable("subscriptions") { SubscriptionScreen(subscriptions, requestedSubscription, { requestedSubscription = null }, {configureAlerts(RecordTarget("SUBSCRIPTION",it))}, settings.preferredCurrency) }
                         composable("schedule") { ScheduleScreen(schedule,scheduleDomain?.let{RecordTarget(it,scheduleId,scheduleDay)},{scheduleDomain=null},{navigate("subscription/$it")},::configureAlerts) }
                         composable("alerts"){AlertSettingsScreen(application.database,application.alerts,RecordTarget(alertDomain,alertId)){nav.popBackStack()}}
                         composable("library") { FoundationScreen("Make time for what you love", "Movies, series, games, and books will share one library. Collection and progress editing arrive in the next phase.", AppIcons.MenuBook) }
@@ -171,7 +172,7 @@ fun PersonalOsApp(model: TodayViewModel, settings: Settings, externalTarget:Reco
             }
         }
     }
-    if (showSettings) SettingsDialog(settings, model::setTheme, model::setDynamicColor,
+    if (showSettings) SettingsDialog(settings, model::setTheme, model::setDynamicColor, model::setPreferredCurrency,
         openBackup = { showSettings = false; nav.navigate("backup") { launchSingleTop = true } }) { showSettings = false }
     if (showDeveloper && DemoCatalog.available) AlertDialog(onDismissRequest = { showDeveloper = false }, title = { Text("Developer previews") },
         text = { DemoControls(mode) { model.setMode(it); showDeveloper = false } }, confirmButton = { TextButton(onClick = { showDeveloper = false }) { Text("Done") } })
@@ -205,10 +206,17 @@ private fun FoundationScreen(title: String, body: String, icon: ImageVector, ext
 }
 
 @Composable
-private fun SettingsDialog(settings: Settings, setTheme: (ThemeMode) -> Unit, setDynamicColor: (Boolean) -> Unit, openBackup: () -> Unit, dismiss: () -> Unit) {
+private fun SettingsDialog(settings: Settings, setTheme: (ThemeMode) -> Unit, setDynamicColor: (Boolean) -> Unit, setCurrency: (String) -> Unit, openBackup: () -> Unit, dismiss: () -> Unit) {
+    var currency by rememberSaveable(settings.preferredCurrency) { mutableStateOf(settings.preferredCurrency) }
+    val valid = runCatching { currencyDigits(currency) }.isSuccess
     AlertDialog(onDismissRequest = dismiss, title = { Text("Settings") }, confirmButton = { TextButton(onClick = dismiss) { Text("Done") } },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
+                OutlinedTextField(currency, { currency = it.uppercase(java.util.Locale.ROOT) }, label = { Text("Preferred currency (ISO code)") },
+                    singleLine = true, isError = !valid, modifier = Modifier.fillMaxWidth(),
+                    supportingText = { if (!valid) Text("Use a valid monetary ISO code, such as IDR, AUD or USD.") })
+                Text("Defaults for new records and Today. Existing amounts and currencies stay unchanged. These settings stay on this device and are excluded from backup files.", style = MaterialTheme.typography.bodySmall)
+                TextButton(enabled = valid && currency != settings.preferredCurrency, onClick = { setCurrency(currency) }) { Text("Save currency") }
                 ThemeMode.entries.forEach { theme ->
                     Row(Modifier.fillMaxWidth().selectable(selected = theme == settings.theme, role = Role.RadioButton,
                         onClick = { setTheme(theme) }).heightIn(min = 56.dp), verticalAlignment = Alignment.CenterVertically) {

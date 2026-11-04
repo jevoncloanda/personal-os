@@ -84,9 +84,9 @@ private fun currencyError(code: String): String? = runCatching { currencyDigits(
 private fun Modifier.semanticsForArchive(): Modifier = this.then(Modifier.semantics { contentDescription = "Archived" })
 
 @Composable
-internal fun AccountEditor(old: AccountEntity?, id: String, busy: Boolean, error: String?, close: () -> Unit, save: (AccountEntity, Boolean, () -> Unit) -> Unit) {
+internal fun AccountEditor(old: AccountEntity?, id: String, busy: Boolean, error: String?, close: () -> Unit, save: (AccountEntity, Boolean, () -> Unit) -> Unit, preferredCurrency: String = DEFAULT_CURRENCY) {
     var name by rememberSaveable { mutableStateOf(old?.name ?: "") }
-    var code by rememberSaveable { mutableStateOf(old?.currencyCode ?: DEFAULT_CURRENCY) }
+    var code by rememberSaveable { mutableStateOf(old?.currencyCode ?: preferredCurrency) }
     var balance by rememberSaveable { mutableStateOf(old?.let { moneyInput(it.openingBalanceMinor, it.currencyCode) } ?: "0") }
     var type by rememberSaveable { mutableStateOf(old?.type ?: "BANK") }
     var notes by rememberSaveable { mutableStateOf(old?.notes ?: "") }
@@ -175,10 +175,10 @@ internal fun CategoryEditor(old: CategoryEntity?, id: String, busy: Boolean, err
 
 @Composable
 internal fun BudgetEditor(old: BudgetEntity?, id: String, selectedMonth: YearMonth, categories: List<CategoryEntity>, currencies: List<String>, busy: Boolean, error: String?, close: () -> Unit,
-    save: (BudgetEntity, Boolean, () -> Unit) -> Unit, delete: (String, () -> Unit) -> Unit) {
+    save: (BudgetEntity, Boolean, () -> Unit) -> Unit, delete: (String, () -> Unit) -> Unit, preferredCurrency: String = DEFAULT_CURRENCY) {
     var name by rememberSaveable { mutableStateOf(old?.name ?: "Monthly budget") }
     var month by rememberSaveable { mutableStateOf(old?.let { YearMonth.from(LocalDate.ofEpochDay(it.startEpochDay)).toString() } ?: selectedMonth.toString()) }
-    var code by rememberSaveable { mutableStateOf(old?.currencyCode ?: DEFAULT_CURRENCY) }
+    var code by rememberSaveable { mutableStateOf(old?.currencyCode ?: preferredCurrency) }
     var limit by rememberSaveable { mutableStateOf(old?.let { moneyInput(it.limitMinor, it.currencyCode) } ?: "") }
     var category by rememberSaveable { mutableStateOf(old?.categoryId ?: "") }
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
@@ -194,7 +194,7 @@ internal fun BudgetEditor(old: BudgetEntity?, id: String, selectedMonth: YearMon
         Field("Budget limit", limit, !busy, KeyboardType.Decimal, error = amountError(limit, code)) { limit = it }
         Choice("Scope", category, listOf("" to "Overall") + categories.filter { it.kind != "INCOME" && (!it.archived || it.id == old?.categoryId) }.map { it.id to it.name }, !busy) { category = it }
         Text("One overall limit per currency and month. Category limits overlap the overall budget; they are never added together. Only recorded expenses count.")
-        Text("Today shows the current month's overall budget. If several currencies have budgets, the currency code that sorts first is shown.", style = MaterialTheme.typography.bodySmall)
+        Text("Choose the current month's overall budget on Today. Automatic uses your preferred currency from Settings.", style = MaterialTheme.typography.bodySmall)
         if (old != null) TextButton(enabled = !busy, onClick = { confirmDelete = true }) { Text("Delete budget", color = MaterialTheme.colorScheme.error) }
     }
     if (confirmDelete) ConfirmDeletion("Delete budget?", "Transactions and account balances are kept.", { confirmDelete = false }) { confirmDelete = false; delete(id, close) }

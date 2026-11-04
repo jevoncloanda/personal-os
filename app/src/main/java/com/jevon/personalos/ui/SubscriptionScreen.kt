@@ -20,7 +20,7 @@ import java.util.Locale
 import java.util.UUID
 
 @Composable
-fun SubscriptionScreen(model: SubscriptionViewModel, requested: String?, handled: () -> Unit, configureAlerts:(String)->Unit={}) {
+fun SubscriptionScreen(model: SubscriptionViewModel, requested: String?, handled: () -> Unit, configureAlerts:(String)->Unit={}, preferredCurrency: String = DEFAULT_CURRENCY) {
     val data by model.state.collectAsStateWithLifecycle()
     val today by model.today.collectAsStateWithLifecycle()
     val busy by model.busy.collectAsStateWithLifecycle()
@@ -112,7 +112,7 @@ fun SubscriptionScreen(model: SubscriptionViewModel, requested: String?, handled
     }
     if (cancel && value != null) AlertDialog(onDismissRequest = { cancel = false }, title = { Text("Cancel ${value.name}?") }, text = { Text("Upcoming forecasts stop. Paid expenses and payment history remain. This does not cancel the service with its provider.") },
         confirmButton = { TextButton(enabled = !busy, onClick = { cancel = false; model.active(value.id, false) }) { Text("Mark inactive") } }, dismissButton = { TextButton(onClick = { cancel = false }) { Text("Keep active") } })
-    if (editor == "subscription") key(selected) { SubscriptionEditor(value?.copy(nextDueEpochDay = nextDue ?: value.nextDueEpochDay), snapshot, busy, error, { editor = null }) { s, create -> model.save(s, create) { editor = null; selected = s.id } } }
+    if (editor == "subscription") key(selected) { SubscriptionEditor(value?.copy(nextDueEpochDay = nextDue ?: value.nextDueEpochDay), snapshot, busy, error, { editor = null }, preferredCurrency) { s, create -> model.save(s, create) { editor = null; selected = s.id } } }
     if (editor == "payment" && value != null) key(value.id, correction) {
         val link = snapshot.payments.firstOrNull { it.id == correction }
         PaymentEditor(value.copy(nextDueEpochDay = nextDue ?: value.nextDueEpochDay), link, snapshot, today, busy, error, { editor = null }, { if (link != null) model.undo(link.id) { editor = null } }) { due, expense ->
@@ -123,12 +123,12 @@ fun SubscriptionScreen(model: SubscriptionViewModel, requested: String?, handled
 }
 
 @Composable
-private fun SubscriptionEditor(old: SubscriptionEntity?, data: SubscriptionSnapshot, busy: Boolean, error: String?, close: () -> Unit, save: (SubscriptionEntity, Boolean) -> Unit) {
+private fun SubscriptionEditor(old: SubscriptionEntity?, data: SubscriptionSnapshot, busy: Boolean, error: String?, close: () -> Unit, preferredCurrency: String, save: (SubscriptionEntity, Boolean) -> Unit) {
     val id = rememberSaveable { old?.id ?: UUID.randomUUID().toString() }
     var name by rememberSaveable { mutableStateOf(old?.name ?: "") }
     var description by rememberSaveable { mutableStateOf(old?.description ?: "") }
     var notes by rememberSaveable { mutableStateOf(old?.notes ?: "") }
-    var currency by rememberSaveable { mutableStateOf(old?.currencyCode ?: DEFAULT_CURRENCY) }
+    var currency by rememberSaveable { mutableStateOf(old?.currencyCode ?: preferredCurrency) }
     var amount by rememberSaveable { mutableStateOf(old?.let { moneyInput(it.amountMinor, it.currencyCode) } ?: "") }
     var frequency by rememberSaveable { mutableStateOf(old?.recurrence?.frequency?.name ?: "MONTHLY") }
     var interval by rememberSaveable { mutableStateOf((old?.recurrence?.interval ?: 1).toString()) }
