@@ -1,6 +1,10 @@
 # Data model
 
-## Current: Phase 3 scheduling
+## Current: Phase 4 Library
+
+Room is v5. Migration 4→5 preserves existing Library rows while adding the fields described under Library progress below. Backup format 4/schema mapping 5 retains readers for formats 1–3 and excludes local artwork. Schedule/Money/Subscription schemas retain their Phase 3 contracts.
+
+## Historical: Phase 3 scheduling
 
 Room v4 nondestructively extends events with notes/revision, reminders with notes/zoneId/dateOnly/revision, and adds `reminder_completions`, `alert_preferences` and nonportable `alert_state`. Existing timestamps/IDs, Money and Subscription relationships remain. Old reminders default to timed UTC semantics; no due instant shifts. Old all-day event dates derive using their existing stored zone and exclusive end.
 
@@ -72,7 +76,11 @@ Event ends must follow starts. All-day events reserve date boundaries in the sto
 
 ## Library progress
 
-Kind fixes progress units: movie = elapsed minutes, series = completed episodes, game = elapsed whole hours, book = pages read. Progress is nonnegative; known total is positive and bounds progress. Status is PLANNED, ACTIVE, COMPLETED or DROPPED. Game percent completion and series season hierarchy are future decisions. Do not label hours as percentage or infer completion from an unknown total.
+Room v5 extends the existing Library row without changing its original seven fields. Common additions include subtitle/synopsis, optional year/rating, notes, added/started/completed dates, favorite, private cover basename and optional provider identity. Existing rows receive empty/null metadata and addedAtMillis=0 (unknown historical addition date). Status adds ON_HOLD to PLANNED, ACTIVE, COMPLETED and DROPPED, with media-specific display labels. Status reversal preserves progress, reviews and dates; missing start/completion dates are filled when entering the corresponding status, keeping retained history valid.
+
+Legacy progress units remain movie minutes, series completed episodes, game whole hours and book pages. New TV fields record current season/episode and optional total seasons. Games additionally store manually entered playtime as integer minutes, optional percentage and platform. Books use current page and optional total pages, plus author/ISBN. Known totals bound progress; no progress value automatically completes an item. Media type is immutable after creation. Text uses the portable 8,192-character/valid-Unicode boundary. Manual duplicate titles are allowed; non-null provider identities are unique per kind.
+
+Explicit 4→5 ALTER migration preserves all existing domains. Backup format 4/schema mapping 5 exports every new portable field and reads formats 1–3 with defaults. Local cover files/references remain device-local and are excluded from portable restore. The earlier phase descriptions above are historical where superseded here.
 
 ## Migrations and optional future synchronization
 

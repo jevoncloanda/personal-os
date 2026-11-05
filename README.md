@@ -1,8 +1,8 @@
 # Personal OS — Android foundation
 
-A local-first Kotlin/Compose personal app with persistent Money, hybrid Today, the approved blue/Inter design system, versioned backup/restore, subscriptions and Schedule. Events and reminders support anchored recurrence, per-occurrence reminder completion and configurable best-effort local alerts shared with subscriptions. Library editors remain deferred.
+A local-first Kotlin/Compose personal app with persistent Money, hybrid Today, the approved blue/Inter design system, versioned backup/restore, subscriptions, Schedule and an offline movie/TV/game/book Library. Library includes manual CRUD, progress, ratings, notes, local covers, bounded browsing and Quick Add.
 
-Current scheduling, notification policies and verification: [Phase 3 handover](docs/phase-3-handover.md). Current exports use backup format 3; formats 1 and 2 remain readable. Android notification permission is contextual; no backend or exact-time delivery guarantee.
+Current Library behavior and verification: [Phase 4 handover](docs/phase-4-handover.md). Scheduling and notification policies: [Phase 3 handover](docs/phase-3-handover.md). Current exports use backup format 4; formats 1–3 remain readable. Local artwork is excluded. Android notification permission is contextual; no backend or exact-time delivery guarantee.
 
 Earlier Subscription policies and verification: [Phase 2 handover](docs/phase-2-handover.md). Recovery security foundations: [Phase 1.7 handover](docs/phase-1.7-handover.md). Backups are unencrypted and need trusted storage.
 

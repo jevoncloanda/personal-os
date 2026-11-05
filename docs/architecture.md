@@ -1,5 +1,7 @@
 # Architecture
 
+Phase 4 adds one shared Library DAO/model/ViewModel/editor for movies, series, games and books. LibraryDao extends ScheduleDao in the existing DAO chain; bounded Room queries return 60 collection rows plus one lookahead, four highlights per status and three recently updated active items for Today. Search/filter/sort and selection live in SavedStateHandle; editor drafts survive Activity recreation. No network client or backend is required. Room is v5 with an explicit 4→5 migration. Backup format 4 reads formats 1–3 and includes portable Library information while excluding private cover images. See [Phase 4 handover](phase-4-handover.md) for semantics, provider decisions and actual proof.
+
 ## Phase 3 scheduling and shared alerts
 
 `ScheduleDao` extends the existing DAO chain. Events/reminders keep their original identities and timestamp fields, with notes, reminder zone/date-only semantics and schedule revisions added by Room 3→4. `reminder_completions` uniquely records reminder/revision/nominal-date completion. Schedule edits preserve old history while starting a new revision; title/notes changes preserve occurrence identity. One-off completion stays on the reminder. Legacy repeating-template completion means its first occurrence, not every future occurrence.
