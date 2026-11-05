@@ -170,13 +170,7 @@ private fun MoneyAndLibrary(content: TodayContent, open: (String) -> Unit,comple
     SectionHeading("Currently enjoying", "Library", { open("library") })
     if (content.library.isEmpty()) EmptyMessage("A little space for downtime", "What you’re watching, playing, or reading will appear here.")
     content.library.forEach { item ->
-        val progress = when (item.kind) {
-            LibraryKind.SERIES -> "Episode ${item.progress}${item.total?.let { " of $it" } ?: ""}"
-            LibraryKind.GAME -> "${item.progress} hours played"
-            LibraryKind.BOOK -> "Page ${item.progress}${item.total?.let { " of $it" } ?: ""}"
-            LibraryKind.MOVIE -> "${item.progress} minutes watched"
-        }
-        ContentRow(when (item.kind) { LibraryKind.GAME -> AppIcons.SportsEsports; LibraryKind.BOOK -> AppIcons.MenuBook; else -> AppIcons.Movie }, item.title, progress)
+        LibraryRow(item) { open("library/${android.net.Uri.encode(item.id)}") }
     }
     val undated = content.reminders.filter { it.dueAtMillis == null }
     if (undated.isNotEmpty()) {

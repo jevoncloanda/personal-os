@@ -62,7 +62,7 @@ class FoundationTest {
         compose.onNodeWithText("Schedule").performClick()
         compose.onNodeWithText("New event").assertIsDisplayed()
         compose.onNodeWithText("Library").performClick()
-        compose.onNodeWithText("Make time for what you love").assertIsDisplayed()
+        compose.onNodeWithText("Your Library").assertIsDisplayed()
         compose.onAllNodesWithText("Today").filter(hasClickAction()).onFirst().performClick()
         compose.onNodeWithText("Nothing urgent").assertExists()
     }

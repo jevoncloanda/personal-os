@@ -19,6 +19,11 @@ class BackupCodecTest {
         return BackupJson.canonical(envelope).toByteArray()
     }
     private fun rejected(bytes: ByteArray) { assertThrows(Exception::class.java) { decode(bytes) } }
+    @Suppress("UNCHECKED_CAST")
+    private fun stripNewLibraryFields(data: MutableMap<String, Any?>) {
+        val legacy = setOf("id", "title", "kind", "status", "progress", "total", "updatedAtMillis")
+        data["libraryItems"] = (data["libraryItems"] as List<Map<String, Any?>>).map { row -> row.filterKeys { it in legacy } }
+    }
 
     @Test fun emptyRoundTripHasEveryRequiredSection() {
         val empty = decode(bytes(BackupData()))
@@ -52,7 +57,7 @@ class BackupCodecTest {
         rejected(mutate { it["createdAt"] = "2026-99-99T00:00:00Z" })
     }
     @Test fun futureFormatAndSchemaAreRejected() {
-        rejected(mutate { it["version"] = 4L }); rejected(mutate { it["schemaVersion"] = 5L })
+        rejected(mutate { it["version"] = 5L }); rejected(mutate { it["schemaVersion"] = 6L })
     }
     @Suppress("UNCHECKED_CAST")
     @Test fun legacyV1ReadsWithExplicitDefaultsAndNewFieldsRoundTrip() {
@@ -63,6 +68,7 @@ class BackupCodecTest {
             data["events"] = (data["events"] as List<Map<String,Any?>>).map { it-setOf("notes","revision") }
             data["reminders"] = (data["reminders"] as List<Map<String,Any?>>).map { it-setOf("notes","zoneId","dateOnly","revision") }
             data["subscriptions"] = (data["subscriptions"] as List<Map<String, Any?>>).map { it - setOf("description", "notes", "accountId", "categoryId") }
+            stripNewLibraryFields(data)
             root["data"] = data
         }
         assertEquals(original.subscriptions.toSet(), decode(legacy).data.subscriptions.toSet())
@@ -79,6 +85,7 @@ class BackupCodecTest {
             data.remove("reminderCompletions"); data.remove("alertPreferences")
             data["events"]=(data["events"] as List<Map<String,Any?>>).map { it-setOf("notes","revision") }
             data["reminders"]=(data["reminders"] as List<Map<String,Any?>>).map { it-setOf("notes","zoneId","dateOnly","revision") }
+            stripNewLibraryFields(data)
             root["data"]=data
         }
         assertEquals(original.events,decode(legacy).data.events)
@@ -93,6 +100,75 @@ class BackupCodecTest {
         assertThrows(IllegalArgumentException::class.java) { bytes(data.copy(completions=data.completions+data.completions)) }
         assertThrows(IllegalArgumentException::class.java) { bytes(data.copy(alerts=data.alerts.map { it.copy(eventId=original.events.first().id) })) }
         assertThrows(IllegalArgumentException::class.java) { bytes(data.copy(completions=data.completions.map { it.copy(revision=3) })) }
+    }
+    @Suppress("UNCHECKED_CAST")
+    @Test fun legacyFormatThreeKeepsLibraryProgressAndSchedulingFields() {
+        val legacy = mutate { root ->
+            root["version"] = 3L; root["schemaVersion"] = 4L
+            val data = (root["data"] as Map<String, Any?>).toMutableMap()
+            stripNewLibraryFields(data)
+            data["events"] = (data["events"] as List<Map<String, Any?>>).map { it + mapOf("notes" to "Legacy event note", "revision" to 4L) }
+            data["reminders"] = (data["reminders"] as List<Map<String, Any?>>).map { it + mapOf("notes" to "Legacy reminder note", "zoneId" to "Asia/Jakarta", "revision" to 2L) }
+            root["data"] = data
+        }
+        val restored = decode(legacy).data
+        assertEquals(original.library.toSet(), restored.library.toSet())
+        assertEquals(original.events.map { it.copy(notes = "Legacy event note", revision = 4L) }, restored.events)
+        assertEquals(original.reminders.map { it.copy(notes = "Legacy reminder note", zoneId = "Asia/Jakarta", revision = 2L) }.toSet(), restored.reminders.toSet())
+        assertEquals(original.completions, restored.completions)
+        assertEquals(original.alerts, restored.alerts)
+        assertTrue(restored.library.all { it.subtitle.isEmpty() && it.rating == null && it.coverPath == null && it.addedAtMillis == 0L })
+    }
+    @Test fun formatFourPreservesEveryPortableLibraryFieldAcrossMedia() {
+        val start = java.time.LocalDate.of(2026, 10, 1).toEpochDay()
+        fun item(id: String, kind: LibraryKind) = LibraryItemEntity(id, "Title $id", kind, LibraryStatus.ON_HOLD,
+            updatedAtMillis = 123456789L, subtitle = "Subtitle", description = "Synopsis", releaseYear = 2025,
+            rating = 4, notes = "Personal review", addedAtMillis = 123L, startedEpochDay = start,
+            completedEpochDay = start + 4, favorite = true)
+        val items = listOf(
+            item("movie", LibraryKind.MOVIE),
+            item("series", LibraryKind.SERIES).copy(progress = 12, total = 24, season = 2, episode = 4, totalSeasons = 3),
+            item("game", LibraryKind.GAME).copy(platform = "PC", hoursPlayedMinutes = 735, completionPercent = 42),
+            item("book", LibraryKind.BOOK).copy(progress = 160, total = 320, author = "An author", isbn = "9780140328721",
+                provider = "openlibrary", providerId = "/works/OL123W"),
+        )
+        val source = BackupData(library = items)
+        val restored = decode(bytes(source)).data
+        assertEquals(items.toSet(), restored.library.toSet())
+        val duplicate = items.last().copy(id = "same-provider")
+        assertThrows(IllegalArgumentException::class.java) { bytes(source.copy(library = items + duplicate)) }
+        assertThrows(IllegalArgumentException::class.java) { bytes(source.copy(library = listOf(items.last().copy(providerId = "invalid")))) }
+        assertThrows(IllegalArgumentException::class.java) { bytes(source.copy(library = listOf(items.last().copy(rating = 6)))) }
+    }
+    @Test fun localArtworkPathAndBytesAreExcludedFromPortableBackup() {
+        val artwork = "12345678-1234-1234-1234-123456789abc.jpg"
+        val item = LibraryItemEntity("book", "Offline cover", LibraryKind.BOOK, LibraryStatus.ACTIVE,
+            updatedAtMillis = 100, coverPath = artwork, notes = "Keep this review")
+        val encoded = bytes(BackupData(library = listOf(item)))
+        assertFalse(String(encoded, Charsets.UTF_8).contains(artwork))
+        assertFalse(String(encoded, Charsets.UTF_8).contains("coverPath"))
+        assertEquals(item.copy(coverPath = null), decode(encoded).data.library.single())
+    }
+    @Test fun largeValidLibraryExportCanBeRestoredWithinTheByteLimit() {
+        // v4 has 26 values per Library item: this exceeds the old 400,000-node
+        // parser limit while remaining within both advertised record/byte limits.
+        val library = List(15_000) { index -> LibraryItemEntity(index.toString(), "B", LibraryKind.BOOK,
+            LibraryStatus.PLANNED, updatedAtMillis = 0) }
+        val encoded = bytes(BackupData(library = library))
+        assertTrue(encoded.size <= MAX_BACKUP_BYTES)
+        assertEquals(library.sortedBy { it.id }, decode(encoded).data.library)
+    }
+    @Test fun acceptedLibraryTextFitsThePortableBackupBoundary() {
+        val item = LibraryItemEntity("book", "Book", LibraryKind.BOOK, LibraryStatus.PLANNED,
+            updatedAtMillis = 100, notes = "n".repeat(MAX_TEXT))
+        com.jevon.personalos.library.validateLibrary(item)
+        assertEquals(item, decode(bytes(BackupData(library = listOf(item)))).data.library.single())
+        assertThrows(IllegalArgumentException::class.java) {
+            com.jevon.personalos.library.validateLibrary(item.copy(notes = "n".repeat(MAX_TEXT + 1)))
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            com.jevon.personalos.library.validateLibrary(item.copy(notes = "\uD800"))
+        }
     }
     @Test fun duplicatesBrokenReferencesAndInvalidDomainFieldsAreRejected() {
         assertThrows(IllegalArgumentException::class.java) { bytes(original.copy(accounts = original.accounts + original.accounts.first())) }

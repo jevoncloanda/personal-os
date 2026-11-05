@@ -4,7 +4,7 @@ import androidx.room.*
 import kotlinx.coroutines.flow.Flow
 
 @Dao
-abstract class PersonalDao : ScheduleDao() {
+abstract class PersonalDao : LibraryDao() {
     @Query("SELECT * FROM events ORDER BY startsAtMillis") abstract fun observeEvents(): Flow<List<EventEntity>>
     @Query("SELECT * FROM reminders WHERE completedAtMillis IS NULL ORDER BY dueAtMillis") abstract fun observeReminders(): Flow<List<ReminderEntity>>
     @Query("SELECT * FROM budgets ORDER BY startEpochDay DESC") abstract fun observeBudgets(): Flow<List<BudgetEntity>>
@@ -14,7 +14,7 @@ abstract class PersonalDao : ScheduleDao() {
     @Query("SELECT * FROM events WHERE endsAtMillis>:now AND startsAtMillis<:end ORDER BY startsAtMillis LIMIT 4") abstract suspend fun todayEvents(now: Long, end: Long): List<EventEntity>
     @Query("SELECT * FROM reminders WHERE completedAtMillis IS NULL AND (dueAtMillis IS NULL OR dueAtMillis<:end) ORDER BY dueAtMillis IS NULL,dueAtMillis LIMIT 4") abstract suspend fun todayReminders(end: Long): List<ReminderEntity>
     @Query("SELECT * FROM subscriptions WHERE active=1 AND nextDueEpochDay<=:end ORDER BY nextDueEpochDay LIMIT 4") abstract suspend fun todaySubscriptions(end: Long): List<SubscriptionEntity>
-    @Query("SELECT * FROM library_items WHERE status='ACTIVE' ORDER BY updatedAtMillis DESC LIMIT 3") abstract suspend fun todayLibrary(): List<LibraryItemEntity>
+    @Query("SELECT * FROM library_items WHERE status='ACTIVE' ORDER BY updatedAtMillis DESC,id LIMIT 3") abstract suspend fun todayLibrary(): List<LibraryItemEntity>
 }
 
 @Database(
@@ -22,7 +22,7 @@ abstract class PersonalDao : ScheduleDao() {
         EventEntity::class, ReminderEntity::class, SubscriptionEntity::class,
         SubscriptionPaymentEntity::class, LibraryItemEntity::class, ReminderCompletionEntity::class,
         AlertPreferenceEntity::class, AlertStateEntity::class],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 @TypeConverters(DatabaseConverters::class)
@@ -30,6 +30,22 @@ abstract class PersonalDatabase : RoomDatabase() {
     abstract fun personalDao(): PersonalDao
     internal abstract fun backupDao(): BackupDao
     companion object {
+        val MIGRATION_4_5 = object : androidx.room.migration.Migration(4, 5) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                listOf("subtitle", "description", "notes", "platform", "author", "isbn").forEach {
+                    db.execSQL("ALTER TABLE library_items ADD COLUMN $it TEXT NOT NULL DEFAULT ''")
+                }
+                listOf("coverPath", "provider", "providerId").forEach { db.execSQL("ALTER TABLE library_items ADD COLUMN $it TEXT") }
+                listOf("releaseYear", "rating", "startedEpochDay", "completedEpochDay", "season", "episode", "totalSeasons", "hoursPlayedMinutes", "completionPercent").forEach {
+                    db.execSQL("ALTER TABLE library_items ADD COLUMN $it INTEGER")
+                }
+                db.execSQL("ALTER TABLE library_items ADD COLUMN addedAtMillis INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE library_items ADD COLUMN favorite INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("CREATE INDEX index_library_items_updatedAtMillis ON library_items(updatedAtMillis)")
+                db.execSQL("CREATE INDEX index_library_items_addedAtMillis ON library_items(addedAtMillis)")
+                db.execSQL("CREATE UNIQUE INDEX index_library_items_kind_provider_providerId ON library_items(kind,provider,providerId)")
+            }
+        }
         val MIGRATION_3_4 = object : androidx.room.migration.Migration(3, 4) {
             override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE events ADD COLUMN notes TEXT NOT NULL DEFAULT ''")

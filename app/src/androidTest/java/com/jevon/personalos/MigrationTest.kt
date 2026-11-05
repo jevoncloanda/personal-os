@@ -5,6 +5,9 @@ import androidx.sqlite.db.SupportSQLiteOpenHelper
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import androidx.test.platform.app.InstrumentationRegistry
 import com.jevon.personalos.data.PersonalDatabase
+import com.jevon.personalos.data.LibraryItemEntity
+import com.jevon.personalos.data.LibraryKind
+import com.jevon.personalos.data.LibraryStatus
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import org.junit.Test
@@ -14,12 +17,13 @@ class MigrationTest {
     @Test fun versionOneRecordsSurviveWithSafeDefaults() = migrated(1)
     @Test fun versionTwoSubscriptionsAndPaymentLinksSurvive() = migrated(2)
     @Test fun versionThreeScheduleGainsSafeDefaultsWithoutDataLoss() = migrated(3)
+    @Test fun versionFourLibraryGainsSafeDefaultsWithoutDataLoss() = migrated(4)
     private fun migrated(version: Int) = runBlocking {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
-        // Build the exported v1 schema and let current Room validate the entire migrated v2 schema.
+        // Build each exported prior schema and let current Room validate the complete migrated schema.
         val schema = JSONObject(instrumentation.context.assets.open("com.jevon.personalos.data.PersonalDatabase/$version.json").bufferedReader().use { it.readText() }).getJSONObject("database")
-        val name = "migration-1-2-${java.util.UUID.randomUUID()}.db"
+        val name = "migration-$version-5-${java.util.UUID.randomUUID()}.db"
         val helper = FrameworkSQLiteOpenHelperFactory().create(SupportSQLiteOpenHelper.Configuration.builder(context).name(name)
             .callback(object : SupportSQLiteOpenHelper.Callback(version) {
                 override fun onCreate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
@@ -33,7 +37,7 @@ class MigrationTest {
                     val setup = schema.getJSONArray("setupQueries")
                     for (i in 0 until setup.length()) db.execSQL(setup.getString(i))
                 }
-                override fun onUpgrade(db: androidx.sqlite.db.SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) = error("Only v1 is created here")
+                override fun onUpgrade(db: androidx.sqlite.db.SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) = error("Only the selected prior schema is created here")
             }).build())
         helper.writableDatabase.apply {
             execSQL("INSERT INTO accounts (id,name,currencyCode,openingBalanceMinor,archived) VALUES ('bank','Bank','USD',-100,0)")
@@ -45,9 +49,10 @@ class MigrationTest {
             execSQL("INSERT INTO reminders (id,title,dueAtMillis,completedAtMillis,repeat_frequency,repeat_interval,repeat_anchorEpochDay,repeat_untilEpochDay) VALUES ('reminder','Old reminder',NULL,NULL,NULL,1,0,NULL)")
             execSQL("INSERT INTO subscriptions (id,name,amountMinor,currencyCode,nextDueEpochDay,active,repeat_frequency,repeat_interval,repeat_anchorEpochDay,repeat_untilEpochDay) VALUES ('plan','Old plan',10,'USD',20000,1,'MONTHLY',1,20000,NULL)")
             execSQL("INSERT INTO subscription_payments VALUES ('link','plan',20000,'expense')")
+            execSQL("INSERT INTO library_items (id,title,kind,status,progress,total,updatedAtMillis) VALUES ('library','Old book','BOOK','ACTIVE',12,320,12345)")
         }
         helper.close()
-        val db = Room.databaseBuilder(context, PersonalDatabase::class.java, name).addMigrations(PersonalDatabase.MIGRATION_1_2, PersonalDatabase.MIGRATION_2_3, PersonalDatabase.MIGRATION_3_4).build()
+        val db = Room.databaseBuilder(context, PersonalDatabase::class.java, name).addMigrations(PersonalDatabase.MIGRATION_1_2, PersonalDatabase.MIGRATION_2_3, PersonalDatabase.MIGRATION_3_4, PersonalDatabase.MIGRATION_4_5).build()
         try {
             val dao = db.personalDao()
             val bank = dao.balances().first { it.account.id == "bank" }
@@ -64,6 +69,8 @@ class MigrationTest {
             assertEquals("", plan.description); assertEquals("", plan.notes)
             assertNull(plan.accountId); assertNull(plan.categoryId)
             assertEquals("expense", dao.paymentsFor("plan").single().entryId)
+            val library = com.jevon.personalos.backup.BackupStore(db).snapshot().library.single()
+            assertEquals(LibraryItemEntity("library", "Old book", LibraryKind.BOOK, LibraryStatus.ACTIVE, 12, 320, 12345), library)
             db.openHelper.readableDatabase.query("PRAGMA foreign_key_check").use { assertFalse(it.moveToFirst()) }
             val backup = com.jevon.personalos.backup.BackupCodec.encode(com.jevon.personalos.backup.BackupStore(db).snapshot(), "migrated-v1")
             val restored = Room.inMemoryDatabaseBuilder(context, PersonalDatabase::class.java).build()
@@ -75,6 +82,7 @@ class MigrationTest {
                 assertEquals(dao.todayReminders(Long.MAX_VALUE), restored.personalDao().todayReminders(Long.MAX_VALUE))
                 assertEquals(dao.subscriptions(), restored.personalDao().subscriptions())
                 assertEquals(dao.paymentsFor("plan"), restored.personalDao().paymentsFor("plan"))
+                assertEquals(listOf(library), com.jevon.personalos.backup.BackupStore(restored).snapshot().library)
             } finally { restored.close() }
         } finally { db.close(); context.deleteDatabase(name) }
     }

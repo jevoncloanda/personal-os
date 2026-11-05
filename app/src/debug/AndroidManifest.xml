@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application>
+        <activity android:name=".library.LibraryReviewActivity" android:exported="false" />
         <activity android:name=".schedule.ScheduleReviewActivity" android:exported="false" android:launchMode="singleTop" />
         <receiver android:name=".schedule.ScheduleReviewAlertReceiver" android:exported="false" />
         <activity android:name=".subscriptions.SubscriptionReviewActivity" android:exported="false" />

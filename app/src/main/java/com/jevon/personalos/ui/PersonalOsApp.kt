@@ -25,6 +25,7 @@ import com.jevon.personalos.today.*
 import com.jevon.personalos.money.MoneyViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.compose.ui.platform.LocalContext
 import com.jevon.personalos.PersonalOsApplication
@@ -48,6 +49,9 @@ fun PersonalOsApp(model: TodayViewModel, settings: Settings, externalTarget:Reco
     SystemBarAppearance()
     val money: MoneyViewModel = viewModel()
     val application = LocalContext.current.applicationContext as PersonalOsApplication
+    val library: com.jevon.personalos.library.LibraryViewModel = viewModel(factory = viewModelFactory { initializer {
+        com.jevon.personalos.library.LibraryViewModel(application.database, createSavedStateHandle())
+    } })
     val subscriptions: SubscriptionViewModel = viewModel(factory = viewModelFactory { initializer { SubscriptionViewModel(application.database) } })
     val schedule:ScheduleViewModel=viewModel(factory=viewModelFactory{initializer{ScheduleViewModel(application.database)}})
     val backup: BackupViewModel = viewModel(factory = viewModelFactory { initializer {
@@ -68,6 +72,7 @@ fun PersonalOsApp(model: TodayViewModel, settings: Settings, externalTarget:Reco
     var showDeveloper by rememberSaveable { mutableStateOf(false) }
     var requestedMoney by rememberSaveable { mutableStateOf<String?>(null) }
     var requestedSubscription by rememberSaveable { mutableStateOf<String?>(null) }
+    var requestedLibrary by rememberSaveable { mutableStateOf<String?>(null) }
     var scheduleDomain by rememberSaveable{mutableStateOf<String?>(null)}
     var scheduleId by rememberSaveable{mutableStateOf("")}
     var scheduleDay by rememberSaveable{mutableStateOf<Long?>(null)}
@@ -77,6 +82,7 @@ fun PersonalOsApp(model: TodayViewModel, settings: Settings, externalTarget:Reco
     fun configureAlerts(target:RecordTarget){alertDomain=target.domain;alertId=target.id;nav.navigate("alerts"){launchSingleTop=true}}
     fun navigate(destination: String) {
         val target = when {
+            destination.startsWith("library/") -> { requestedLibrary = android.net.Uri.decode(destination.substringAfter('/')); "library" }
             destination == "money-budgets" -> { requestedMoney = "BUDGETS"; "money" }
             destination.startsWith("subscription/")-> {requestedSubscription=destination.substringAfter('/');"subscriptions"}
             destination.startsWith("event/")-> {requestSchedule(RecordTarget("EVENT",android.net.Uri.decode(destination.substringAfter('/').substringBefore('?')),destination.substringAfter("?day=","").toLongOrNull()));"schedule"}
@@ -151,7 +157,7 @@ fun PersonalOsApp(model: TodayViewModel, settings: Settings, externalTarget:Reco
                         composable("subscriptions") { SubscriptionScreen(subscriptions, requestedSubscription, { requestedSubscription = null }, {configureAlerts(RecordTarget("SUBSCRIPTION",it))}, settings.preferredCurrency) }
                         composable("schedule") { ScheduleScreen(schedule,scheduleDomain?.let{RecordTarget(it,scheduleId,scheduleDay)},{scheduleDomain=null},{navigate("subscription/$it")},::configureAlerts) }
                         composable("alerts"){AlertSettingsScreen(application.database,application.alerts,RecordTarget(alertDomain,alertId)){nav.popBackStack()}}
-                        composable("library") { FoundationScreen("Make time for what you love", "Movies, series, games, and books will share one library. Collection and progress editing arrive in the next phase.", AppIcons.MenuBook) }
+                        composable("library") { LibraryScreen(library, requestedLibrary, { requestedLibrary = null }) }
                     }
                 }
             }
@@ -163,7 +169,7 @@ fun PersonalOsApp(model: TodayViewModel, settings: Settings, externalTarget:Reco
             Text("A small action, a clearer day.", Modifier.padding(top = 8.dp, bottom = 16.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
             listOf(Triple("Add expense", "EXPENSE", AppIcons.NorthEast), Triple("Add income", "INCOME", AppIcons.SouthWest), Triple("Transfer", "TRANSFER", AppIcons.SwapHoriz),
                 Triple("New event", "new-event", AppIcons.CalendarMonth), Triple("New reminder", "new-reminder", AppIcons.RadioButtonUnchecked), Triple("New subscription", "subscription/new", AppIcons.Autorenew),
-                Triple("Library item · preview", "library", AppIcons.MenuBook)).forEach { (label, destination, icon) ->
+                Triple("Add to Library", "library/new", AppIcons.MenuBook)).forEach { (label, destination, icon) ->
                 ListItem(headlineContent = { Text(label, style = MaterialTheme.typography.bodyLarge) }, leadingContent = { IconBadge(icon, positive = destination == "INCOME") }, trailingContent = { Icon(AppIcons.ChevronRight, null, Modifier.size(18.dp)) },
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent), modifier = Modifier.clickable { quickAdd = false
                         if (destination in listOf("EXPENSE", "INCOME", "TRANSFER")) { requestedMoney = destination; navigate("money") }

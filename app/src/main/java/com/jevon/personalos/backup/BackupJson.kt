@@ -12,6 +12,9 @@ import java.io.StringReader
 internal const val MAX_BACKUP_BYTES = 8 * 1024 * 1024
 internal const val MAX_RECORDS = 20_000
 internal const val MAX_TEXT = 8_192
+// The largest portable record is Library's 26 fields plus its object node.
+// Reserve bounded overhead for the envelope, data sections and integrity object.
+private const val MAX_JSON_NODES = MAX_RECORDS * 27 + 100
 
 internal fun checkedBackupText(text: String): String {
     require(text.length <= MAX_TEXT) { "Backup text field is too long." }
@@ -78,7 +81,7 @@ internal object BackupJson {
     private class Parser(private val reader: JsonReader) {
         private var nodes = 0
         fun value(depth: Int): Any? {
-            require(depth <= 12 && ++nodes <= 400_000) { "Backup is too complex." }
+            require(depth <= 12 && ++nodes <= MAX_JSON_NODES) { "Backup is too complex." }
             return when (reader.peek()) {
                 JsonToken.BEGIN_OBJECT -> {
                     reader.beginObject(); val map = linkedMapOf<String, Any?>()

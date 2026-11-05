@@ -8,7 +8,7 @@ import kotlinx.coroutines.ensureActive
 internal class BackupStore(private val database: PersonalDatabase) {
     suspend fun snapshot(): BackupData = database.withTransaction {
         val dao = database.backupDao()
-        require(dao.recordCount() <= MAX_RECORDS && dao.textBytes() + dao.subscriptionTextBytes() + dao.scheduleTextBytes() <= MAX_BACKUP_BYTES) { "Data exceeds the backup limits (20,000 records / 8 MiB). Nothing was changed." }
+        require(dao.recordCount() <= MAX_RECORDS && dao.textBytes() + dao.subscriptionTextBytes() + dao.scheduleTextBytes() + dao.libraryTextBytes() <= MAX_BACKUP_BYTES) { "Data exceeds the backup limits (20,000 records / 8 MiB). Nothing was changed." }
         BackupData(dao.accounts(), dao.categories(), dao.entries(), dao.budgets(), dao.events(), dao.reminders(), dao.subscriptions(), dao.payments(), dao.library(),dao.completions(),dao.alerts())
     }
 

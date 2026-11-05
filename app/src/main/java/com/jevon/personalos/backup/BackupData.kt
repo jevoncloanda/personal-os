@@ -119,6 +119,16 @@ internal data class BackupData(
             require(expense.kind == EntryKind.EXPENSE && expense.currencyCode == subscription.currencyCode) { "Invalid payment expense." }
             require(paymentPeriods.add(payment.subscriptionId to payment.dueEpochDay) && paymentEntries.add(payment.entryId)) { "Duplicate subscription payment." }
         }
-        library.forEach { text(it.title, true); timestamp(it.updatedAtMillis); require(it.progress >= 0 && (it.total == null || it.total > 0 && it.progress <= it.total)) { "Invalid library progress." } }
+        val providerIdentities = HashSet<Triple<LibraryKind, String, String>>()
+        library.forEach {
+            com.jevon.personalos.library.validateLibrary(it)
+            text(it.title, true); text(it.subtitle); text(it.description); text(it.notes); text(it.platform); text(it.author); text(it.isbn)
+            it.provider?.let { provider -> text(provider, true) }; it.providerId?.let { id -> text(id, true) }
+            timestamp(it.updatedAtMillis); timestamp(it.addedAtMillis)
+            it.startedEpochDay?.let(::day); it.completedEpochDay?.let(::day)
+            if (it.provider != null && it.providerId != null) {
+                require(providerIdentities.add(Triple(it.kind, it.provider, it.providerId))) { "Duplicate library provider identity." }
+            }
+        }
     }
 }

@@ -5,7 +5,7 @@ import androidx.room.*
 enum class EntryKind { EXPENSE, INCOME, TRANSFER }
 enum class Frequency { DAILY, WEEKLY, MONTHLY, YEARLY }
 enum class LibraryKind { MOVIE, SERIES, GAME, BOOK }
-enum class LibraryStatus { PLANNED, ACTIVE, COMPLETED, DROPPED }
+enum class LibraryStatus { PLANNED, ACTIVE, COMPLETED, DROPPED, ON_HOLD }
 
 class DatabaseConverters {
     @TypeConverter fun entry(value: String): EntryKind = EntryKind.valueOf(value)
@@ -166,7 +166,7 @@ data class SubscriptionPaymentEntity(
     val entryId: String,
 )
 
-@Entity(tableName = "library_items", indices = [Index("status")])
+@Entity(tableName = "library_items", indices = [Index("status"), Index("updatedAtMillis"), Index("addedAtMillis"), Index(value = ["kind", "provider", "providerId"], unique = true)])
 data class LibraryItemEntity(
     @PrimaryKey val id: String,
     val title: String,
@@ -175,6 +175,26 @@ data class LibraryItemEntity(
     val progress: Int = 0,
     val total: Int? = null,
     val updatedAtMillis: Long,
+    @ColumnInfo(defaultValue = "''") val subtitle: String = "",
+    @ColumnInfo(defaultValue = "''") val description: String = "",
+    val coverPath: String? = null,
+    val releaseYear: Int? = null,
+    val rating: Int? = null,
+    @ColumnInfo(defaultValue = "''") val notes: String = "",
+    @ColumnInfo(defaultValue = "0") val addedAtMillis: Long = 0,
+    val startedEpochDay: Long? = null,
+    val completedEpochDay: Long? = null,
+    @ColumnInfo(defaultValue = "0") val favorite: Boolean = false,
+    val provider: String? = null,
+    val providerId: String? = null,
+    val season: Int? = null,
+    val episode: Int? = null,
+    val totalSeasons: Int? = null,
+    @ColumnInfo(defaultValue = "''") val platform: String = "",
+    val hoursPlayedMinutes: Long? = null,
+    val completionPercent: Int? = null,
+    @ColumnInfo(defaultValue = "''") val author: String = "",
+    @ColumnInfo(defaultValue = "''") val isbn: String = "",
 ) {
     init { require(progress >= 0 && (total == null || total > 0 && progress <= total)) }
 }

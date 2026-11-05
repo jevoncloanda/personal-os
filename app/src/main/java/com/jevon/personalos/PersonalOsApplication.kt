@@ -24,7 +24,7 @@ class PersonalOsApplication : Application() {
             .debounce(150).catch { alerts.reconcile() }.collect { alerts.reconcile() }
     }
     val database by lazy {
-        Room.databaseBuilder(this, PersonalDatabase::class.java, "personal-os.db").addMigrations(PersonalDatabase.MIGRATION_1_2, PersonalDatabase.MIGRATION_2_3, PersonalDatabase.MIGRATION_3_4).build()
+        Room.databaseBuilder(this, PersonalDatabase::class.java, "personal-os.db").addMigrations(PersonalDatabase.MIGRATION_1_2, PersonalDatabase.MIGRATION_2_3, PersonalDatabase.MIGRATION_3_4, PersonalDatabase.MIGRATION_4_5).build()
     }
     val settings by lazy { SettingsStore(this) }
 }

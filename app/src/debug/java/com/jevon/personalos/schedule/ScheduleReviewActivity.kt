@@ -80,7 +80,7 @@ class ScheduleReviewActivity:ComponentActivity(){
 class ScheduleReviewHost(app:Application,id:String,millis:Long?):AndroidViewModel(app){
     init{require(runCatching{UUID.fromString(id)}.isSuccess)}
     val clock:Clock?=millis?.let{Clock.fixed(Instant.ofEpochMilli(it),ZoneId.of("Asia/Jakarta"))}
-    val database=Room.databaseBuilder(app,PersonalDatabase::class.java,"phase3-review-$id.db").addMigrations(PersonalDatabase.MIGRATION_1_2,PersonalDatabase.MIGRATION_2_3,PersonalDatabase.MIGRATION_3_4).build()
+    val database=Room.databaseBuilder(app,PersonalDatabase::class.java,"phase3-review-$id.db").addMigrations(PersonalDatabase.MIGRATION_1_2,PersonalDatabase.MIGRATION_2_3,PersonalDatabase.MIGRATION_3_4,PersonalDatabase.MIGRATION_4_5).build()
     val delivery=reviewDelivery(app,database,id)
     @OptIn(kotlinx.coroutines.FlowPreview::class)
     private val observer=viewModelScope.launch(Dispatchers.IO){database.invalidationTracker.createFlow("events","reminders","reminder_completions","alert_preferences","subscriptions","subscription_payments").debounce(100).collect{delivery.reconcile()}}
@@ -96,7 +96,7 @@ class ScheduleReviewAlertReceiver:BroadcastReceiver(){
         if(runCatching{UUID.fromString(id)}.isFailure)return
         val result=goAsync()
         CoroutineScope(SupervisorJob()+Dispatchers.IO).launch{
-            val db=Room.databaseBuilder(context,PersonalDatabase::class.java,"phase3-review-$id.db").addMigrations(PersonalDatabase.MIGRATION_1_2,PersonalDatabase.MIGRATION_2_3,PersonalDatabase.MIGRATION_3_4).build()
+            val db=Room.databaseBuilder(context,PersonalDatabase::class.java,"phase3-review-$id.db").addMigrations(PersonalDatabase.MIGRATION_1_2,PersonalDatabase.MIGRATION_2_3,PersonalDatabase.MIGRATION_3_4,PersonalDatabase.MIGRATION_4_5).build()
             try{reviewDelivery(context,db,id).reconcile()}finally{db.close();result.finish()}
         }
     }
