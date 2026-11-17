@@ -38,11 +38,13 @@ class SubscriptionDatabaseTest {
         assertNotNull(dao.findEntry("paid")); dao.setSubscriptionActive("plan", true)
         assertTrue(dao.subscription("plan")!!.active)
     }
-    @Test fun paymentIsOneExpenseInBalancesBudgetsAndTotals() = isolated { _, dao ->
+    @Test fun paymentIsOneExpenseInBalancesBudgetsAndTotals() = isolated { db, dao ->
         dao.saveSubscription(plan(), true)
         dao.saveBudget(BudgetEntity("b", "January", "IDR", 5000, LocalDate.of(2026,1,1).toEpochDay(), LocalDate.of(2026,2,1).toEpochDay(), "service"), true)
         assertTrue(dao.totals(jan, jan + 1).isEmpty())
         dao.recordSubscriptionPayment("plan", jan, expense())
+        val money = db.observeMoney(java.time.YearMonth.of(2026, 1), "", "", "", "", "", 0).first()
+        assertEquals("plan", money.linkedSubscriptions["paid"])
         assertEquals(8500L, dao.balances().first { it.account.id == "cash" }.balance)
         assertEquals(1500L, dao.budgetProjections(jan).single().spent)
         assertEquals(1500L, dao.totals(jan, jan + 1).single().amount)

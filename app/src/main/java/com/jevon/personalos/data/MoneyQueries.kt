@@ -10,14 +10,15 @@ import com.jevon.personalos.schedule.scheduleRange
 
 private val moneyTables = arrayOf("accounts", "categories", "entries", "budgets")
 fun PersonalDatabase.observeMoney(month: YearMonth, kind: String, account: String, category: String, currency: String, search: String, page: Int) =
-    invalidationTracker.createFlow(*moneyTables).map {
+    invalidationTracker.createFlow(*moneyTables, "subscription_payments").map {
         withTransaction {
             val dao = personalDao()
             val start = month.atDay(1).toEpochDay()
             val end = month.plusMonths(1).atDay(1).toEpochDay()
             MoneySnapshot(dao.balances(), dao.categories(), dao.budgetProjections(start), dao.totals(start, end),
                 dao.history(start, end, kind, account, category, currency, search, 51, page * 50), dao.entryCount(start, end),
-                dao.history(start, end, "", "", "", "", "", 5, 0), dao.categorySpending(start, end))
+                dao.history(start, end, "", "", "", "", "", 5, 0), dao.categorySpending(start, end),
+                dao.subscriptionPayments().associate { it.entryId to it.subscriptionId })
         }
     }
 

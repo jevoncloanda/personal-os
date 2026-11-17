@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><title>Personal OS</title><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Sora:wght@600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100%;margin:0;padding:0;background-color:#faf8ff;}body{overscroll-behavior-y:none;-webkit-tap-highlight-color:transparent;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "outline": "#767586", "tertiary": "#6b38d4", "on-error": "#ffffff", "surface-variant": "#dae2fd", "on-tertiary-container": "#fffbff", "tertiary-fixed": "#e9ddff", "on-secondary-fixed-variant": "#004c6e", "on-tertiary-fixed": "#23005c", "inverse-surface": "#283044", "outline-variant": "#c7c4d7", "on-surface": "#131b2e", "on-secondary-fixed": "#001e2f", "on-error-container": "#93000a", "surface-tint": "#494bd6", "secondary": "#006591", "on-primary": "#ffffff", "on-background": "#131b2e", "background": "#faf8ff", "on-primary-container": "#fffbff", "surface-container-highest": "#dae2fd", "secondary-container": "#39b8fd", "surface-container-high": "#e2e7ff", "error": "#ba1a1a", "inverse-on-surface": "#eef0ff", "on-surface-variant": "#464554", "secondary-fixed": "#c9e6ff", "on-primary-fixed": "#07006c", "surface-dim": "#d2d9f4", "tertiary-container": "#8455ef", "tertiary-fixed-dim": "#d0bcff", "primary-fixed": "#e1e0ff", "on-tertiary-fixed-variant": "#5516be", "primary-container": "#6063ee", "error-container": "#ffdad6", "on-secondary-container": "#004666", "surface-container-lowest": "#ffffff", "inverse-primary": "#c0c1ff", "on-tertiary": "#ffffff", "primary-fixed-dim": "#c0c1ff", "surface": "#faf8ff", "on-secondary": "#ffffff", "surface-bright": "#faf8ff", "secondary-fixed-dim": "#89ceff", "surface-container-low": "#f2f3ff", "surface-container": "#eaedff", "on-primary-fixed-variant": "#2f2ebe", "primary": "#4648d4" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "space-lg": "1.5rem", "margin": "1.25rem", "gutter": "1rem", "space-xs": "0.25rem", "space-sm": "0.5rem", "space-xl": "2rem", "margin-expanded": "1.5rem", "gutter-compact": "0.75rem", "space-md": "1rem" }, "fontFamily": { "headline-sm": ["Sora"], "label-md": ["Inter"], "headline-lg": ["Sora"], "label-lg": ["Inter"], "body-sm": ["Inter"], "label-sm": ["Inter"], "display-lg-mobile": ["Sora"], "display-lg": ["Sora"], "body-lg": ["Inter"], "title-md": ["Inter"], "body-md": ["Inter"], "headline-md": ["Sora"] }, "fontSize": { "headline-sm": ["18px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }], "headline-lg": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }], "body-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "400" }], "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }], "display-lg-mobile": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "display-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.03em", "fontWeight": "700" }], "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400" }], "title-md": ["16px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.005em", "fontWeight": "400" }], "headline-md": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.015em", "fontWeight": "600" }] } } } };</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface text-on-surface antialiased flex flex-col min-h-screen selection:bg-primary-container selection:text-on-primary-container"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.03)]"><div class="h-16 px-margin flex items-center justify-between"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-primary text-[26px]">terminal</span><div class="flex flex-col"><span class="font-headline-sm text-headline-sm tracking-tight text-on-surface leading-none">Personal OS</span><span class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1 mt-0.5">Settings</span></div></div><div class="flex items-center gap-space-xs"><button aria-label="Offline Sync Status: Synced" class="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined text-[20px] text-secondary">cloud_done</span></button><button aria-label="User Profile" class="min-w-[44px] min-h-[44px] flex items-center justify-center pl-1"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-[0_2px_6px_rgba(70,72,212,0.3)]"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></button></div></div></header><main class="flex-1 w-full pt-16 pb-28 bg-surface px-margin"><div class="flex flex-col w-full pb-8 space-y-6">
+<!-- Header Intro & Persona Delight Banner -->
+<div class="flex items-center justify-between pt-1">
+<div>
+<span class="font-label-sm text-label-sm text-secondary uppercase tracking-widest">Preferensi Sistem</span>
+<h1 class="font-headline-md text-headline-md text-on-surface">Pengaturan</h1>
+</div>
+<div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container-high text-primary">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">bolt</span>
+<span class="font-label-sm text-label-sm text-on-surface">Kinetic v2.4</span>
+</div>
+</div>
+<!-- Profil & Akun (Executive Micro-Card) -->
+<div class="w-full bg-surface-container-lowest rounded-2xl p-4 shadow-sm flex items-center justify-between">
+<div class="flex items-center gap-3.5">
+<div class="relative">
+<img class="w-12 h-12 rounded-full object-cover" data-alt="Close-up portrait of Nadia Ramadhani, an Indonesian woman with stylish modern executive casual wear, warm confident expression, clean studio lighting with soft electric indigo rim light, high resolution, minimalist aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB5BAthg69qBSYP5u980N3veG-M9rcDcUulgPCVgNy5C9suGOKCOFaeATZXi2pwwNBYtLfAeYIi-b1lE7yAjPk1uuqLzxY2QiWnbpof6K_Qninj-_4KE_IUzroQVwsAA6vE1_R2_jQ1Ef4deP502vWi3STw5zcENwGQW7Wkq2Bs8xLMFB0YPmQDvaMfQCQaB0q8DfW0UzbVJ5E-rY4CuLfrvP3PVrxQl8LCx7z0oQ"/>
+<span class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-primary rounded-full ring-2 ring-surface-container-lowest flex items-center justify-center">
+<span class="w-1.5 h-1.5 bg-on-primary rounded-full"></span>
+</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-title-md text-title-md text-on-surface truncate">Nadia Ramadhani</span>
+<span class="material-symbols-outlined text-secondary text-[16px]">verified</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">nadiaramadhani@email.com</span>
+</div>
+</div>
+<div class="flex flex-col items-end gap-1">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[12px]">lock</span>
+        Tersimpan Lokal
+      </span>
+<span class="font-label-sm text-label-sm text-outline">Enkripsi AES-256</span>
+</div>
+</div>
+<!-- SECTION: Tampilan & Tema (Interactive Core) -->
+<section class="flex flex-col space-y-3.5">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">palette</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Tampilan &amp; Tema</h2>
+</div>
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded bg-primary-fixed text-on-primary-fixed font-medium" id="theme-status-tag">Mode Aktif</span>
+</div>
+<!-- 3-Way Segmented Control -->
+<div class="w-full bg-surface-container p-1 rounded-2xl flex items-center gap-1 relative select-none">
+<button class="flex-1 py-2 rounded-xl flex items-center justify-center gap-1.5 text-on-primary bg-primary shadow-sm transition-all duration-200" id="theme-btn-light" onclick="selectTheme('light')">
+<span class="material-symbols-outlined text-[18px]">light_mode</span>
+<span class="font-label-md text-label-md">Terang</span>
+</button>
+<button class="flex-1 py-2 rounded-xl flex items-center justify-center gap-1.5 text-on-surface-variant hover:text-on-surface transition-all duration-200" id="theme-btn-dark" onclick="selectTheme('dark')">
+<span class="material-symbols-outlined text-[18px]">dark_mode</span>
+<span class="font-label-md text-label-md">Gelap</span>
+</button>
+<button class="flex-1 py-2 rounded-xl flex items-center justify-center gap-1.5 text-on-surface-variant hover:text-on-surface transition-all duration-200" id="theme-btn-system" onclick="selectTheme('system')">
+<span class="material-symbols-outlined text-[18px]">settings_night_sight</span>
+<span class="font-label-md text-label-md">Sistem</span>
+</button>
+</div>
+<!-- Live Interactive Visual Preview Card -->
+<div class="w-full rounded-2xl p-4 bg-surface-container-lowest transition-all duration-300 shadow-sm relative overflow-hidden" id="theme-preview-card">
+<!-- Glow ambient accent -->
+<div class="absolute -right-10 -top-10 w-28 h-28 bg-primary/10 rounded-full blur-2xl pointer-events-none"></div>
+<div class="flex items-center justify-between pb-3">
+<div class="flex items-center gap-2">
+<div class="w-7 h-7 rounded-lg bg-primary-container text-on-primary-container flex items-center justify-center" id="preview-avatar-badge">
+<span class="material-symbols-outlined text-[16px]" id="preview-icon">wb_sunny</span>
+</div>
+<div>
+<div class="font-title-md text-title-md text-on-surface font-semibold" id="preview-title">Obsidian Kinetic - Mode Terang</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant" id="preview-subtitle">Preset Palet Kontras Tinggi</div>
+</div>
+</div>
+<span class="px-2.5 py-1 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm font-semibold" id="preview-chip">Aktif</span>
+</div>
+<!-- Mini Wireframe Display -->
+<div class="rounded-xl p-3 bg-surface-container-low transition-colors duration-200 flex flex-col gap-2" id="preview-mock-ui">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-2.5 h-2.5 rounded-full bg-primary animate-pulse" id="preview-pill"></div>
+<span class="font-label-sm text-label-sm text-on-surface font-medium" id="preview-metric-label">Beban Aliran Data</span>
+</div>
+<span class="font-label-md text-label-md text-primary font-semibold" id="preview-metric-value">42.8 GB / 128 GB</span>
+</div>
+<!-- Progress bar -->
+<div class="w-full h-2 rounded-full bg-surface-container-highest overflow-hidden">
+<div class="h-full bg-primary rounded-full transition-all duration-500" id="preview-bar" style="width: 36%;"></div>
+</div>
+<div class="flex items-center justify-between pt-1">
+<span class="font-label-sm text-label-sm text-on-surface-variant" id="preview-foot">Indikator OLED Electric Indigo</span>
+<span class="font-label-sm text-label-sm text-secondary font-medium">99.98% Latensi Aman</span>
+</div>
+</div>
+</div>
+<!-- Appearance Toggles List -->
+<div class="w-full bg-surface-container-lowest rounded-2xl p-1 shadow-sm divide-y-0">
+<!-- Toggle: Tema Otomatis -->
+<div class="flex items-center justify-between p-3.5 hover:bg-surface-container/50 rounded-xl transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center text-on-surface">
+<span class="material-symbols-outlined text-[20px]">sync</span>
+</div>
+<div class="flex flex-col">
+<span class="font-title-md text-title-md text-on-surface">Tema Otomatis</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Menyesuaikan jadwal matahari &amp; sistem Android</span>
+</div>
+</div>
+<button class="w-12 h-7 rounded-full bg-primary p-0.5 flex items-center justify-end transition-colors duration-200" id="toggle-auto-theme" onclick="toggleSwitch(this)">
+<div class="w-6 h-6 rounded-full bg-on-primary shadow-sm transform transition-transform"></div>
+</button>
+</div>
+<!-- Toggle: Aksen Warna OLED -->
+<div class="flex items-center justify-between p-3.5 hover:bg-surface-container/50 rounded-xl transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">colorize</span>
+</div>
+<div class="flex flex-col">
+<span class="font-title-md text-title-md text-on-surface">Aksen Warna OLED</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Electric Indigo (High-Voltage Luminescence)</span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-primary ring-2 ring-primary/30 flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary text-[14px]">done</span>
+</div>
+<button class="w-12 h-7 rounded-full bg-primary p-0.5 flex items-center justify-end transition-colors duration-200" id="toggle-oled" onclick="toggleSwitch(this)">
+<div class="w-6 h-6 rounded-full bg-on-primary shadow-sm transform transition-transform"></div>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION: Keuangan & Anggaran -->
+<section class="flex flex-col space-y-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[20px]">account_balance_wallet</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Keuangan &amp; Anggaran</h2>
+</div>
+<div class="w-full bg-surface-container-lowest rounded-2xl p-1 shadow-sm">
+<!-- Currency selector row -->
+<div class="flex items-center justify-between p-3.5 hover:bg-surface-container/50 rounded-xl transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-xl bg-secondary-fixed flex items-center justify-center text-on-secondary-fixed-variant">
+<span class="material-symbols-outlined text-[20px]">payments</span>
+</div>
+<div class="flex flex-col">
+<span class="font-title-md text-title-md text-on-surface">Mata Uang Utama</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Basis konversi kalkulator arus kas</span>
+</div>
+</div>
+<div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container">
+<span class="font-label-md text-label-md text-on-surface font-semibold">IDR (Rp)</span>
+<span class="material-symbols-outlined text-[16px] text-outline">chevron_right</span>
+</div>
+</div>
+<!-- Budget reset day row -->
+<div class="flex items-center justify-between p-3.5 hover:bg-surface-container/50 rounded-xl transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-xl bg-secondary-fixed flex items-center justify-center text-on-secondary-fixed-variant">
+<span class="material-symbols-outlined text-[20px]">event_repeat</span>
+</div>
+<div class="flex flex-col">
+<span class="font-title-md text-title-md text-on-surface">Hari Reset Anggaran</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Siklus otomatis pembukuan bulanan</span>
+</div>
+</div>
+<div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container">
+<span class="font-label-md text-label-md text-on-surface font-semibold">Tanggal 1</span>
+<span class="material-symbols-outlined text-[16px] text-outline">expand_more</span>
+</div>
+</div>
+<!-- Expense limit toggle -->
+<div class="flex items-center justify-between p-3.5 hover:bg-surface-container/50 rounded-xl transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-xl bg-secondary-fixed flex items-center justify-center text-on-secondary-fixed-variant">
+<span class="material-symbols-outlined text-[20px]">notification_important</span>
+</div>
+<div class="flex flex-col">
+<span class="font-title-md text-title-md text-on-surface">Notifikasi Batas Pengeluaran</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Peringatan tactile saat mencapai 80% alokasi</span>
+</div>
+</div>
+<button class="w-12 h-7 rounded-full bg-primary p-0.5 flex items-center justify-end transition-colors duration-200" id="toggle-budget-limit" onclick="toggleSwitch(this)">
+<div class="w-6 h-6 rounded-full bg-on-primary shadow-sm"></div>
+</button>
+</div>
+</div>
+</section>
+<!-- SECTION: Privasi & Penyimpanan -->
+<section class="flex flex-col space-y-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary text-[20px]">shield</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Privasi &amp; Penyimpanan</h2>
+</div>
+<div class="w-full bg-surface-container-lowest rounded-2xl p-1 shadow-sm">
+<!-- Offline-first status -->
+<div class="flex items-center justify-between p-3.5 hover:bg-surface-container/50 rounded-xl transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-xl bg-tertiary-fixed flex items-center justify-center text-on-tertiary-fixed">
+<span class="material-symbols-outlined text-[20px]">cloud_off</span>
+</div>
+<div class="flex flex-col">
+<span class="font-title-md text-title-md text-on-surface">Mode Offline-First</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Zero cloud dependency, zero external tracking</span>
+</div>
+</div>
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-high text-primary font-label-sm text-label-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+          Aktif
+        </span>
+</div>
+<!-- Backup Local Data -->
+<div class="flex items-center justify-between p-3.5 hover:bg-surface-container/50 rounded-xl transition-colors cursor-pointer" onclick="triggerBackupDelight(this)">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-xl bg-tertiary-fixed flex items-center justify-center text-on-tertiary-fixed">
+<span class="material-symbols-outlined text-[20px]">data_object</span>
+</div>
+<div class="flex flex-col">
+<span class="font-title-md text-title-md text-on-surface">Cadangkan Data Lokal</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Ekspor database aman ke format snapshot (.json)</span>
+</div>
+</div>
+<button class="px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md flex items-center gap-1 transition-colors">
+<span class="material-symbols-outlined text-[16px]">download</span>
+          Ekspor
+        </button>
+</div>
+<!-- Biometric Lock Toggle -->
+<div class="flex items-center justify-between p-3.5 hover:bg-surface-container/50 rounded-xl transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-xl bg-tertiary-fixed flex items-center justify-center text-on-tertiary-fixed">
+<span class="material-symbols-outlined text-[20px]">fingerprint</span>
+</div>
+<div class="flex flex-col">
+<span class="font-title-md text-title-md text-on-surface">Kunci Biometrik Fingerprint</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Wajib verifikasi saat membuka Personal OS</span>
+</div>
+</div>
+<button class="w-12 h-7 rounded-full bg-primary p-0.5 flex items-center justify-end transition-colors duration-200" id="toggle-biometric" onclick="toggleSwitch(this)">
+<div class="w-6 h-6 rounded-full bg-on-primary shadow-sm"></div>
+</button>
+</div>
+</div>
+</section>
+<!-- SECTION: Tentang Personal OS & System Meta -->
+<section class="flex flex-col space-y-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-outline text-[20px]">info</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Tentang Personal OS</h2>
+</div>
+<div class="w-full bg-surface-container-lowest rounded-2xl p-4 shadow-sm flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-[22px]">terminal</span>
+</div>
+<div class="flex flex-col">
+<span class="font-title-md text-title-md text-on-surface">Personal OS Core</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Arsitektur Eksekutif Mandiri</span>
+</div>
+</div>
+<div class="text-right">
+<div class="font-label-md text-label-md text-on-surface font-semibold">Versi 2.4.0</div>
+<div class="font-label-sm text-label-sm text-outline">Build 302 (Stable)</div>
+</div>
+</div>
+<div class="w-full h-px bg-surface-container"></div>
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-body-sm text-body-sm">Status Lisensi</span>
+<span class="inline-flex items-center gap-1 font-label-md text-label-md text-primary font-medium">
+<span class="material-symbols-outlined text-[16px]">verified_user</span>
+          Lisensi Pribadi Aktif
+        </span>
+</div>
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-body-sm text-body-sm">Kernel Mesin Sinkronisasi</span>
+<span class="font-label-sm text-label-sm text-outline font-mono">SQLite-WASM + LocalKeyStore</span>
+</div>
+</div>
+</section>
+<!-- Interactive Feedback Toast Placeholder -->
+<div class="fixed top-20 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-xl bg-inverse-surface text-inverse-on-surface font-label-md text-label-md shadow-xl transition-all duration-300 opacity-0 pointer-events-none flex items-center gap-2 z-50" id="toast">
+<span class="material-symbols-outlined text-[18px] text-secondary-fixed" id="toast-icon">check_circle</span>
+<span id="toast-message">Pengaturan diperbarui</span>
+</div>
+</div>
+<!-- Interactive Client-side Script -->
+<script>
+  let currentTheme = 'light';
+
+  function showToast(message, icon = 'check_circle') {
+    const toast = document.getElementById('toast');
+    const msg = document.getElementById('toast-message');
+    const ico = document.getElementById('toast-icon');
+    if (!toast || !msg) return;
+    
+    msg.textContent = message;
+    if (ico) ico.textContent = icon;
+    
+    toast.classList.remove('opacity-0', 'pointer-events-none');
+    toast.classList.add('opacity-100');
+    
+    setTimeout(() => {
+      toast.classList.remove('opacity-100');
+      toast.classList.add('opacity-0', 'pointer-events-none');
+    }, 2200);
+  }
+
+  function selectTheme(theme) {
+    currentTheme = theme;
+
+    // Reset button styles
+    const btnLight = document.getElementById('theme-btn-light');
+    const btnDark = document.getElementById('theme-btn-dark');
+    const btnSystem = document.getElementById('theme-btn-system');
+
+    const defaultClasses = 'flex-1 py-2 rounded-xl flex items-center justify-center gap-1.5 text-on-surface-variant hover:text-on-surface transition-all duration-200';
+    const activeClasses = 'flex-1 py-2 rounded-xl flex items-center justify-center gap-1.5 text-on-primary bg-primary shadow-sm transition-all duration-200';
+
+    btnLight.className = defaultClasses;
+    btnDark.className = defaultClasses;
+    btnSystem.className = defaultClasses;
+
+    // Elements to mutate in preview
+    const previewCard = document.getElementById('theme-preview-card');
+    const previewTitle = document.getElementById('preview-title');
+    const previewSubtitle = document.getElementById('preview-subtitle');
+    const previewIcon = document.getElementById('preview-icon');
+    const previewMock = document.getElementById('preview-mock-ui');
+    const statusTag = document.getElementById('theme-status-tag');
+    const previewChip = document.getElementById('preview-chip');
+    const previewBar = document.getElementById('preview-bar');
+
+    if (theme === 'light') {
+      btnLight.className = activeClasses;
+      previewTitle.textContent = 'Obsidian Kinetic - Mode Terang';
+      previewSubtitle.textContent = 'Tonal Putih Bersih & Electric Indigo';
+      previewIcon.textContent = 'wb_sunny';
+      
+      previewCard.style.backgroundColor = '#ffffff';
+      previewCard.style.color = '#131b2e';
+      if (previewMock) {
+        previewMock.style.backgroundColor = '#f2f3ff';
+      }
+      if (previewBar) {
+        previewBar.style.width = '36%';
+      }
+      statusTag.textContent = 'Mode Terang Aktif';
+      showToast('Tema diubah ke Mode Terang', 'light_mode');
+    } else if (theme === 'dark') {
+      btnDark.className = activeClasses;
+      previewTitle.textContent = 'Obsidian Kinetic - Mode Gelap';
+      previewSubtitle.textContent = 'Kedalaman Slate & Luminesensi Ultra-Kontras';
+      previewIcon.textContent = 'dark_mode';
+      
+      previewCard.style.backgroundColor = '#283044';
+      previewCard.style.color = '#eef0ff';
+      if (previewMock) {
+        previewMock.style.backgroundColor = '#131b2e';
+      }
+      if (previewBar) {
+        previewBar.style.width = '78%';
+      }
+      statusTag.textContent = 'Mode Gelap Aktif';
+      showToast('Tema diubah ke Mode Gelap', 'dark_mode');
+    } else if (theme === 'system') {
+      btnSystem.className = activeClasses;
+      previewTitle.textContent = 'Obsidian Kinetic - Sistem Auto';
+      previewSubtitle.textContent = 'Sinkron Dinamis dengan Preferensi OS';
+      previewIcon.textContent = 'settings_night_sight';
+      
+      previewCard.style.backgroundColor = '#eaedff';
+      previewCard.style.color = '#131b2e';
+      if (previewMock) {
+        previewMock.style.backgroundColor = '#ffffff';
+      }
+      if (previewBar) {
+        previewBar.style.width = '55%';
+      }
+      statusTag.textContent = 'Sistem Auto Aktif';
+      showToast('Tema mengikuti preferensi Android', 'sync');
+    }
+  }
+
+  function toggleSwitch(btn) {
+    const isChecked = btn.classList.contains('bg-primary');
+    if (isChecked) {
+      // Turn OFF
+      btn.classList.remove('bg-primary', 'justify-end');
+      btn.classList.add('bg-surface-container-highest', 'justify-start');
+      showToast('Pengaturan dinonaktifkan', 'toggle_off');
+    } else {
+      // Turn ON
+      btn.classList.remove('bg-surface-container-highest', 'justify-start');
+      btn.classList.add('bg-primary', 'justify-end');
+      showToast('Pengaturan diaktifkan', 'toggle_on');
+    }
+  }
+
+  function triggerBackupDelight(el) {
+    showToast('Snapshot lokal berhasil diekspor (personal-os-backup.json)', 'file_download_done');
+  }
+</script></main><div class="fixed bottom-24 right-margin z-50"><button aria-label="Quick Add" class="w-14 h-14 rounded-2xl bg-primary text-on-primary flex items-center justify-center shadow-[0_10px_24px_-4px_rgba(15,23,42,0.18),0_4px_12px_-2px_rgba(99,102,241,0.35)] active:scale-95 transition-transform"><span class="material-symbols-outlined text-[28px]">add</span></button></div><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface-container-lowest/90 backdrop-blur-xl shadow-[0_-2px_12px_rgba(0,0,0,0.04)]" data-active-classes="text-primary font-headline-sm"><div class="h-16 px-space-xs flex items-center justify-around"><a class="min-w-[44px] min-h-[44px] flex-1 flex flex-col items-center justify-center gap-1 text-on-surface-variant hover:text-on-surface transition-colors" data-path="today" href="#"><span class="material-symbols-outlined text-[22px]">today</span><span class="font-label-sm text-label-sm">Today</span></a><a class="min-w-[44px] min-h-[44px] flex-1 flex flex-col items-center justify-center gap-1 text-on-surface-variant hover:text-on-surface transition-colors" data-path="money" href="#"><span class="material-symbols-outlined text-[22px]">account_balance_wallet</span><span class="font-label-sm text-label-sm">Money</span></a><a class="min-w-[44px] min-h-[44px] flex-1 flex flex-col items-center justify-center gap-1 text-on-surface-variant hover:text-on-surface transition-colors" data-path="schedule" href="#"><span class="material-symbols-outlined text-[22px]">calendar_month</span><span class="font-label-sm text-label-sm">Schedule</span></a><a class="min-w-[44px] min-h-[44px] flex-1 flex flex-col items-center justify-center gap-1 text-on-surface-variant hover:text-on-surface transition-colors" data-path="library" href="#"><span class="material-symbols-outlined text-[22px]">folder_open</span><span class="font-label-sm text-label-sm">Library</span></a><a aria-current="page" class="min-w-[44px] min-h-[44px] flex-1 flex flex-col items-center justify-center gap-1 transition-colors text-primary font-headline-sm" data-path="settings" href="#"><span class="material-symbols-outlined text-[22px]">tune</span><span class="font-label-sm text-label-sm">Settings</span></a></div></nav></body></html>

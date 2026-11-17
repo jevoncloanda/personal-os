@@ -14,6 +14,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -34,23 +37,34 @@ internal fun EditorFrame(title: String, busy: Boolean, error: String?, close: ()
     fun requestClose() { if (!busy) { if (dirty) confirmDiscard = true else close() } }
     val scroll = rememberScrollState()
     val message = inputError ?: error
+    val focus = LocalFocusManager.current
+    fun submit() {
+        focus.clearFocus()
+        validate = true
+        inputError = null
+        try { save() } catch (e: Exception) {
+            inputError = when (e) { is IllegalArgumentException -> e.message; is java.time.DateTimeException -> "Use a valid date (YYYY-MM-DD), month (YYYY-MM), and time (HH:mm)"; else -> "Check the amount and required fields" }
+        }
+    }
     LaunchedEffect(message) { if (message != null) scroll.animateScrollTo(0) }
     Dialog(onDismissRequest = ::requestClose, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
-      AtmosphericBackground {
+      PorosBackground {
         SystemBarAppearance()
         Scaffold(modifier = Modifier.fillMaxSize().imePadding(), containerColor = Color.Transparent, topBar = {
-            TopAppBar(title = { Text(title, style = MaterialTheme.typography.titleLarge) }, colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent), navigationIcon = { IconButton(enabled = !busy, onClick = ::requestClose) { Icon(AppIcons.ArrowBack, "Cancel editing") } },
-                actions = { Button(enabled = !busy, shape = MaterialTheme.shapes.medium, contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp), modifier = Modifier.padding(end = 16.dp), onClick = {
-                    validate = true
-                    inputError = null
-                    try { save() } catch (e: Exception) {
-                        inputError = when (e) { is IllegalArgumentException -> e.message; is java.time.DateTimeException -> "Use a valid date (YYYY-MM-DD), month (YYYY-MM), and time (HH:mm)"; else -> "Check the amount and required fields" }
-                    }
-                }) { Text(if (busy) "Saving…" else "Save") } })
+            TopAppBar(title = { Text(title, style = MaterialTheme.typography.titleLarge) }, colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background), navigationIcon = { IconButton(enabled = !busy, onClick = ::requestClose) { Icon(AppIcons.ArrowBack, "Cancel editing") } })
+        }, bottomBar = {
+            Surface(color = MaterialTheme.colorScheme.background) {
+                Button(enabled = !busy, onClick = ::submit, shape = MaterialTheme.shapes.medium,
+                    modifier = Modifier.navigationBarsPadding().padding(horizontal = 20.dp, vertical = 12.dp).fillMaxWidth().heightIn(min = 52.dp)) {
+                    Icon(AppIcons.CheckCircle, null, Modifier.size(20.dp))
+                    Text(if (busy) "Saving…" else "Save", Modifier.padding(start = 8.dp))
+                }
+            }
         }) { padding ->
             Column(Modifier.fillMaxSize().padding(padding).verticalScroll(scroll).padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 if (message != null) Surface(color = MaterialTheme.colorScheme.errorContainer, contentColor = MaterialTheme.colorScheme.onErrorContainer, shape = MaterialTheme.shapes.small) { Text(message, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.fillMaxWidth().padding(16.dp)) }
-                CompositionLocalProvider(LocalMarkDraftDirty provides { dirty = true; inputError = null }, LocalValidateFields provides validate) { body() }
+                CompositionLocalProvider(LocalMarkDraftDirty provides { dirty = true; inputError = null }, LocalValidateFields provides validate,
+                    LocalEditorError provides message, LocalEditorDirty provides dirty) { body() }
                 Spacer(Modifier.height(24.dp))
             }
         }
@@ -60,14 +74,79 @@ internal fun EditorFrame(title: String, busy: Boolean, error: String?, close: ()
         confirmButton = { TextButton(onClick = { confirmDiscard = false; close() }) { Text("Discard") } }, dismissButton = { TextButton(onClick = { confirmDiscard = false }) { Text("Keep editing") } })
 }
 
-@Composable internal fun Field(label: String, value: String, enabled: Boolean, keyboard: KeyboardType = KeyboardType.Text, single: Boolean = true, error: String? = null, change: (String) -> Unit) {
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun EntryDetail(entry: EntryEntity, data: MoneySnapshot, busy: Boolean, error: String?, close: () -> Unit,
+    edit: () -> Unit, delete: (String, () -> Unit) -> Unit, openSubscription: (String) -> Unit) {
+    var confirm by rememberSaveable(entry.id) { mutableStateOf(false) }
+    val subscription = data.linkedSubscriptions[entry.id]
+    val kind = entry.kind.name.lowercase().replaceFirstChar(Char::uppercase)
+    val category = data.categories.firstOrNull { it.id == entry.categoryId }?.name ?: "Uncategorized"
+    fun account(id: String?) = data.accounts.firstOrNull { it.account.id == id }?.account?.let { "${it.name}${if (it.archived) " · Archived" else ""}" } ?: "Account"
+    Dialog(onDismissRequest = { if (!busy) close() }, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
+        PorosBackground {
+            SystemBarAppearance()
+            Scaffold(containerColor = Color.Transparent, topBar = {
+                TopAppBar(title = { Text("Transaction detail", style = MaterialTheme.typography.titleLarge) },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
+                    navigationIcon = { IconButton(enabled = !busy, onClick = close) { Icon(AppIcons.ArrowBack, "Close transaction") } })
+            }) { padding ->
+                Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    PorosCard {
+                        IconBadge(when (entry.kind) { EntryKind.EXPENSE -> AppIcons.NorthEast; EntryKind.INCOME -> AppIcons.SouthWest; EntryKind.TRANSFER -> AppIcons.SwapHoriz }, entry.kind == EntryKind.INCOME)
+                        Text(entry.note.ifBlank { category }, style = MaterialTheme.typography.titleLarge)
+                        Text(kind, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("${if (entry.kind == EntryKind.EXPENSE) "−" else if (entry.kind == EntryKind.INCOME) "+" else ""}${com.jevon.personalos.today.formatMoney(entry.amountMinor, entry.currencyCode)}",
+                            style = MaterialTheme.typography.headlineLarge, color = if (entry.kind == EntryKind.INCOME) LocalAtmosphere.current.positive else MaterialTheme.colorScheme.onSurface)
+                        Text("${entry.currencyCode} · ${LocalDate.ofEpochDay(entry.occurredOnEpochDay)} · %02d:%02d".format(Locale.ROOT, entry.minuteOfDay / 60, entry.minuteOfDay % 60), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    PorosCard {
+                        Text("Details & allocation", style = MaterialTheme.typography.titleMedium)
+                        if (entry.kind != EntryKind.TRANSFER) DetailValue("Category", category)
+                        if (entry.fromAccountId != null) DetailValue("From account", account(entry.fromAccountId))
+                        if (entry.toAccountId != null) DetailValue(if (entry.kind == EntryKind.INCOME) "Account" else "To account", account(entry.toAccountId))
+                        DetailValue("Notes", entry.note.ifBlank { "No notes" })
+                    }
+                    if (subscription != null) PorosCard {
+                        Text("Subscription payment", style = MaterialTheme.typography.titleMedium)
+                        Text("Correct or undo this payment in its subscription history. The linked expense and renewal stay consistent.", style = MaterialTheme.typography.bodyMedium)
+                        Button(onClick = { close(); openSubscription(subscription) }) { Text("Open payment history") }
+                    } else {
+                        Button(enabled = !busy, onClick = edit, shape = MaterialTheme.shapes.medium, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text("Edit details") }
+                        TextButton(enabled = !busy, onClick = { confirm = true }) { Text("Delete transaction", color = MaterialTheme.colorScheme.error) }
+                    }
+                    if (error != null) Text(error, color = MaterialTheme.colorScheme.error)
+                }
+            }
+        }
+    }
+    if (confirm) ConfirmDeletion("Delete transaction?", "This removes its balance effects from every account and its spending from budgets. A transfer is removed from both accounts together.", { confirm = false }) { confirm = false; delete(entry.id, close) }
+}
+
+@Composable
+private fun DetailValue(label: String, value: String) {
+    Column(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(value, style = MaterialTheme.typography.bodyLarge)
+    }
+}
+
+@Composable internal fun Field(label: String, value: String, enabled: Boolean, keyboard: KeyboardType = KeyboardType.Text, single: Boolean = true, error: String? = null,
+    trailing: @Composable (() -> Unit)? = null, prominent: Boolean = false, change: (String) -> Unit) {
     val markDirty = LocalMarkDraftDirty.current
     val showError = LocalValidateFields.current && error != null
+    val focus = LocalFocusManager.current
     OutlinedTextField(value, { if (it != value) markDirty(); change(it) }, enabled = enabled, label = { Text(label) }, singleLine = single, modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.small, isError = showError,
+        textStyle = if (prominent) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.bodyLarge,
         supportingText = if (showError) { { Text(error!!) } } else null,
-        colors = OutlinedTextFieldDefaults.colors(unfocusedContainerColor = LocalAtmosphere.current.panel, focusedContainerColor = LocalAtmosphere.current.panel, unfocusedBorderColor = LocalAtmosphere.current.border),
-        keyboardOptions = KeyboardOptions(keyboardType = keyboard, imeAction = if (single) ImeAction.Next else ImeAction.Default))
+        trailingIcon = trailing,
+        colors = OutlinedTextFieldDefaults.colors(
+            unfocusedContainerColor = if (prominent) Color.Transparent else LocalAtmosphere.current.panel,
+            focusedContainerColor = if (prominent) Color.Transparent else LocalAtmosphere.current.panel,
+            unfocusedBorderColor = if (prominent) Color.Transparent else LocalAtmosphere.current.border),
+        keyboardOptions = KeyboardOptions(keyboardType = keyboard, imeAction = if (prominent) ImeAction.Done else if (single) ImeAction.Next else ImeAction.Default),
+        keyboardActions = KeyboardActions(onDone = { focus.clearFocus() }))
 }
 
 private fun amountError(value: String, code: String, signed: Boolean = false): String? = runCatching { parseMoney(value, code.trim().uppercase(Locale.ROOT), signed) }.exceptionOrNull()?.message
@@ -114,11 +193,16 @@ internal fun AccountEditor(old: AccountEntity?, id: String, busy: Boolean, error
 
 @Composable
 internal fun EntryEditor(old: EntryEntity?, id: String, initialKind: EntryKind, data: MoneySnapshot, busy: Boolean, error: String?, close: () -> Unit,
-    save: (EntryEntity, Boolean, () -> Unit) -> Unit, delete: (String, () -> Unit) -> Unit) {
+    save: (EntryEntity, Boolean, () -> Unit) -> Unit, delete: (String, () -> Unit) -> Unit,
+    initialAccount: String = "", initialCategory: String = "") {
+    val activeAccounts = data.accounts.map { it.account }.filter { !it.archived }
+    val defaultAccount = if (initialKind == EntryKind.TRANSFER) "" else
+        (activeAccounts.firstOrNull { it.id == initialAccount } ?: activeAccounts.singleOrNull())?.id.orEmpty()
+    val defaultCategory = data.categories.firstOrNull { it.id == initialCategory && !it.archived && (it.kind == null || it.kind == initialKind.name) }?.id.orEmpty()
     var kind by rememberSaveable { mutableStateOf(old?.kind?.name ?: initialKind.name) }
-    var source by rememberSaveable { mutableStateOf(old?.fromAccountId ?: "") }
-    var target by rememberSaveable { mutableStateOf(old?.toAccountId ?: "") }
-    var category by rememberSaveable { mutableStateOf(old?.categoryId ?: "") }
+    var source by rememberSaveable { mutableStateOf(old?.fromAccountId ?: if (initialKind != EntryKind.INCOME) defaultAccount else "") }
+    var target by rememberSaveable { mutableStateOf(old?.toAccountId ?: if (initialKind == EntryKind.INCOME) defaultAccount else "") }
+    var category by rememberSaveable { mutableStateOf(old?.categoryId ?: if (old == null) defaultCategory else "") }
     var amount by rememberSaveable { mutableStateOf(old?.let { moneyInput(it.amountMinor, it.currencyCode) } ?: "") }
     var date by rememberSaveable { mutableStateOf(old?.let { LocalDate.ofEpochDay(it.occurredOnEpochDay).toString() } ?: LocalDate.now().toString()) }
     var time by rememberSaveable { mutableStateOf(old?.let { "%02d:%02d".format(Locale.ROOT, it.minuteOfDay / 60, it.minuteOfDay % 60) } ?: LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm"))) }
@@ -141,20 +225,46 @@ internal fun EntryEditor(old: EntryEntity?, id: String, initialKind: EntryKind, 
             if (selectedKind == EntryKind.TRANSFER) null else category.ifBlank { null }, note.trim(), clock.hour * 60 + clock.minute), old == null, close)
     }) {
         if (accounts.isEmpty()) Text("Create an account in Money before recording a transaction.", color = MaterialTheme.colorScheme.error)
-        Choice("Transaction kind", kind, EntryKind.entries.map { it.name to it.name.lowercase().replaceFirstChar(Char::uppercase) }, !busy) { kind = it; category = "" }
+        PorosCard(contentPadding = 16.dp, verticalSpacing = 4.dp) {
+            AmountField("Amount${primary?.let { " (${it.currencyCode})" } ?: ""}", amount, !busy,
+                amountError(amount, primary?.currencyCode ?: DEFAULT_CURRENCY)) { amount = it }
+            Text(primary?.let { "${it.currencyCode} · ${it.name}" } ?: "Choose an account to set the currency.",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
         if (selectedKind != EntryKind.INCOME) Choice("From account", source, accounts.map { it.id to "${it.name} · ${it.currencyCode}${if (it.archived) " (archived)" else ""}" }, !busy) { source = it; if (selectedKind == EntryKind.TRANSFER) target = "" }
         if (selectedKind != EntryKind.EXPENSE) Choice(if (selectedKind == EntryKind.INCOME) "Account" else "To account", target,
             accounts.filter { selectedKind != EntryKind.TRANSFER || it.id != source && it.currencyCode == primary?.currencyCode }.map { it.id to "${it.name} · ${it.currencyCode}" }, !busy) { target = it }
-        Field("Amount${primary?.let { " (${it.currencyCode})" } ?: ""}", amount, !busy, KeyboardType.Decimal, error = amountError(amount, primary?.currencyCode ?: DEFAULT_CURRENCY)) { amount = it }
-        Text("Use a decimal point, without grouping. ${primary?.let { "${currencyDigits(it.currencyCode)} decimal places maximum." } ?: "Choose an account to set the currency."}", style = MaterialTheme.typography.bodySmall)
         if (selectedKind != EntryKind.TRANSFER) Choice("Category", category, listOf("" to "Uncategorized") + categories.map { it.id to it.name }, !busy) { category = it }
-        Field("Date (YYYY-MM-DD)", date, !busy, error = if (runCatching { LocalDate.parse(date) }.isFailure) "Use a valid date, e.g. 2026-10-24" else null) { date = it }
-        Field("Time (HH:mm)", time, !busy, KeyboardType.Ascii, error = if (runCatching { LocalTime.parse(time) }.isFailure) "Use 24-hour time, e.g. 09:30" else null) { time = it }
-        Text("The effective date assigns spending to a month. Time is local; changing timezone does not move historical spending.", style = MaterialTheme.typography.bodySmall)
-        Field("Transaction notes (optional)", note, !busy, single = false) { note = it }
+        val summary = listOfNotNull(
+            runCatching { LocalDate.parse(date).format(DateTimeFormatter.ofPattern("d MMM uuuu")) }.getOrNull(),
+            if (note.isNotBlank()) "Description added" else null).joinToString(" · ")
+        MoreOptions(summary) {
+            Field("Transaction notes (optional)", note, !busy, single = false) { note = it }
+            BillingDateField("Date", date, !busy, compact = true) { date = it }
+            CalendarTimeField("Time", time, !busy, compact = true) { time = it }
+            Choice("Transaction kind", kind, EntryKind.entries.map { it.name to it.name.lowercase().replaceFirstChar(Char::uppercase) }, !busy) {
+                kind = it
+                if (data.categories.firstOrNull { c -> c.id == category }?.kind?.let { categoryKind -> categoryKind != it } == true || it == "TRANSFER") category = ""
+            }
+        }
         if (old != null) TextButton(enabled = !busy, onClick = { confirmDelete = true }) { Text("Delete transaction", color = MaterialTheme.colorScheme.error) }
     }
     if (confirmDelete) ConfirmDeletion("Delete transaction?", "This removes its balance effects from every account and its spending from budgets. A transfer is removed from both accounts together.", { confirmDelete = false }) { confirmDelete = false; delete(id, close) }
+}
+
+@Composable
+internal fun AmountField(label: String, value: String, enabled: Boolean, error: String? = null, change: (String) -> Unit) {
+    val dirty = LocalMarkDraftDirty.current
+    val focus = LocalFocusManager.current
+    val invalid = LocalValidateFields.current && error != null
+    OutlinedTextField(value, { if (it != value) dirty(); change(it) }, enabled = enabled, label = { Text(label) },
+        placeholder = { Text("0", style = MaterialTheme.typography.displaySmall) },
+        textStyle = MaterialTheme.typography.displaySmall, singleLine = true, isError = invalid,
+        modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.small,
+        supportingText = if (invalid) { { Text(error!!, style = MaterialTheme.typography.bodySmall) } } else null,
+        colors = OutlinedTextFieldDefaults.colors(unfocusedBorderColor = Color.Transparent, focusedBorderColor = MaterialTheme.colorScheme.primary),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
+        keyboardActions = KeyboardActions(onDone = { focus.clearFocus() }))
 }
 
 @Composable

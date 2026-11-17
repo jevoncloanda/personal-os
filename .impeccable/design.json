@@ -1,299 +1,94 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-25T03:44:30.020208+00:00",
-  "title": "Design System: Personal OS Android",
+  "generatedAt": "2026-11-16T13:38:46Z",
+  "title": "Poros Android Design System",
   "extensions": {
     "colorMeta": {
-      "light-primary": {
-        "role": "primary",
-        "displayName": "Action Blue"
-      },
-      "dark-primary": {
-        "role": "primary",
-        "displayName": "Night Pale Blue"
-      },
-      "light-secondary": {
-        "role": "secondary",
-        "displayName": "Slate Blue"
-      },
-      "dark-secondary": {
-        "role": "secondary",
-        "displayName": "Pale Slate Blue"
-      },
-      "light-panel": {
-        "role": "neutral",
-        "displayName": "Day Panel"
-      },
-      "dark-panel": {
-        "role": "neutral",
-        "displayName": "Night Panel"
-      },
-      "light-sky": {
-        "role": "neutral",
-        "displayName": "Day Sky"
-      },
-      "dark-sky": {
-        "role": "neutral",
-        "displayName": "Night Sky"
-      },
-      "light-positive": {
-        "role": "secondary",
-        "displayName": "Positive Green"
-      },
-      "dark-positive": {
-        "role": "secondary",
-        "displayName": "Night Positive Green"
-      }
+      "dark-primary": { "role": "primary", "displayName": "Pale Electric Indigo" },
+      "dark-primary-container": { "role": "primary", "displayName": "Electric Indigo" },
+      "light-primary": { "role": "primary", "displayName": "Deep Electric Indigo" },
+      "dark-canvas": { "role": "neutral", "displayName": "Obsidian" },
+      "dark-panel": { "role": "neutral", "displayName": "Charcoal Panel" },
+      "light-canvas": { "role": "neutral", "displayName": "Pale Canvas" },
+      "light-panel": { "role": "neutral", "displayName": "White Panel" },
+      "dark-positive": { "role": "tertiary", "displayName": "Positive Mint" },
+      "light-positive": { "role": "tertiary", "displayName": "Positive Green" }
     },
     "typographyMeta": {
-      "display-large": {
-        "displayName": "display-large",
-        "purpose": "Complete theme role; no current screen consumer."
-      },
-      "display-medium": {
-        "displayName": "display-medium",
-        "purpose": "Complete theme role; no current screen consumer."
-      },
-      "display-small": {
-        "displayName": "display-small",
-        "purpose": "Active-currency balance."
-      },
-      "headline-large": {
-        "displayName": "headline-large",
-        "purpose": "Today greeting, monthly spending and account creation headline."
-      },
-      "headline-medium": {
-        "displayName": "headline-medium",
-        "purpose": "Today remaining budget and foundation headings."
-      },
-      "headline-small": {
-        "displayName": "headline-small",
-        "purpose": "Budget remaining amounts and sheet headings."
-      },
-      "title-large": {
-        "displayName": "title-large",
-        "purpose": "Screen, editor and group headings; monthly income."
-      },
-      "title-medium": {
-        "displayName": "title-medium",
-        "purpose": "Section headings, month selector and supporting figures."
-      },
-      "title-small": {
-        "displayName": "title-small",
-        "purpose": "Ledger titles, category values and compact budget names."
-      },
-      "body-large": {
-        "displayName": "body-large",
-        "purpose": "Row titles, editor guidance and foundation copy."
-      },
-      "body-medium": {
-        "displayName": "body-medium",
-        "purpose": "Descriptions, date, balance label and supporting text."
-      },
-      "body-small": {
-        "displayName": "body-small",
-        "purpose": "Financial scope labels, ledger details and metadata."
-      },
-      "label-large": {
-        "displayName": "label-large",
-        "purpose": "Native actions, Money tabs and time labels."
-      },
-      "label-medium": {
-        "displayName": "label-medium",
-        "purpose": "Supporting labels and developer disclosure."
-      },
-      "label-small": {
-        "displayName": "label-small",
-        "purpose": "Complete theme role; no current app-level consumer."
-      }
+      "display-small": { "displayName": "Financial Display", "purpose": "Balance and amount entry." },
+      "headline-large": { "displayName": "Screen Headline", "purpose": "Greeting and major screen statements." },
+      "title-medium": { "displayName": "Section Title", "purpose": "Section headings and supporting figures." },
+      "body-small": { "displayName": "Supporting Detail", "purpose": "Currency scope, metadata and validation." },
+      "label-small": { "displayName": "Navigation Label", "purpose": "Five-destination bottom navigation." }
     },
     "shadows": [
-      {
-        "name": "frosted-panel",
-        "value": "0.5dp native shadowElevation",
-        "purpose": "Quiet opaque panel with translucent border; native elevation rather than CSS box-shadow."
-      },
-      {
-        "name": "compact-quick-add",
-        "value": "2dp rest / 4dp pressed native FAB elevation",
-        "purpose": "Circular central Quick Add in compact navigation; rail retains Material defaults."
-      }
+      { "name": "poros-card", "value": "0dp shadowElevation", "purpose": "Flat tonal panels." },
+      { "name": "bottom-navigation", "value": "0dp tonalElevation", "purpose": "Separate navigation by surface tone." }
     ],
     "motion": [],
     "breakpoints": [
-      {
-        "name": "shell-navigation-rail",
-        "value": "600dp"
-      },
-      {
-        "name": "today-two-columns-content-width",
-        "value": "720dp"
-      },
-      {
-        "name": "money-actions-weighted-row",
-        "value": "width >= 300dp and fontScale <= 1.15"
-      },
-      {
-        "name": "navigation-ledger-large-text",
-        "value": "fontScale > 1.3"
-      }
+      { "name": "navigation-rail", "value": "600dp" },
+      { "name": "today-two-columns", "value": "720dp" },
+      { "name": "money-actions-row", "value": "width >= 300dp and fontScale <= 1.15" },
+      { "name": "stacked-ledger-and-quick-add", "value": "fontScale > 1.3" },
+      { "name": "compact-library-and-theme-controls", "value": "fontScale <= 1.15" }
     ],
     "native": {
       "platform": "Android Jetpack Compose Material 3",
       "designDocument": "docs/DESIGN.md",
-      "adaptationLimits": "Preserve native dp/sp, Compose semantic roles and native state behavior. No HTML/CSS previews, synthesized tonal ramps or web CSS detector on Kotlin: they would not reproduce native typography, focus, wallpaper roles or elevation.",
-      "defaultOwnership": "Theme.kt explicitly defines all 15 Inter Material type roles, paired schemes, atmosphere and shapes. Material supplies component interactions, motion, control state glyphs and overlay elevation. Wallpaper affects supporting roles only.",
-      "evidence": [
-        "docs/screenshots/phase-1.6/money-overview-light.png",
-        "docs/screenshots/phase-1.6/today-personal-dark.png",
-        "docs/screenshots/phase-1.6/large-text-money.png"
-      ],
-      "evidenceLimits": "current Theme, AppIcons, VisualSystem, PersonalOsApp, TodayScreen, MoneyOverview, MoneyScreen and MoneyEditors Kotlin sources; approved reference, direction and user brief. Directly inspected final physical Samsung SM-S942B captures: [Money light](screenshots/phase-1.6/money-overview-light.png), [Today dark](screenshots/phase-1.6/today-personal-dark.png) and [Money at app-local 1.5x text scale](screenshots/phase-1.6/large-text-money.png). These confirm compact controls, grouped monthly comparison, quiet panels, outline navigation, readable dark bars and the large-text wrapping/labeled Quick Add path. Phone settings were not changed. The [Phase 1.6 handover](phase-1.6-handover.md) records the full physical capture set, build/lint gates, JVM/device results and measured cold startup; [independent review](design/phase-1.6-review.md) records the bounded rendered inspection. Captures include retained disposable regression records, not product seed content. No 2x text, tablet/foldable, arbitrary wallpaper contrast, TalkBack, RTL or general performance certification is made. The app bundles the licensed font and native vector paths; reference and captures remain documentation evidence, not shipping raster assets. Browser CSS detection and HTML/CSS component replicas are inapplicable to this native system.",
-      "notCanonized": "the pre-existing `Foundation screen` eyebrow is a craft-floor defect, not a reusable label style; it is outside this documentation-only edit. Debug/sample disclosures remain local status. No hard offset shadow or glyph-icon convention is established. The context loader's legacy PRODUCT.md schema drift remains outside the requested design-record refresh; `init` owns that separate repair.",
-      "provenance": "User-pinned Phase 1.5 sky-blue world with explicitly authorized Phase 1.6 refinement; same native Compose direction, no new world, generated comp or iOS replication. Font provenance: docs/design/fonts/README.md; icon provenance: docs/design/icon-provenance.md. OFL and ISC/Feather notices are packaged as APK raw resources.",
+      "referenceAuthority": "docs/design/poros-stitch/README.md; approved dark screens, light screens, consolidated design prose",
       "componentSources": [
-        {
-          "name": "Shared primitives",
-          "source": "app/src/main/java/com/jevon/personalos/ui/VisualSystem.kt",
-          "roles": [
-            "AtmosphericBackground",
-            "FrostedPanel",
-            "IconBadge",
-            "LedgerRow",
-            "FinancialProgress",
-            "SystemBarAppearance"
-          ]
-        },
-        {
-          "name": "Shell and overlays",
-          "source": "app/src/main/java/com/jevon/personalos/ui/PersonalOsApp.kt",
-          "roles": [
-            "NavigationBar",
-            "NavigationRail",
-            "FloatingActionButton",
-            "ModalBottomSheet",
-            "AlertDialog"
-          ]
-        },
-        {
-          "name": "Today",
-          "source": "app/src/main/java/com/jevon/personalos/ui/TodayScreen.kt",
-          "roles": [
-            "SectionHeading",
-            "EmptyMessage",
-            "FrostedPanel"
-          ]
-        },
-        {
-          "name": "Money overview",
-          "source": "app/src/main/java/com/jevon/personalos/ui/MoneyOverview.kt",
-          "roles": [
-            "BalanceHeader",
-            "MoneyActions",
-            "MonthSelector",
-            "FrostedPanel",
-            "LinearProgressIndicator"
-          ]
-        },
-        {
-          "name": "Ledger and filters",
-          "source": "app/src/main/java/com/jevon/personalos/ui/MoneyScreen.kt",
-          "roles": [
-            "PrimaryScrollableTabRow",
-            "Tab",
-            "LedgerRow",
-            "Choice",
-            "ModalBottomSheet"
-          ]
-        },
-        {
-          "name": "Editors",
-          "source": "app/src/main/java/com/jevon/personalos/ui/MoneyEditors.kt",
-          "roles": [
-            "Dialog",
-            "OutlinedTextField",
-            "Checkbox",
-            "Switch",
-            "AlertDialog"
-          ]
-        },
-        {
-          "name": "Shared outline family",
-          "source": "app/src/main/java/com/jevon/personalos/ui/AppIcons.kt",
-          "roles": [
-            "AppIcons",
-            "outline"
-          ]
-        }
+        "app/src/main/java/com/jevon/personalos/ui/Theme.kt",
+        "app/src/main/java/com/jevon/personalos/ui/VisualSystem.kt",
+        "app/src/main/java/com/jevon/personalos/ui/FormComponents.kt",
+        "app/src/main/java/com/jevon/personalos/ui/ScheduleEditors.kt",
+        "app/src/main/java/com/jevon/personalos/ui/PersonalOsApp.kt",
+        "app/src/main/java/com/jevon/personalos/ui/QuickAdd.kt",
+        "app/src/main/java/com/jevon/personalos/ui/SettingsScreen.kt",
+        "app/src/main/java/com/jevon/personalos/ui/MoneyEditors.kt",
+        "app/src/main/java/com/jevon/personalos/ui/MoneyScreen.kt",
+        "app/src/main/java/com/jevon/personalos/ui/MoneyOverview.kt",
+        "app/src/main/java/com/jevon/personalos/ui/TodayScreen.kt",
+        "app/src/main/java/com/jevon/personalos/ui/LibraryScreen.kt",
+        "app/src/main/java/com/jevon/personalos/ui/ScheduleScreen.kt"
       ],
-      "typographyImplementation": {
-        "source": "app/src/main/java/com/jevon/personalos/ui/Theme.kt",
-        "resource": "app/src/main/res/font/inter_variable.ttf",
-        "license": "app/src/main/res/raw/inter_ofl.txt",
-        "instantiation": "One unmodified variable face, explicit weight instances 400/500/600 at optical size 14sp; system glyph fallback.",
-        "financialFeatures": "Display, headline and title roles enable tnum; body and label roles do not."
-      },
-      "iconImplementation": {
-        "source": "app/src/main/java/com/jevon/personalos/ui/AppIcons.kt",
-        "provenance": "docs/design/icon-provenance.md",
-        "license": "app/src/main/res/raw/lucide_license.txt",
-        "construction": "23 native Lucide outline vectors, 24-unit grid, rounded caps/joins, uniform 1.75-unit stroke. Back and book auto-mirror; RTL unverified.",
-        "dependencyPolicy": "Local vectors without runtime icon library, icon font or extended Material icon dependency; checkbox/radio/switch state glyphs remain Material."
-      },
-      "systemBarPolicy": "Only the focused Activity/Dialog window applies contrast; theme/focus updates post after native focus dispatch to avoid another window restoring stale bar styles.",
-      "layoutBehavior": {
-        "compactNavigation": "72dp content plus system gesture insets; 22dp destination vectors; central 48dp circular Quick Add with 24dp vector. Above fontScale 1.3, separate labeled Quick Add above 80dp navigation content.",
-        "monthlyComparison": "Period selector and actual spending/income share one panel; FlowRow horizontal/vertical gaps 24dp/12dp with minimum spending/income column widths 140dp/110dp.",
-        "touchTargets": "Money actions and choices retain at least 48dp height; 36dp decorative icon badge is not an interactive target.",
-        "moneyTabs": "PrimaryScrollableTabRow, native underline, no divider, transparent container, edgePadding 0dp, minimum tab width 64dp."
-      }
+      "componentPolicy": "Compose components are documented in DESIGN.md. Native dp/sp, Material state behavior and overlay elevation remain authoritative.",
+      "font": "Bundled inter_variable.ttf, explicit 400/500/600 weight instances, optical size 14sp, system glyph fallback. Display/headline/title roles enable tnum.",
+      "icons": "Bundled Lucide ImageVectors, 24-unit grid, 1.75-unit rounded strokes. Native Material control-state glyphs.",
+      "wallpaper": "Android 12+ opt-in setting replaces supporting secondary/tertiary roles. Poros primary, surfaces and atmosphere positive role remain stable.",
+      "systemBars": "Nearest DialogWindowProvider ancestor owns dialog bars, with Activity fallback. Contrast applies to the owning window decor and posts reapplication after composition and native focus dispatch.",
+      "compactControls": "At fontScale <= 1.15 Library uses a horizontally scrollable Media/Status/Sort Choice toolbar and Settings uses native System/Light/Dark segmented buttons. Larger text uses full-width stacked choices and radio rows.",
+      "entryWorkflows": "Prominent title fields, compact native date/time triggers and one Save action. More options summarizes retained optional values and reveals fields on validation errors. Event date/time pairs stack above fontScale 1.15. Money uses amount/account/category as primary fields and wrapping section tabs. Today uses one financial focal card with open supporting sections.",
+      "branding": "Native core/orbit mark with adaptive foreground/background and Android 13+ monochrome icon resources.",
+      "verification": "Source extraction only in this documentation pass. See docs/poros-redesign-handover.md for implementation and measured verification.",
+      "notCanonized": "Decorative Quick Add subtitle copy remains local to its sheet. Device/reference parity and accessibility verification belong to implementation review."
     }
   },
   "components": [],
   "narrative": {
-    "northStar": "A clear day for your priorities and your money",
-    "overview": "The approved [sky-blue direction and Phase 1.6 refinement](design/phase-1.5-direction.md) retain a sky-to-mist atmosphere, softly layered panels and clear financial figures. The user-selected [finance reference](design/references/finance-ui-direction.png) supplies the material character; native Android components supply navigation and interaction. Phase 1.6 tightens the same world through bundled Inter, one outline icon family and quieter controls.\n\nThe implementation uses opaque tonal panels, translucent borders and restrained native elevation to suggest frost without backdrop blur. Today keeps priorities ahead of a compact budget and domain summaries. Money gives currency-specific balances a stronger hierarchy, then quick actions, selected-month summaries and ledger detail. [PRODUCT.md](PRODUCT.md) points to durable product authority; the product name remains provisional.",
+    "northStar": "Obsidian & Electric Indigo",
+    "overview": "Poros uses charcoal tonal layers, restrained indigo actions, compact information groups and clear financial figures. Light mode carries the same shared native Compose components onto a pale canvas with white panels.",
     "keyCharacteristics": [
-      "Sky-blue light atmosphere and a deliberate deep-navy night scheme.",
-      "Opaque rounded panels, fine borders and restrained native shadows.",
-      "Bundled Inter across the complete Material role scale, with tabular financial figures.",
-      "One locally bundled Lucide outline family across app surfaces.",
-      "Native actions, adaptive navigation and practical scrolling editors."
+      "Signature dark appearance with paired light semantic roles.",
+      "Flat rounded panels and bundled Inter/Lucide assets.",
+      "Native Material 3 navigation, controls, sheets and editors."
     ],
     "rules": [
-      {
-        "name": "The Stable Sky Rule",
-        "body": "Wallpaper personalization affects supporting Material roles; preserve the brand-blue primary and atmosphere palette.",
-        "section": "colors"
-      },
-      {
-        "name": "The Semantic Pair Rule",
-        "body": "Consume Material and atmosphere roles with matching content colors; static swatches are source evidence rather than screen-level literals.",
-        "section": "colors"
-      },
-      {
-        "name": "The Financial Hierarchy Rule",
-        "body": "Reserve displaySmall for the balance header; retain currency and explicit financial meaning beside supporting figures.",
-        "section": "typography"
-      },
-      {
-        "name": "The Tonal Frost Rule",
-        "body": "Keep elevated panels opaque; create frost through tone, border and restrained native elevation.",
-        "section": "elevation"
-      }
+      { "name": "The Stable Indigo Rule", "body": "Optional Android wallpaper colors customize supporting secondary and tertiary roles while preserving Poros primary, surfaces and financial positive color.", "section": "colors" },
+      { "name": "The Semantic Pair Rule", "body": "Use Material color/content pairs and shared panel roles across both themes.", "section": "colors" },
+      { "name": "The Financial Meaning Rule", "body": "Retain currency, period and recorded-versus-upcoming meaning beside financial amounts.", "section": "typography" },
+      { "name": "The Tonal Layer Rule", "body": "Establish hierarchy through shared canvas and container roles with flat resting cards.", "section": "elevation" }
     ],
     "dos": [
-      "**Do** preserve stable blue branding and semantic Material/atmosphere roles.",
-      "**Do** use opaque bordered panels over the shared gradient with native elevation.",
-      "**Do** use the bundled Inter Material role scale, tabular financial figures and currency labels.",
-      "**Do** use the shared Lucide outline vectors and retain native Material control state glyphs.",
-      "**Do** preserve native insets, wrapping, scrollable forms and explicit status text."
+      "**Do** consume shared theme roles and Poros primitives for both appearances.",
+      "**Do** use bundled Inter, outline vectors, native focus feedback and accessible labels.",
+      "**Do** retain wrapping, touch targets, system insets and scrollable editors.",
+      "**Do** preserve currency-specific totals and explicit financial and schedule status."
     ],
     "donts": [
-      "**Don't** replace native navigation, Back or vector icons with copied iOS chrome or glyphs.",
-      "**Don't** apply runtime backdrop blur or translucent fills to shared elevated panels.",
-      "**Don't** invent trends, combine currencies or present forecasts as recorded spending.",
-      "**Don't** imply deferred non-Money workflows save records."
+      "**Don't** introduce repeated glowing borders or excessive decorative effects.",
+      "**Don't** substitute icon-font glyphs for the shared vector family.",
+      "**Don't** turn fictional reference content into product capabilities."
     ]
   }
 }

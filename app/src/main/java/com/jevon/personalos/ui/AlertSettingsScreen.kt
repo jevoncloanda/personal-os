@@ -93,14 +93,22 @@ internal fun AlertSettingsScreen(database:PersonalDatabase,delivery:LocalAlerts,
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun CalendarTimeField(label:String,value:String,enabled:Boolean,change:(String)->Unit) {
+internal fun CalendarTimeField(label:String,value:String,enabled:Boolean,compact:Boolean=false,change:(String)->Unit) {
     var picker by remember{mutableStateOf(false)}
+    var keyboard by remember { mutableStateOf(false) }
     val dirty=LocalMarkDraftDirty.current
-    Field("$label (HH:mm)",value,enabled){change(it)}
-    TextButton(enabled=enabled,onClick={picker=true}){Text("Choose ${label.lowercase()}")}
+    if (compact) PickerTrigger(label, runCatching { LocalTime.parse(value).format(java.time.format.DateTimeFormatter.ofLocalizedTime(java.time.format.FormatStyle.SHORT)) }.getOrDefault("Choose time"), AppIcons.Clock, enabled) { picker = true }
+    else Field("$label (HH:mm)",value,enabled, trailing = {
+        IconButton(enabled = enabled, onClick = { picker = true }) { Icon(AppIcons.CalendarMonth, "Choose ${label.lowercase()}") }
+    }){change(it)}
     if(picker){
         val initial=runCatching{LocalTime.parse(value)}.getOrDefault(LocalTime.of(9,0))
         val state=rememberTimePickerState(initial.hour,initial.minute,true)
-        AlertDialog(onDismissRequest={picker=false},title={Text(label)},text={TimePicker(state)},confirmButton={TextButton(onClick={dirty();change("%02d:%02d".format(state.hour,state.minute));picker=false}){Text("Use time")}},dismissButton={TextButton(onClick={picker=false}){Text("Cancel")}})
+        AlertDialog(onDismissRequest={picker=false},title={Text(label)},text={
+            Column {
+                if (keyboard) TimeInput(state) else TimePicker(state)
+                TextButton(onClick = { keyboard = !keyboard }) { Text(if (keyboard) "Use clock" else "Type time") }
+            }
+        },confirmButton={TextButton(onClick={dirty();change("%02d:%02d".format(state.hour,state.minute));picker=false}){Text("Use time")}},dismissButton={TextButton(onClick={picker=false}){Text("Cancel")}})
     }
 }

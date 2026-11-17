@@ -77,7 +77,7 @@ class MoneyWorkflowTest {
             screenshot("history-filters")
             click("Reset filters"); click("Show results")
             compose.onNodeWithTag("MoneyList").performScrollToNode(hasText(expense))
-            click(expense); field("Amount ($code)", "100"); save()
+            click(expense); click("Edit details"); field("Amount ($code)", "100"); save()
             compose.onNodeWithTag("MoneyList").performScrollToNode(hasText(transfer))
             click(transfer); compose.onNodeWithText("Delete transaction").performScrollTo().performClick(); click("Delete")
             compose.waitUntil(10000) { compose.onAllNodesWithContentDescription("Cancel editing").fetchSemanticsNodes().isEmpty() }

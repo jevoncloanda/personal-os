@@ -35,25 +35,29 @@ fun TodayScreen(state: TodayState, retry: () -> Unit, open: (String) -> Unit, se
         }
         is TodayState.Ready -> {
             TodayBody(state.content, open,complete, if (selectBudget == null) null else { { choosing = true } })
-            if (choosing && selectBudget != null) AlertDialog(onDismissRequest = { choosing = false },
-                title = { Text("Today budget") },
-                text = { Column(Modifier.verticalScroll(rememberScrollState())) {
-                    Text("Choose an overall budget for ${YearMonth.from(state.content.date)}. Automatic uses ${state.content.preferredCurrency} only.")
-                    if (state.content.requestedBudgetId != null && state.content.eligibleBudgets.none { it.id == state.content.requestedBudgetId })
-                        Text("Your saved choice is no longer eligible this month. The automatic fallback is shown.", Modifier.padding(vertical = 8.dp))
-                    val options = listOf<String?>(null) + state.content.eligibleBudgets.sortedWith(compareBy<BudgetEntity> { it.currencyCode != state.content.preferredCurrency }.thenBy { it.id }).map { it.id }
-                    options.forEach { id ->
-                        val budget = state.content.eligibleBudgets.firstOrNull { it.id == id }
-                        TextButton(onClick = { selectBudget(id); choosing = false }, modifier = Modifier.fillMaxWidth()) {
-                            Text((if (id == state.content.requestedBudgetId) "Selected: " else "") +
-                                (budget?.let { "${it.name} · ${it.currencyCode}" } ?: "Automatic · ${state.content.preferredCurrency}"))
-                        }
-                    }
-                } },
-                confirmButton = { TextButton(onClick = { choosing = false; open("money-budgets") }) { Text("Manage budgets") } },
-                dismissButton = { TextButton(onClick = { choosing = false }) { Text("Close") } })
+            if (choosing && selectBudget != null) TodayBudgetPicker(state.content, selectBudget, { open("money-budgets") }) { choosing = false }
         }
     }
+}
+
+@Composable
+internal fun TodayBudgetPicker(content: TodayContent, select: (String?) -> Unit, manage: () -> Unit, dismiss: () -> Unit) {
+    AlertDialog(onDismissRequest = dismiss, title = { Text("Today budget") }, text = {
+        Column(Modifier.verticalScroll(rememberScrollState())) {
+            Text("Choose an overall budget for ${YearMonth.from(content.date)}. Automatic uses ${content.preferredCurrency} only.")
+            if (content.requestedBudgetId != null && content.eligibleBudgets.none { it.id == content.requestedBudgetId })
+                Text("Your saved choice is no longer eligible this month. The automatic fallback is shown.", Modifier.padding(vertical = 8.dp))
+            val options = listOf<String?>(null) + content.eligibleBudgets.sortedWith(compareBy<BudgetEntity> { it.currencyCode != content.preferredCurrency }.thenBy { it.id }).map { it.id }
+            options.forEach { id ->
+                val budget = content.eligibleBudgets.firstOrNull { it.id == id }
+                TextButton(onClick = { select(id); dismiss() }, modifier = Modifier.fillMaxWidth()) {
+                    Text((if (id == content.requestedBudgetId) "Selected: " else "") +
+                        (budget?.let { "${it.name} · ${it.currencyCode}" } ?: "Automatic · ${content.preferredCurrency}"))
+                }
+            }
+        }
+    }, confirmButton = { TextButton(onClick = { dismiss(); manage() }) { Text("Manage budgets") } },
+        dismissButton = { TextButton(onClick = dismiss) { Text("Close") } })
 }
 
 @Composable
@@ -65,9 +69,9 @@ private fun TodayBody(content: TodayContent, open: (String) -> Unit,complete:((c
                 .padding(top = 8.dp, bottom = 28.dp),
         ) {
             Text(content.date.format(DateTimeFormatter.ofPattern("EEEE, d MMMM")),
-                Modifier.padding(bottom = 4.dp), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Modifier.padding(bottom = 4.dp), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(when (content.now.hour) { in 5..11 -> "Good morning."; in 12..16 -> "Good afternoon."; else -> "Good evening." },
-                style = MaterialTheme.typography.headlineLarge, modifier = Modifier.padding(bottom = 16.dp))
+                style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(bottom = 12.dp))
             if (expanded) {
                 Row(horizontalArrangement = Arrangement.spacedBy(40.dp)) {
                     Column(Modifier.weight(1f)) { Agenda(content, open,complete) }
@@ -83,7 +87,7 @@ private fun Agenda(content: TodayContent, open: (String) -> Unit,complete:((com.
     val imminent = content.events.filter { it.startsAtMillis <= content.now.plusHours(1).toInstant().toEpochMilli() }
     val dueSoon = content.reminders.filter { it.dueAtMillis != null }
     if (imminent.isEmpty() && dueSoon.isEmpty()) {
-        FrostedPanel(contentPadding = 16.dp) {
+        Column {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 IconBadge(AppIcons.CheckCircle, positive = true)
                 Column(Modifier.weight(1f)) {
@@ -96,7 +100,7 @@ private fun Agenda(content: TodayContent, open: (String) -> Unit,complete:((com.
         Spacer(Modifier.height(16.dp))
         return
     }
-    FrostedPanel {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
     SectionHeading("Priorities", "Schedule", { open("schedule") })
     if(content.scheduleReminders.isNotEmpty()&&complete!=null)content.scheduleReminders.filter{it.due!=null}.forEach{item->ReminderRow(item,content.now,false,{complete(item)},{open("reminder/${android.net.Uri.encode(item.reminder.id)}?day=${item.day}")})}
     else dueSoon.forEach { reminder ->
@@ -134,20 +138,25 @@ private fun EventRows(events: List<EventEntity>, content: TodayContent,open:(Str
 
 @Composable
 private fun MoneyAndLibrary(content: TodayContent, open: (String) -> Unit,complete:((com.jevon.personalos.schedule.ReminderOccurrence)->Unit)?, choose: (() -> Unit)?) {
-    SectionHeading("This month", "Money", { open("money") })
     val summary = content.budget
-    if (choose != null) TextButton(onClick = choose) { Text("Choose Today budget") }
-    if (summary == null) {
-        EmptyMessage("No ${content.preferredCurrency} budget this month", "Create an overall monthly budget, or choose an existing budget in another currency.")
-        TextButton(onClick = { open("money-budgets") }) { Text("Manage budgets") }
-    }
-    else FrostedPanel {
+    PorosCard(contentPadding = 16.dp, verticalSpacing = 4.dp) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text("This month", Modifier.weight(1f).semantics { heading() }, style = MaterialTheme.typography.titleMedium)
+            if (choose != null) IconButton(onClick = choose) { Icon(AppIcons.ExpandMore, "Choose Today budget") }
+            TextButton(onClick = { open("money") }) { Text("Money") }
+        }
+        if (summary == null) {
+            Text("No ${content.preferredCurrency} budget this month", style = MaterialTheme.typography.titleSmall)
+            Text("Choose or create an overall monthly budget.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        } else {
             Text("${summary.budget.name} · ${summary.budget.currencyCode}", style = MaterialTheme.typography.titleSmall)
             val remaining = summary.remainingMinor
             Text("${formatMoney(kotlin.math.abs(remaining), summary.budget.currencyCode)} ${if (remaining >= 0) "left" else "over budget"}",
-                Modifier.padding(top = 2.dp, bottom = 8.dp), style = MaterialTheme.typography.headlineMedium,
+                Modifier.padding(top = 2.dp, bottom = 4.dp), style = MaterialTheme.typography.headlineMedium,
                 color = if (remaining < 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface)
             FinancialProgress(summary.fraction, remaining < 0, "${formatMoney(summary.spentMinor, summary.budget.currencyCode)} spent of ${formatMoney(summary.budget.limitMinor, summary.budget.currencyCode)}")
+        }
+        if (summary == null) TextButton(onClick = { open("money-budgets") }) { Text("Manage budgets") }
     }
     Spacer(Modifier.height(16.dp))
     val later = content.events.filter { it.startsAtMillis > content.now.plusHours(1).toInstant().toEpochMilli() }
@@ -156,8 +165,9 @@ private fun MoneyAndLibrary(content: TodayContent, open: (String) -> Unit,comple
         EventRows(later, content,open)
         Spacer(Modifier.height(16.dp))
     }
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
     SectionHeading("Upcoming payments", "Subscriptions", { open("subscriptions") })
-    if (content.subscriptions.isEmpty()) EmptyMessage("No payments on the horizon", "Renewals due in the next seven days will appear here.")
+    if (content.subscriptions.isEmpty()) Text("No payments on the horizon", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     content.subscriptions.forEach { item ->
         val due = LocalDate.ofEpochDay(item.nextDueEpochDay)
         val whenDue = when { due < content.date -> "Overdue · ${due.format(DateTimeFormatter.ofPattern("d MMM"))}"; due == content.date -> "Due today"; due == content.date.plusDays(1) -> "Due tomorrow"; else -> "Due ${due.format(DateTimeFormatter.ofPattern("EEE, d MMM"))}" }
@@ -166,11 +176,14 @@ private fun MoneyAndLibrary(content: TodayContent, open: (String) -> Unit,comple
                 supportingColor = if (due < content.date) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
+    }
     Spacer(Modifier.height(16.dp))
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
     SectionHeading("Currently enjoying", "Library", { open("library") })
-    if (content.library.isEmpty()) EmptyMessage("A little space for downtime", "What you’re watching, playing, or reading will appear here.")
+    if (content.library.isEmpty()) Text("A little space for downtime", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     content.library.forEach { item ->
         LibraryRow(item) { open("library/${android.net.Uri.encode(item.id)}") }
+    }
     }
     val undated = content.reminders.filter { it.dueAtMillis == null }
     if (undated.isNotEmpty()) {

@@ -33,7 +33,7 @@ class LibraryReviewActivity : ComponentActivity() {
             var request by rememberSaveable { mutableStateOf<String?>(null) }
             val today by remember { host.database.observeToday(ZonedDateTime.now()) }.collectAsState(initial = null)
             PersonalOsTheme(Settings(if (dark) ThemeMode.DARK else ThemeMode.LIGHT, false)) {
-                AtmosphericBackground { SystemBarAppearance()
+                PorosBackground { SystemBarAppearance()
                     Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.systemBars)) {
                         Row {
                             TextButton(onClick = { dark = !dark }) { Text(if (dark) "Review light" else "Review dark") }

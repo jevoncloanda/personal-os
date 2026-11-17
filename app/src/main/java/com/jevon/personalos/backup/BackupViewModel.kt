@@ -67,7 +67,7 @@ internal class BackupViewModel(database: PersonalDatabase, private val resolver:
                         runCatching { DocumentsContract.deleteDocument(resolver, failedOutput) }.getOrDefault(false)
                     }
                     val details = when (e.message) {
-                        "This is not a Personal OS backup.", "This backup format is not supported. Use an app version that supports it.",
+                        "This is not a Poros backup.", "This backup format is not supported. Use an app version that supports it.",
                         "This backup uses an unsupported data schema.", "Backup checksum failed. Choose an undamaged backup.",
                         "Backup exceeds the 8 MiB limit.", "Backup exceeds the 20,000-record limit.", "Too many backup records." -> e.message
                         else -> null
@@ -78,7 +78,7 @@ internal class BackupViewModel(database: PersonalDatabase, private val resolver:
                         else if (incompleteOutput)
                         "The backup could not be saved. An incomplete file may remain at the chosen destination; delete it. Your local records were not changed."
                         else if (label == "Writing backup…") "Could not save the backup. Check the destination and available space, then try again. Your records were not changed."
-                        else "Could not use this backup. ${details ?: "Choose a complete, compatible Personal OS backup and try again."} Existing records were preserved.", error = e !is CancellationException)
+                        else "Could not use this backup. ${details ?: "Choose a complete, compatible Poros backup and try again."} Existing records were preserved.", error = e !is CancellationException)
                 }
             }
         }

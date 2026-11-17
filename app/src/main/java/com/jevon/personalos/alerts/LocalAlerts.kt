@@ -27,7 +27,7 @@ class LocalAlerts(private val context:Context, private val database:PersonalData
     private val alarms=context.getSystemService(AlarmManager::class.java)
     var lastError:String?=null; private set
     var nextScheduledAt:Long?=null; private set
-    fun createChannels() { listOf("EVENT" to "Calendar events","REMINDER" to "Reminders","SUBSCRIPTION" to "Subscription renewals").forEach { (id,name)->manager.createNotificationChannel(NotificationChannel(channel(id),name,NotificationManager.IMPORTANCE_DEFAULT).apply { description="Local Personal OS alerts · best-effort timing"; lockscreenVisibility=Notification.VISIBILITY_PRIVATE }) } }
+    fun createChannels() { listOf("EVENT" to "Calendar events","REMINDER" to "Reminders","SUBSCRIPTION" to "Subscription renewals").forEach { (id,name)->manager.createNotificationChannel(NotificationChannel(channel(id),name,NotificationManager.IMPORTANCE_DEFAULT).apply { description="Local Poros alerts · best-effort timing"; lockscreenVisibility=Notification.VISIBILITY_PRIVATE }) } }
     private fun channel(domain:String)="personal-os-${domain.lowercase()}"
     fun enabled(domain:String):Boolean = deliveryAllowed?.invoke(domain) ?: ((Build.VERSION.SDK_INT<33 || context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)==PackageManager.PERMISSION_GRANTED) && manager.areNotificationsEnabled() && manager.getNotificationChannel(channel(domain))?.let{it.importance!=NotificationManager.IMPORTANCE_NONE}==true)
     fun status(domain:String):AlertStatus {
@@ -99,7 +99,7 @@ class LocalAlerts(private val context:Context, private val database:PersonalData
             cancelAlarm()
             next?.let { alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,it,pending());nextScheduledAt=it }
             lastError=null
-        } catch(e:CancellationException){throw e} catch(_:Exception) { cancelAlarm(); lastError="Alerts couldn't be refreshed. Open Personal OS and retry; your records are preserved." }
+        } catch(e:CancellationException){throw e} catch(_:Exception) { cancelAlarm(); lastError="Alerts couldn't be refreshed. Open Poros and retry; your records are preserved." }
     } }
 }
 

@@ -47,6 +47,7 @@ data class MoneySnapshot(
     val entries: List<EntryEntity> = emptyList(), val count: Int = 0,
     val recent: List<EntryEntity> = emptyList(),
     val categorySpending: List<CategorySpending> = emptyList(),
+    val linkedSubscriptions: Map<String, String> = emptyMap(),
 )
 
 @Dao

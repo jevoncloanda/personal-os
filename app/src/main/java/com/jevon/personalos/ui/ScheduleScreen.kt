@@ -31,6 +31,7 @@ fun ScheduleScreen(model:ScheduleViewModel,requested:RecordTarget?,handled:()->U
     val focus by model.focus.collectAsStateWithLifecycle(); val busy by model.busy.collectAsStateWithLifecycle(); val error by model.error.collectAsStateWithLifecycle()
     var mode by rememberSaveable {mutableStateOf("Agenda")}; var editor by rememberSaveable {mutableStateOf<String?>(null)}
     var showCompleted by rememberSaveable {mutableStateOf(false)}; var deleting by rememberSaveable {mutableStateOf(false)}
+    var visibleKind by rememberSaveable { mutableStateOf("All") }
     LaunchedEffect(requested){if(requested!=null){model.clearError();if(requested.domain.startsWith("NEW_")){model.focus.value=null;editor=requested.domain.removePrefix("NEW_")}else model.focus.value=requested;handled()}}
     BackHandler(focus!=null&&editor==null){model.focus.value=null;model.clearError()}
     val snapshot=data
@@ -42,22 +43,26 @@ fun ScheduleScreen(model:ScheduleViewModel,requested:RecordTarget?,handled:()->U
     LazyColumn(Modifier.fillMaxSize().testTag("ScheduleList"),contentPadding=PaddingValues(20.dp,0.dp,20.dp,28.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
         if(focus==null){
             item {
-                FlowRow(horizontalArrangement=Arrangement.spacedBy(8.dp)){
-                    Button(onClick={model.clearError();editor="EVENT"}){Icon(AppIcons.Add,null);Text("New event",Modifier.padding(start=6.dp))}
-                    OutlinedButton(onClick={model.clearError();editor="REMINDER"}){Text("New reminder")}
-                }
+                MonthSelector(YearMonth.from(selected),{model.date.value=selected.minusMonths(1)},{model.date.value=selected.plusMonths(1)})
                 PrimaryTabRow(selectedTabIndex=if(mode=="Agenda")0 else 1,containerColor=androidx.compose.ui.graphics.Color.Transparent,divider={}){
                     listOf("Agenda","Month").forEach{label->Tab(selected=mode==label,onClick={mode=label},text={Text(label)})}
                 }
-                MonthSelector(YearMonth.from(selected),{model.date.value=selected.minusMonths(1)},{model.date.value=selected.plusMonths(1)})
+                if (mode == "Agenda") WeekStrip(selected, now.toLocalDate()) { model.date.value = it }
                 Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
+                    IconButton(onClick={model.date.value=selected.minusDays(1)}) { Icon(AppIcons.ChevronLeft, "Previous day") }
                     Text(selected.format(DateTimeFormatter.ofPattern("EEE, d MMM uuuu")),Modifier.weight(1f),style=MaterialTheme.typography.titleMedium)
+                    IconButton(onClick={model.date.value=selected.plusDays(1)}) { Icon(AppIcons.ChevronRight, "Next day") }
                     TextButton(onClick={model.date.value=now.toLocalDate()}){Text("Today")}
                 }
-                FlowRow {
-                    TextButton(onClick={model.date.value=selected.minusDays(1)}){Text("Previous day")}
-                    TextButton(onClick={model.date.value=selected.plusDays(1)}){Text("Next day")}
-                    TextButton(onClick={showCompleted=!showCompleted}){Text(if(showCompleted)"Hide completed" else "Show completed")}
+                FlowRow(horizontalArrangement=Arrangement.spacedBy(8.dp)){
+                    FilledTonalButton(onClick={model.clearError();editor="EVENT"}){Icon(AppIcons.Add,null);Text("New event",Modifier.padding(start=6.dp))}
+                    OutlinedButton(onClick={model.clearError();editor="REMINDER"}){Text("New reminder")}
+                }
+                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf("All", "Events", "Reminders").forEach { kind ->
+                        FilterChip(selected = visibleKind == kind, onClick = { visibleKind = kind }, label = { Text(kind) })
+                    }
+                    FilterChip(selected = showCompleted, onClick = { showCompleted = !showCompleted }, label = { Text(if(showCompleted)"Hide completed" else "Show completed") })
                 }
             }
             if(mode=="Month")item {MonthGrid(selected,now.toLocalDate(),snapshot,now.zone){model.date.value=it}}
@@ -65,15 +70,15 @@ fun ScheduleScreen(model:ScheduleViewModel,requested:RecordTarget?,handled:()->U
             val from=selected.atStartOfDay(now.zone).toInstant().toEpochMilli()
             val until=selected.plusDays(if(mode=="Month")1 else 7).atStartOfDay(now.zone).toInstant().toEpochMilli()
             val overdue=if(selected==now.toLocalDate())snapshot.overdue else emptyList()
-            if(overdue.isNotEmpty()){
+            if(overdue.isNotEmpty() && visibleKind != "Events"){
                 item{Text("Overdue",style=MaterialTheme.typography.titleLarge,color=MaterialTheme.colorScheme.error)}
                 items(overdue,key={"overdue:${it.key}"}){ReminderRow(it,now,busy,{model.complete(it,!it.completed)},{open(RecordTarget("REMINDER",it.reminder.id,it.day))})}
             }
             val overdueKeys=overdue.map{it.key}.toSet()
             val rows=ArrayList<AgendaItem>()
-            snapshot.events.filter{it.end>from&&it.start<until}.forEach{rows+=AgendaItem(maxOf(it.start,from),"event:${it.event.id}:${it.day}",event=it)}
-            snapshot.reminders.filter{it.due!=null&&it.due>=from&&it.due<until&&it.key !in overdueKeys&&(showCompleted||!it.completed)}.forEach{rows+=AgendaItem(it.due!!,"reminder:${it.key}",reminder=it)}
-            snapshot.forecasts.filter{it.day>=selected.toEpochDay()&&it.day<selected.plusDays(if(mode=="Month")1 else 7).toEpochDay()}.forEach{rows+=AgendaItem(LocalDate.ofEpochDay(it.day).atTime(9,0).atZone(now.zone).toInstant().toEpochMilli(),"forecast:${it.subscription.id}:${it.day}",forecast=it)}
+            if (visibleKind != "Reminders") snapshot.events.filter{it.end>from&&it.start<until}.forEach{rows+=AgendaItem(maxOf(it.start,from),"event:${it.event.id}:${it.day}",event=it)}
+            if (visibleKind != "Events") snapshot.reminders.filter{it.due!=null&&it.due>=from&&it.due<until&&it.key !in overdueKeys&&(showCompleted||!it.completed)}.forEach{rows+=AgendaItem(it.due!!,"reminder:${it.key}",reminder=it)}
+            if (visibleKind == "All") snapshot.forecasts.filter{it.day>=selected.toEpochDay()&&it.day<selected.plusDays(if(mode=="Month")1 else 7).toEpochDay()}.forEach{rows+=AgendaItem(LocalDate.ofEpochDay(it.day).atTime(9,0).atZone(now.zone).toInstant().toEpochMilli(),"forecast:${it.subscription.id}:${it.day}",forecast=it)}
             item{Text(if(mode=="Month")"Selected day" else "Next seven days",style=MaterialTheme.typography.titleLarge)}
             if(rows.isEmpty())item{Text("No events, dated reminders or unpaid renewals here. Add a commitment or choose another date.",color=MaterialTheme.colorScheme.onSurfaceVariant)}
             rows.sortedWith(compareBy<AgendaItem>{it.time}.thenBy{it.key}).groupBy{Instant.ofEpochMilli(it.time).atZone(now.zone).toLocalDate()}.forEach{(day,items)->
@@ -84,7 +89,7 @@ fun ScheduleScreen(model:ScheduleViewModel,requested:RecordTarget?,handled:()->U
                     row.forecast!=null->LedgerRow(AppIcons.Autorenew,row.forecast.subscription.name,"Unpaid payment forecast · ${LocalDate.ofEpochDay(row.forecast.day)}",formatMoney(row.forecast.subscription.amountMinor,row.forecast.subscription.currencyCode),onClick={openSubscription(row.forecast.subscription.id)})
                 }}
             }
-            val undated=snapshot.reminders.filter{it.due==null&&(showCompleted||!it.completed)}
+            val undated=snapshot.reminders.filter{visibleKind != "Events"&&it.due==null&&(showCompleted||!it.completed)}
             if(undated.isNotEmpty())item{Text("Undated reminders",style=MaterialTheme.typography.titleLarge)}
             items(undated,key={"undated:${it.key}"}){ReminderRow(it,now,busy,{model.complete(it,!it.completed)},{open(RecordTarget("REMINDER",it.reminder.id))})}
         }else{
@@ -94,7 +99,7 @@ fun ScheduleScreen(model:ScheduleViewModel,requested:RecordTarget?,handled:()->U
                 item{Text(event.title,style=MaterialTheme.typography.headlineMedium)}
                 val day=focus?.day?.takeIf{calendarDateOnOrAfter(event.recurrence,eventBaseDate(event).toEpochDay(),it)==it}?:eventBaseDate(event).toEpochDay()
                 val occurrence=eventOccurrence(event,day,now.zone)
-                item{FrostedPanel{
+                item{PorosCard{
                     Text(if(event.allDay)"All day · ${LocalDate.ofEpochDay(day)}" else "${Instant.ofEpochMilli(occurrence.start).atZone(now.zone).format(DateTimeFormatter.ofPattern("d MMM uuuu, HH:mm"))} – ${Instant.ofEpochMilli(occurrence.end).atZone(now.zone).format(DateTimeFormatter.ofPattern("d MMM, HH:mm"))}",style=MaterialTheme.typography.titleMedium)
                     Text("Time zone: ${event.zoneId}")
                     if(event.location.isNotBlank())Text(event.location)
@@ -111,7 +116,7 @@ fun ScheduleScreen(model:ScheduleViewModel,requested:RecordTarget?,handled:()->U
                 val specified=focus?.day?.takeIf{reminderBaseDate(reminder)?.toEpochDay()?.let{base->calendarDateOnOrAfter(reminder.recurrence,base,it)==it}==true}
                 val occurrence=specified?.let{reminderOccurrence(reminder,it,history.map{it.revision to it.occurrenceEpochDay}.toSet(),now.zone)}?:oldestUncompleted(reminder,history,now.zone)?:reminderOccurrence(reminder,reminderBaseDate(reminder)?.toEpochDay(),history.map{it.revision to it.occurrenceEpochDay}.toSet(),now.zone)
                 item{Text(reminder.title,style=MaterialTheme.typography.headlineMedium)}
-                item{FrostedPanel{
+                item{PorosCard{
                     ReminderRow(occurrence,now,busy,{model.complete(occurrence,!occurrence.completed)},{})
                     if(reminder.notes.isNotBlank())Text(reminder.notes)
                     Text(repeatLabel(reminder.recurrence));Text("Time zone: ${reminder.zoneId}",style=MaterialTheme.typography.bodySmall)
@@ -131,8 +136,20 @@ fun ScheduleScreen(model:ScheduleViewModel,requested:RecordTarget?,handled:()->U
         }
         if(error!=null&&editor==null)item{Text(error!!,color=MaterialTheme.colorScheme.error)}
     }
-    if(editor=="EVENT")key(focus?.id){EventEditor(event,selected,busy,error,{editor=null}){value,create->model.event(value,create){editor=null;model.focus.value=RecordTarget("EVENT",value.id)}}}
-    if(editor=="REMINDER")key(focus?.id){ReminderEditor(reminder,selected,busy,error,{editor=null}){value,create->model.reminder(value,create){editor=null;model.focus.value=RecordTarget("REMINDER",value.id)}}}
+    if (editor == "EVENT") key(focus?.id) {
+        EventEditor(event, selected, busy, error, { editor = null },
+            snapshot.alerts.filter { event != null && it.eventId == event.id },
+            openAlerts = event?.let { { editor = null; configureAlerts(RecordTarget("EVENT", it.id)) } }) { value, create ->
+            model.event(value, create) { editor = null; model.focus.value = RecordTarget("EVENT", value.id) }
+        }
+    }
+    if (editor == "REMINDER") key(focus?.id) {
+        ReminderEditor(reminder, selected, busy, error, { editor = null },
+            snapshot.alerts.filter { reminder != null && it.reminderId == reminder.id },
+            openAlerts = reminder?.takeIf { it.dueAtMillis != null }?.let { { editor = null; configureAlerts(RecordTarget("REMINDER", it.id)) } }) { value, create ->
+            model.reminder(value, create) { editor = null; model.focus.value = RecordTarget("REMINDER", value.id) }
+        }
+    }
     if(deleting&&focus!=null)AlertDialog(onDismissRequest={deleting=false},title={Text("Delete entire record or series?")},text={Text("All occurrences, completion history and alert preferences for this record will be removed. Money and subscription records are unaffected.")},confirmButton={TextButton(enabled=!busy,onClick={val target=focus!!;deleting=false;model.delete(target){model.focus.value=null}}){Text("Delete series")}},dismissButton={TextButton(onClick={deleting=false}){Text("Keep record")}})
 }
 
@@ -143,10 +160,30 @@ internal fun repeatLabel(r:Recurrence):String {
     return label+r.untilEpochDay?.let{" · through ${LocalDate.ofEpochDay(it)}"}.orEmpty()
 }
 
+@Composable
+private fun WeekStrip(selected: LocalDate, today: LocalDate, choose: (LocalDate) -> Unit) {
+    val monday = selected.minusDays(selected.dayOfWeek.value - 1L)
+    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        repeat(7) { index ->
+            val date = monday.plusDays(index.toLong())
+            val active = date == selected
+            Surface(onClick = { choose(date) }, color = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerLow,
+                contentColor = if (active) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+                shape = MaterialTheme.shapes.small, modifier = Modifier.widthIn(min = 48.dp).semantics { this.selected = active; contentDescription = "Select $date${if (date == today) ", today" else ""}" }) {
+                Column(Modifier.padding(horizontal = 10.dp, vertical = 12.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(date.format(DateTimeFormatter.ofPattern("EEEEE")), style = MaterialTheme.typography.labelSmall)
+                    Text(date.dayOfMonth.toString(), style = MaterialTheme.typography.titleMedium)
+                }
+            }
+        }
+    }
+}
+
 @Composable internal fun ReminderRow(item:ReminderOccurrence,now:ZonedDateTime,busy:Boolean,complete:()->Unit,open:()->Unit) {
     val overdue=!item.completed&&item.due!=null&&if(item.reminder.dateOnly)item.day!!<now.toLocalDate().toEpochDay()else item.due<now.toInstant().toEpochMilli()
     val status=when{item.completed->"Completed";item.due==null->"Undated";overdue->"Overdue";Instant.ofEpochMilli(item.due).atZone(now.zone).toLocalDate()==now.toLocalDate()->"Due today";else->"Upcoming"}
-    Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)){
+    Surface(color = MaterialTheme.colorScheme.surfaceContainerLow, shape = MaterialTheme.shapes.small) {
+    Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 6.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)){
         Checkbox(item.completed,onCheckedChange={complete()},enabled=!busy,modifier=Modifier.semantics{contentDescription="${if(item.completed)"Reopen" else "Complete"} ${item.reminder.title} ${item.day?.let{LocalDate.ofEpochDay(it)}?:"undated"}"})
         TextButton(onClick=open,modifier=Modifier.weight(1f),shape=MaterialTheme.shapes.small,contentPadding=PaddingValues(vertical=8.dp,horizontal=12.dp)){
             Column(Modifier.fillMaxWidth()){
@@ -155,9 +192,24 @@ internal fun repeatLabel(r:Recurrence):String {
             }
         }
     }
+    }
 }
 @Composable private fun EventRow(item:EventOccurrence,zone:ZoneId,open:()->Unit){
-    LedgerRow(AppIcons.CalendarMonth,item.event.title,"${if(item.event.recurrence.frequency!=null)"Repeats · " else ""}${item.event.location.ifBlank{"Calendar event"}}\nEnds ${Instant.ofEpochMilli(item.end).atZone(zone).format(DateTimeFormatter.ofPattern("d MMM, HH:mm"))}",if(item.event.allDay)"All day" else Instant.ofEpochMilli(item.start).atZone(zone).format(DateTimeFormatter.ofPattern("HH:mm")),onClick=open)
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(if(item.event.allDay) "All day" else Instant.ofEpochMilli(item.start).atZone(zone).format(DateTimeFormatter.ofPattern("HH:mm")),
+            Modifier.widthIn(min = 48.dp, max = 76.dp).padding(top = 16.dp), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+        Surface(onClick = open, modifier = Modifier.weight(1f), color = LocalAtmosphere.current.panel, shape = MaterialTheme.shapes.medium) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(AppIcons.CalendarMonth, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+                    Text(item.event.title, style = MaterialTheme.typography.titleMedium)
+                }
+                if (item.event.location.isNotBlank()) Text(item.event.location, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Ends ${Instant.ofEpochMilli(item.end).atZone(zone).format(DateTimeFormatter.ofPattern("d MMM, HH:mm"))}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (item.event.recurrence.frequency != null) Text(repeatLabel(item.event.recurrence), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    }
 }
 
 @Composable private fun MonthGrid(selected:LocalDate,today:LocalDate,data:ScheduleSnapshot,zone:ZoneId,choose:(LocalDate)->Unit){
@@ -176,65 +228,5 @@ internal fun repeatLabel(r:Recurrence):String {
                 }
             }}}
         }
-    }
-}
-
-@Composable private fun RepeatFields(frequency:String,interval:String,until:String,enabled:Boolean,setFrequency:(String)->Unit,setInterval:(String)->Unit,setUntil:(String)->Unit){
-    Choice("Repeat",frequency,listOf("NONE" to "Does not repeat","DAILY" to "Daily","WEEKLY" to "Weekly","MONTHLY" to "Monthly","YEARLY" to "Yearly"),enabled,setFrequency)
-    if(frequency!="NONE"){Field("Repeat interval",interval,enabled,androidx.compose.ui.text.input.KeyboardType.Number,change=setInterval);BillingDateField("Repeat through (optional)",until,enabled,setUntil)}
-}
-private fun recurrence(frequency:String,interval:String,until:String,base:LocalDate)=Recurrence(if(frequency=="NONE")null else Frequency.valueOf(frequency),if(frequency=="NONE")1 else interval.toIntOrNull()?:throw IllegalArgumentException("Use a whole repeat interval"),base.toEpochDay(),if(frequency=="NONE"||until.isBlank())null else LocalDate.parse(until).toEpochDay())
-
-@Composable private fun EventEditor(old:EventEntity?,selected:LocalDate,busy:Boolean,error:String?,close:()->Unit,save:(EventEntity,Boolean)->Unit){
-    val id=rememberSaveable{old?.id?:UUID.randomUUID().toString()};val base=old?.let{Instant.ofEpochMilli(it.startsAtMillis).atZone(ZoneId.of(it.zoneId))}?:selected.atTime(9,0).atZone(ZoneId.systemDefault())
-    val end=old?.let{Instant.ofEpochMilli(it.endsAtMillis).atZone(ZoneId.of(it.zoneId))}?:base.plusHours(1)
-    var title by rememberSaveable{mutableStateOf(old?.title?:"")};var notes by rememberSaveable{mutableStateOf(old?.notes?:"")};var location by rememberSaveable{mutableStateOf(old?.location?:"")}
-    var allDay by rememberSaveable{mutableStateOf(old?.allDay?:false)};var date by rememberSaveable{mutableStateOf(base.toLocalDate().toString())};var lastDate by rememberSaveable{mutableStateOf((if(old?.allDay==true)end.toLocalDate().minusDays(1)else end.toLocalDate()).toString())}
-    var startTime by rememberSaveable{mutableStateOf(base.toLocalTime().withSecond(0).withNano(0).toString())};var endTime by rememberSaveable{mutableStateOf(end.toLocalTime().withSecond(0).withNano(0).toString())};var zone by rememberSaveable{mutableStateOf(old?.zoneId?:ZoneId.systemDefault().id)}
-    var frequency by rememberSaveable{mutableStateOf(old?.recurrence?.frequency?.name?:"NONE")};var interval by rememberSaveable{mutableStateOf((old?.recurrence?.interval?:1).toString())};var until by rememberSaveable{mutableStateOf(old?.recurrence?.untilEpochDay?.let{LocalDate.ofEpochDay(it).toString()}.orEmpty())}
-    EditorFrame(if(old==null)"New event" else "Edit entire event series",busy,error,close,{
-        val z=ZoneId.of(zone);val startDate=LocalDate.parse(date);val finalDate=LocalDate.parse(lastDate)
-        val a=if(allDay)startDate.atStartOfDay(z)else startDate.atTime(LocalTime.parse(startTime)).atZone(z)
-        val b=if(allDay)finalDate.plusDays(1).atStartOfDay(z)else finalDate.atTime(LocalTime.parse(endTime)).atZone(z)
-        require(b.toInstant()>a.toInstant()){"End must follow start"}
-        val proposed=recurrence(frequency,interval,until,startDate)
-        val repeat=if(old!=null&&startDate==eventBaseDate(old)&&old.recurrence.copy(anchorEpochDay=proposed.anchorEpochDay)==proposed)old.recurrence else proposed
-        save(EventEntity(id,title.trim(),a.toInstant().toEpochMilli(),b.toInstant().toEpochMilli(),z.id,allDay,location.trim(),repeat,notes.trim(),old?.revision?:0),old==null)
-    }){
-        Field("Event title",title,!busy){title=it};Field("Notes (optional)",notes,!busy,single=false){notes=it}
-        val dirty=LocalMarkDraftDirty.current
-        Row(Modifier.fillMaxWidth().toggleable(allDay,enabled=!busy,role=Role.Checkbox,onValueChange={dirty();allDay=it}).heightIn(min=48.dp),verticalAlignment=Alignment.CenterVertically){Checkbox(allDay,null);Text("All-day event",Modifier.padding(start=12.dp))}
-        BillingDateField("Start date",date,!busy){date=it};if(!allDay)CalendarTimeField("Start time",startTime,!busy){startTime=it}
-        BillingDateField(if(allDay)"Last day (inclusive)" else "End date",lastDate,!busy){lastDate=it};if(!allDay)CalendarTimeField("End time",endTime,!busy){endTime=it}
-        Field("Time zone",zone,!busy){zone=it};Field("Location (optional)",location,!busy){location=it}
-        RepeatFields(frequency,interval,until,!busy,{frequency=it},{interval=it},{until=it})
-        Text("Timed events keep wall-clock times in this zone. DST gaps move forward; overlaps use the earlier offset. All-day events keep their calendar dates. Editing changes the entire series. Configure notification timing after saving.",style=MaterialTheme.typography.bodySmall)
-    }
-}
-
-@Composable private fun ReminderEditor(old:ReminderEntity?,selected:LocalDate,busy:Boolean,error:String?,close:()->Unit,save:(ReminderEntity,Boolean)->Unit){
-    val id=rememberSaveable{old?.id?:UUID.randomUUID().toString()};val zoneId=old?.zoneId?:ZoneId.systemDefault().id
-    val base=old?.dueAtMillis?.let{Instant.ofEpochMilli(it).atZone(ZoneId.of(zoneId))}?:selected.atTime(9,0).atZone(ZoneId.of(zoneId))
-    var title by rememberSaveable{mutableStateOf(old?.title?:"")};var notes by rememberSaveable{mutableStateOf(old?.notes?:"")};var hasDate by rememberSaveable{mutableStateOf(old==null||old.dueAtMillis!=null)};var timed by rememberSaveable{mutableStateOf(old?.let{!it.dateOnly}?:false)}
-    var date by rememberSaveable{mutableStateOf(base.toLocalDate().toString())};var time by rememberSaveable{mutableStateOf(base.toLocalTime().withSecond(0).withNano(0).toString())};var zone by rememberSaveable{mutableStateOf(zoneId)}
-    var frequency by rememberSaveable{mutableStateOf(old?.recurrence?.frequency?.name?:"NONE")};var interval by rememberSaveable{mutableStateOf((old?.recurrence?.interval?:1).toString())};var until by rememberSaveable{mutableStateOf(old?.recurrence?.untilEpochDay?.let{LocalDate.ofEpochDay(it).toString()}.orEmpty())}
-    EditorFrame(if(old==null)"New reminder" else "Edit entire reminder series",busy,error,close,{
-        val z=ZoneId.of(zone);val day=LocalDate.parse(date)
-        val due=if(!hasDate)null else if(timed)day.atTime(LocalTime.parse(time)).atZone(z).toInstant().toEpochMilli()else day.atStartOfDay(z).toInstant().toEpochMilli()
-        val proposed=if(hasDate)recurrence(frequency,interval,until,day)else Recurrence(null)
-        val repeat=if(old!=null&&(!hasDate&&old.dueAtMillis==null||day==reminderBaseDate(old))&&old.recurrence.copy(anchorEpochDay=proposed.anchorEpochDay)==proposed)old.recurrence else proposed
-        save(ReminderEntity(id,title.trim(),due,old?.completedAtMillis,repeat,notes.trim(),z.id,!timed,old?.revision?:0),old==null)
-    }){
-        Field("Reminder title",title,!busy){title=it};Field("Notes (optional)",notes,!busy,single=false){notes=it}
-        val dirty=LocalMarkDraftDirty.current
-        Row(Modifier.fillMaxWidth().toggleable(hasDate,enabled=!busy,role=Role.Checkbox,onValueChange={dirty();hasDate=it;if(!it)frequency="NONE"}).heightIn(min=48.dp),verticalAlignment=Alignment.CenterVertically){Checkbox(hasDate,null);Text("Has due date",Modifier.padding(start=12.dp))}
-        if(hasDate){
-            BillingDateField("Due date",date,!busy){date=it}
-            Row(Modifier.fillMaxWidth().toggleable(timed,enabled=!busy,role=Role.Checkbox,onValueChange={dirty();timed=it}).heightIn(min=48.dp),verticalAlignment=Alignment.CenterVertically){Checkbox(timed,null);Text("Specific due time",Modifier.padding(start=12.dp))}
-            if(timed)CalendarTimeField("Due time",time,!busy){time=it}
-            Field("Time zone",zone,!busy){zone=it}
-            RepeatFields(frequency,interval,until,!busy,{frequency=it},{interval=it},{until=it})
-        }
-        Text("Undated reminders have no notifications. Complete or reopen a single occurrence from the list. Editing changes the entire series; date changes retain previous completion history. Configure notification timing after saving.",style=MaterialTheme.typography.bodySmall)
     }
 }

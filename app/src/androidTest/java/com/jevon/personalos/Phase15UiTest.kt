@@ -89,7 +89,7 @@ class Phase15UiTest {
             section("Overview"); capture("money-overview-dark")
             click("Schedule"); capture("schedule-dark")
             click("Library"); capture("library-dark")
-            compose.onNodeWithContentDescription("Settings").performClick(); capture("appearance-dark"); click("Done")
+            compose.onNodeWithContentDescription("Settings").performClick(); capture("appearance-dark"); click("Money")
             compose.onNodeWithContentDescription("Quick add").performClick(); capture("quick-add-dark")
         } finally { runBlocking { app.settings.setTheme(original.theme); app.settings.setDynamicColor(original.dynamicColor) } }
     }

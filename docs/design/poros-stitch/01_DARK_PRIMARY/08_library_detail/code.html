@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_stack" name="shell-type"/><title>Transaction Detail</title><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Sora:wght@600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "error-container": "#93000a", "primary-container": "#8d7fff", "on-tertiary-fixed": "#002117", "inverse-on-surface": "#2f3039", "outline": "#928ea0", "surface-container-low": "#1a1b23", "surface-container-lowest": "#0d0e16", "tertiary-fixed": "#84f8ce", "primary-fixed": "#e4dfff", "on-tertiary-fixed-variant": "#00513d", "secondary-fixed-dim": "#c7bfff", "tertiary": "#66dbb3", "on-background": "#e3e1ed", "secondary": "#c7bfff", "on-primary-container": "#23008d", "on-secondary-fixed-variant": "#443a8f", "on-primary-fixed-variant": "#4027be", "on-tertiary-container": "#003123", "tertiary-container": "#21a37f", "on-primary-fixed": "#170065", "surface-container-highest": "#33343d", "error": "#ffb4ab", "outline-variant": "#474554", "background": "#12131b", "tertiary-fixed-dim": "#66dbb3", "on-surface-variant": "#c8c4d7", "inverse-surface": "#e3e1ed", "on-secondary-container": "#b8afff", "surface-variant": "#33343d", "on-primary": "#29009f", "primary-fixed-dim": "#c7bfff", "on-error": "#690005", "primary": "#c7bfff", "surface-container": "#1e1f28", "on-secondary-fixed": "#170164", "surface": "#12131b", "secondary-fixed": "#e4dfff", "surface-tint": "#c7bfff", "inverse-primary": "#5945d6", "on-surface": "#e3e1ed", "surface-container-high": "#292932", "on-tertiary": "#003829", "secondary-container": "#473c92", "on-error-container": "#ffdad6", "surface-bright": "#383842", "surface-dim": "#12131b", "on-secondary": "#2d2178" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "space-lg": "1.5rem", "space-xs": "0.25rem", "space-md": "1rem", "gutter-mobile": "0.75rem", "margin": "1.5rem", "margin-mobile": "1rem", "gutter": "1rem", "space-xl": "2rem", "space-sm": "0.5rem" }, "fontFamily": { "headline-sm": ["Sora"], "label-md": ["Inter"], "display-lg": ["Sora"], "label-lg": ["Inter"], "display-lg-mobile": ["Sora"], "label-sm": ["Inter"], "body-lg": ["Inter"], "headline-md": ["Sora"], "headline-lg": ["Sora"], "body-md": ["Inter"], "title-md": ["Inter"], "body-sm": ["Inter"] }, "fontSize": { "headline-sm": ["18px", { "lineHeight": "24px", "fontWeight": "600" }], "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }], "display-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }], "display-lg-mobile": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "label-sm": ["10px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }], "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }], "headline-md": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "headline-lg": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }], "title-md": ["16px", { "lineHeight": "22px", "fontWeight": "600" }], "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }] } } } };</script><style>@layer base { .pb-safe { padding-bottom: max(env(safe-area-inset-bottom, 0px), 16px); } .pt-safe { padding-top: max(env(safe-area-inset-top, 0px), 0px); } } ::-webkit-scrollbar { display: none; }</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface-container-lowest text-on-surface font-body-md text-body-md min-h-screen selection:bg-primary-container selection:text-on-primary-container"><header class="fixed top-0 w-full z-50 pt-safe bg-surface-container/85 backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.35)]"><div class="h-16 px-margin-mobile flex items-center justify-between"><div class="flex items-center gap-space-sm"><button aria-label="Go back or dismiss" class="w-11 h-11 -ml-1 flex items-center justify-center rounded-xl bg-surface-container-high text-on-surface hover:text-primary transition-all active:scale-95" onclick="history.back()"><span class="material-symbols-outlined text-[20px]">arrow_back</span></button><h1 class="font-headline-sm text-headline-sm text-on-surface tracking-tight truncate max-w-[210px]">Transaction Detail</h1></div><div class="flex items-center gap-space-xs"><button aria-label="More actions" class="w-11 h-11 flex items-center justify-center rounded-xl text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all active:scale-95"><span class="material-symbols-outlined text-[20px]">more_vert</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center ml-1"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full min-h-screen pt-16 pb-safe px-margin-mobile bg-surface-container-lowest"><div class="flex flex-col w-full pb-safe">
+<!-- Interactive Top Action Sub-bar -->
+<div class="flex items-center justify-between py-space-sm mb-space-sm">
+<div class="flex items-center gap-space-xs">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+        Vault Sync: Offline Only
+      </span>
+</div>
+<div class="flex items-center gap-1">
+<button aria-label="Bookmark" class="w-10 h-10 flex items-center justify-center rounded-xl bg-surface-container hover:bg-surface-container-high text-primary active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">bookmark</span>
+</button>
+<button aria-label="Share" class="w-10 h-10 flex items-center justify-center rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[20px]">share</span>
+</button>
+<button aria-label="More options" class="w-10 h-10 flex items-center justify-center rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[20px]">more_horiz</span>
+</button>
+</div>
+</div>
+<!-- Media Hero Presentation Card -->
+<div class="relative w-full rounded-2xl bg-surface-container p-space-md shadow-xl overflow-hidden mb-space-md">
+<!-- Ambient Backdrop Illumination Glow -->
+<div class="absolute -top-12 -right-12 w-48 h-48 bg-primary/10 rounded-full blur-3xl pointer-events-none"></div>
+<div class="flex gap-space-md relative z-10">
+<!-- Media Poster with Fallback Preview Toggle Feature -->
+<div class="relative shrink-0 w-28 h-40 rounded-xl overflow-hidden shadow-lg bg-surface-container-high" id="posterWrapper">
+<img class="w-full h-full object-cover" data-alt="Cinematic neo-noir dark corporate thriller poster with sterile office fluorescent lights, turquoise neon tones, an enigmatic protagonist in a retro-futuristic labyrinthine office, premium 8k digital cinematography in deep obsidian and cyan palette" id="mainPoster" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBncFqUHAgzFOOPSSk2m_GEddtsyQ9uo28Ue01meyc4zoYm812KClmu6GxIdCO6qexBftOWdKkk_KOuH0sVrZGxrs3M_ANwte7xexYYirngN-8_gNi9e-CGNmYBSsU2c-MpTiDdSc-Mt4GSJETRC8fyoNknD-fWSKZlZcTzg14mT73PwaJwmzuEDDo7t6yLopYSU4tibrD3357yFf04tenmla8M57bsgytU1r_xDQ"/>
+<!-- Fallback Monogram Card (Hidden by default, togglable) -->
+<div class="hidden absolute inset-0 w-full h-full bg-gradient-to-br from-secondary-container via-surface-container-high to-surface-container-lowest p-3 flex flex-col justify-between items-center text-center" id="fallbackPoster">
+<span class="font-headline-lg text-primary tracking-widest pt-3">SV</span>
+<div class="flex flex-col items-center">
+<span class="material-symbols-outlined text-primary-container text-[20px]">tv</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant mt-0.5">Sci-Fi</span>
+</div>
+</div>
+<!-- 4K HDR Badge Overlay -->
+<div class="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded bg-surface-container-lowest/85 backdrop-blur-md">
+<span class="font-label-sm text-[9px] font-bold tracking-widest text-primary-fixed">4K HDR</span>
+</div>
+</div>
+<!-- Hero Metadata -->
+<div class="flex flex-col justify-between flex-1 min-w-0">
+<div>
+<!-- Pulsing Live Pill -->
+<div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-tertiary-container/30 mb-1.5">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-tertiary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-tertiary"></span>
+</span>
+<span class="font-label-sm text-[10px] tracking-wide text-tertiary font-bold uppercase">Watching Now</span>
+</div>
+<!-- Titles -->
+<h2 class="font-headline-md text-headline-md text-on-surface truncate leading-tight">Severance</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate mt-0.5">Season 2 • Dir. Ben Stiller</p>
+<!-- Badges -->
+<div class="flex flex-wrap items-center gap-1.5 mt-2">
+<span class="px-2 py-0.5 rounded-lg bg-surface-container-high text-on-surface text-label-sm font-label-sm">
+              Apple TV+
+            </span>
+<span class="px-2 py-0.5 rounded-lg bg-surface-container-high text-on-surface-variant text-label-sm font-label-sm">
+              Sci-Fi / Thriller
+            </span>
+</div>
+</div>
+<!-- Fallback toggle pill trigger -->
+<button class="inline-flex items-center gap-1 text-left text-on-surface-variant hover:text-primary transition-colors text-label-sm font-label-sm mt-2" id="toggleFallbackBtn" type="button">
+<span class="material-symbols-outlined text-[14px]">flip_camera_android</span>
+<span id="fallbackText">Simulate missing cover</span>
+</button>
+</div>
+</div>
+<!-- Overall Season Progress Gauge -->
+<div class="mt-4 pt-3 bg-surface-container-low rounded-xl p-3">
+<div class="flex items-center justify-between text-label-sm font-label-sm mb-1.5">
+<span class="text-on-surface font-medium">Season Completion</span>
+<span class="text-primary font-bold">4 of 10 episodes (40%)</span>
+</div>
+<div class="w-full h-2 rounded-full bg-surface-container-highest overflow-hidden">
+<div class="h-full bg-gradient-to-r from-primary-container to-primary rounded-full transition-all duration-300" id="progressFill" style="width: 40%;"></div>
+</div>
+</div>
+</div>
+<!-- Media Type Adaptor Indicator Tabs -->
+<div class="mb-space-md overflow-x-auto no-scrollbar">
+<div class="flex items-center gap-2 min-w-max pb-1">
+<div class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-on-primary font-label-md text-label-md shadow-md">
+<span class="material-symbols-outlined text-[18px]">tv</span>
+<span>TV Episodes</span>
+<span class="w-1.5 h-1.5 rounded-full bg-on-primary ml-1"></span>
+</div>
+<div class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface-variant font-label-md text-label-md transition-colors opacity-75">
+<span class="material-symbols-outlined text-[18px]">menu_book</span>
+<span>Book Pages</span>
+</div>
+<div class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface-variant font-label-md text-label-md transition-colors opacity-75">
+<span class="material-symbols-outlined text-[18px]">sports_esports</span>
+<span>Game Playtime</span>
+</div>
+<div class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface-variant font-label-md text-label-md transition-colors opacity-75">
+<span class="material-symbols-outlined text-[18px]">movie</span>
+<span>Movie Status</span>
+</div>
+</div>
+</div>
+<!-- Current Playhead & Stepper Controls (M3 Ergonomic Layout) -->
+<div class="w-full rounded-2xl bg-surface-container p-space-md shadow-lg mb-space-md">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-lg bg-primary-container/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">play_circle</span>
+</div>
+<div>
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider block">Current Playhead</span>
+<h3 class="font-title-md text-title-md text-on-surface" id="episodeTitle">Episode 4: Woe</h3>
+</div>
+</div>
+<span class="px-2 py-1 rounded-md bg-tertiary-container/25 text-tertiary font-label-sm text-label-sm font-semibold">Active</span>
+</div>
+<!-- Ergonomic Stepper Button Group -->
+<div class="grid grid-cols-2 gap-space-sm mb-3">
+<button class="min-h-[52px] px-4 rounded-xl bg-surface-container-high hover:bg-surface-bright text-on-surface font-label-lg text-label-lg flex items-center justify-center gap-2 active:scale-95 transition-all" id="btnDecrement" type="button">
+<span class="material-symbols-outlined text-[20px]">remove_circle_outline</span>
+<span>- 1 Episode</span>
+</button>
+<button class="min-h-[52px] px-4 rounded-xl bg-primary text-on-primary font-label-lg text-label-lg shadow-lg shadow-primary/25 hover:brightness-110 flex items-center justify-center gap-2 active:scale-95 transition-all" id="btnIncrement" type="button">
+<span class="material-symbols-outlined text-[20px]">add_circle</span>
+<span>+ 1 Episode</span>
+</button>
+</div>
+<!-- Mark Season Finished Checkbox Action -->
+<button class="w-full min-h-[48px] px-3 py-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container-high text-on-surface flex items-center justify-between transition-colors active:scale-98" id="markSeasonBtn" type="button">
+<div class="flex items-center gap-2.5">
+<div class="w-5 h-5 rounded-md bg-surface-container-highest flex items-center justify-center text-on-primary transition-colors" id="markCheck">
+<span class="material-symbols-outlined text-[16px] hidden" id="markCheckIcon">check</span>
+</div>
+<span class="font-label-md text-label-md font-medium text-on-surface">Mark Season Finished</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]">done_all</span>
+</button>
+</div>
+<!-- Next Episode Premiere & Local Alarm Card -->
+<div class="w-full rounded-2xl bg-surface-container p-space-md shadow-lg mb-space-md relative overflow-hidden">
+<div class="flex items-start gap-3">
+<div class="w-10 h-10 rounded-xl bg-secondary-container/40 flex items-center justify-center text-secondary shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[20px]">notifications_active</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-secondary font-semibold uppercase tracking-wider">Release Alert</span>
+<span class="font-label-sm text-[11px] text-tertiary bg-tertiary/10 px-2 py-0.5 rounded-md">Device Alarm Synced</span>
+</div>
+<h4 class="font-title-md text-title-md text-on-surface mt-1 truncate">Next Episode Premiere</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+          Fri, Nov 1 at 09:00 AM • <span class="text-on-surface">Episode 5: The Grim Barbarity</span>
+</p>
+<div class="flex items-center gap-1.5 mt-2.5 text-label-sm font-label-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px] text-primary">schedule</span>
+<span>Local notification scheduled strictly on this Android hardware</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Encrypted Personal Vault Notes & Rating -->
+<div class="w-full rounded-2xl bg-surface-container p-space-md shadow-lg mb-space-lg">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-1.5">
+<div class="flex items-center text-primary">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]">star_half</span>
+</div>
+<span class="font-headline-sm text-headline-sm text-on-surface ml-1">4.0</span>
+</div>
+<!-- AES-256 Offline Badge -->
+<div class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-high text-tertiary font-label-sm text-label-sm font-mono">
+<span class="material-symbols-outlined text-[14px]">lock</span>
+<span>AES-256 Vault</span>
+</div>
+</div>
+<!-- Personal Observation Memo -->
+<div class="relative p-3.5 rounded-xl bg-surface-container-low mb-3">
+<span class="material-symbols-outlined absolute top-2 right-2 text-surface-container-highest text-[28px] opacity-40">format_quote</span>
+<p class="font-body-sm text-body-sm text-on-surface leading-relaxed relative z-10 italic">
+        "Incredible cinematography and sound design in episode 4. Lumon basement sequence pacing was peak television."
+      </p>
+<div class="flex items-center justify-between mt-2 pt-2 text-label-sm font-label-sm text-on-surface-variant">
+<span>Logged yesterday at 11:42 PM</span>
+<span class="text-tertiary">Zero Cloud Telemetry</span>
+</div>
+</div>
+<button class="w-full min-h-[44px] px-3 rounded-xl bg-surface-container-high hover:bg-surface-bright text-on-surface font-label-md text-label-md flex items-center justify-center gap-2 active:scale-98 transition-all" type="button">
+<span class="material-symbols-outlined text-[16px]">edit_note</span>
+<span>Edit Encrypted Memo &amp; Score</span>
+</button>
+</div>
+<!-- Persistent Bottom Action Bar (Clearance for Android Navigation Gesture Bar) -->
+<div class="sticky bottom-0 left-0 right-0 pt-2 pb-2 bg-surface-container-lowest/90 backdrop-blur-xl">
+<div class="flex items-center gap-space-sm">
+<button class="flex-1 min-h-[52px] rounded-2xl bg-primary hover:bg-primary-container text-on-primary font-label-lg text-label-lg font-bold flex items-center justify-center gap-2 shadow-lg shadow-primary/25 active:scale-98 transition-all" type="button">
+<span class="material-symbols-outlined text-[22px]" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+<span>Resume on Apple TV</span>
+</button>
+<button aria-label="Export or Share Ledger Entry" class="w-13 h-13 min-h-[52px] min-w-[52px] rounded-2xl bg-surface-container-high hover:bg-surface-bright text-on-surface flex items-center justify-center active:scale-95 transition-all shadow-md">
+<span class="material-symbols-outlined text-[20px]">ios_share</span>
+</button>
+</div>
+</div>
+</div>
+<script>
+  // Interactive Local State Simulator for Poros Personal OS
+  (function initPorosDetail() {
+    let currentEpisode = 4;
+    const totalEpisodes = 10;
+    let isFinished = false;
+
+    const titles = {
+      1: "Episode 1: Good News About Hell",
+      2: "Episode 2: Half Loop",
+      3: "Episode 3: In Perpetuity",
+      4: "Episode 4: Woe",
+      5: "Episode 5: The Grim Barbarity",
+      6: "Episode 6: Hide and Seek",
+      7: "Episode 7: Defiant Jazz",
+      8: "Episode 8: What's for Dinner?",
+      9: "Episode 9: The We We Are",
+      10: "Episode 10: Lumon Reckoning"
+    };
+
+    const epTitleEl = document.getElementById('episodeTitle');
+    const progressFillEl = document.getElementById('progressFill');
+    const btnIncrement = document.getElementById('btnIncrement');
+    const btnDecrement = document.getElementById('btnDecrement');
+    const markSeasonBtn = document.getElementById('markSeasonBtn');
+    const markCheck = document.getElementById('markCheck');
+    const markCheckIcon = document.getElementById('markCheckIcon');
+
+    // Missing Cover Fallback Toggle Simulator
+    const toggleFallbackBtn = document.getElementById('toggleFallbackBtn');
+    const mainPoster = document.getElementById('mainPoster');
+    const fallbackPoster = document.getElementById('fallbackPoster');
+    const fallbackText = document.getElementById('fallbackText');
+
+    let fallbackActive = false;
+    toggleFallbackBtn?.addEventListener('click', () => {
+      fallbackActive = !fallbackActive;
+      if (fallbackActive) {
+        mainPoster.classList.add('hidden');
+        fallbackPoster.classList.remove('hidden');
+        fallbackText.textContent = "Restore cover image";
+      } else {
+        mainPoster.classList.remove('hidden');
+        fallbackPoster.classList.add('hidden');
+        fallbackText.textContent = "Simulate missing cover";
+      }
+    });
+
+    function updateUI() {
+      if (epTitleEl) {
+        epTitleEl.textContent = titles[currentEpisode] || `Episode ${currentEpisode}`;
+      }
+      if (progressFillEl) {
+        const pct = Math.round((currentEpisode / totalEpisodes) * 100);
+        progressFillEl.style.width = pct + '%';
+      }
+      if (isFinished) {
+        markCheck.classList.remove('bg-surface-container-highest');
+        markCheck.classList.add('bg-tertiary');
+        markCheckIcon.classList.remove('hidden');
+      } else {
+        markCheck.classList.remove('bg-tertiary');
+        markCheck.classList.add('bg-surface-container-highest');
+        markCheckIcon.classList.add('hidden');
+      }
+    }
+
+    btnIncrement?.addEventListener('click', () => {
+      if (currentEpisode < totalEpisodes) {
+        currentEpisode++;
+        if (currentEpisode === totalEpisodes) isFinished = true;
+        updateUI();
+      }
+    });
+
+    btnDecrement?.addEventListener('click', () => {
+      if (currentEpisode > 1) {
+        currentEpisode--;
+        isFinished = false;
+        updateUI();
+      }
+    });
+
+    markSeasonBtn?.addEventListener('click', () => {
+      isFinished = !isFinished;
+      if (isFinished) {
+        currentEpisode = totalEpisodes;
+      }
+      updateUI();
+    });
+  })();
+</script></main></body></html>

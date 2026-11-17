@@ -37,16 +37,16 @@ class TodayPersonalizationDeviceTest {
         try {
             runBlocking { app.settings.setPreferredCurrency("IDR"); app.settings.setTodayBudget(null); app.settings.setTheme(ThemeMode.LIGHT); app.settings.setDynamicColor(false) }
             compose.onNodeWithContentDescription("Developer previews").performClick(); tap("Personal")
-            waitFor("Choose Today budget")
+            compose.waitUntil(10000) { compose.onAllNodesWithContentDescription("Choose Today budget").fetchSemanticsNodes().isNotEmpty() }
             val today = runBlocking { app.database.observeToday(ZonedDateTime.now(), app.settings.settings.first()).first() }
             assertTrue(today.budget == null || today.budget!!.budget.currencyCode == "IDR")
             capture("personal-today-idr-light")
-            tap("Choose Today budget"); capture("personal-budget-chooser"); tap("Close")
+            compose.onNodeWithContentDescription("Choose Today budget").performClick(); capture("personal-budget-chooser"); tap("Close")
             compose.onNodeWithContentDescription("Settings").performClick()
             compose.onNodeWithText("Preferred currency (ISO code)").performTextReplacement("USD")
             tap("Save currency")
             compose.waitUntil(10000) { runBlocking { app.settings.settings.first().preferredCurrency == "USD" } }
-            capture("preferred-currency-settings"); tap("Done")
+            capture("preferred-currency-settings"); tap("Today")
             compose.activityRule.scenario.recreate()
             assertEquals("USD", runBlocking { app.settings.settings.first().preferredCurrency })
             // Choose a currency with no current budget to guarantee a no-budget state without entity writes.

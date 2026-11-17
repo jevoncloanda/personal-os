@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Sora:wght@600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;background-color:#0d0e16;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "secondary": "#c7bfff", "surface-bright": "#383842", "primary-container": "#8d7fff", "secondary-fixed-dim": "#c7bfff", "on-primary-container": "#23008d", "on-primary-fixed-variant": "#4027be", "on-error-container": "#ffdad6", "on-tertiary-fixed": "#002117", "error-container": "#93000a", "surface-container-highest": "#33343d", "surface-dim": "#12131b", "outline-variant": "#474554", "surface-variant": "#33343d", "surface-container-low": "#1a1b23", "tertiary-fixed": "#84f8ce", "on-secondary-fixed": "#170164", "secondary-fixed": "#e4dfff", "tertiary-fixed-dim": "#66dbb3", "tertiary": "#66dbb3", "on-surface-variant": "#c8c4d7", "on-tertiary-container": "#003123", "on-primary-fixed": "#170065", "on-error": "#690005", "primary": "#c7bfff", "inverse-on-surface": "#2f3039", "surface-tint": "#c7bfff", "on-tertiary-fixed-variant": "#00513d", "surface-container": "#1e1f28", "on-tertiary": "#003829", "error": "#ffb4ab", "surface-container-lowest": "#0d0e16", "primary-fixed": "#e4dfff", "outline": "#928ea0", "on-secondary": "#2d2178", "surface-container-high": "#292932", "on-background": "#e3e1ed", "tertiary-container": "#21a37f", "secondary-container": "#473c92", "inverse-primary": "#5945d6", "background": "#12131b", "on-secondary-fixed-variant": "#443a8f", "on-surface": "#e3e1ed", "surface": "#12131b", "on-secondary-container": "#b8afff", "inverse-surface": "#e3e1ed", "primary-fixed-dim": "#c7bfff", "on-primary": "#29009f" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "margin": "1.5rem", "gutter-mobile": "0.75rem", "margin-mobile": "1rem", "space-md": "1rem", "gutter": "1rem", "space-xs": "0.25rem", "space-xl": "2rem", "space-sm": "0.5rem", "space-lg": "1.5rem" }, "fontFamily": { "label-sm": ["Inter"], "body-md": ["Inter"], "body-lg": ["Inter"], "label-md": ["Inter"], "title-md": ["Inter"], "headline-md": ["Sora"], "display-lg": ["Sora"], "headline-lg": ["Sora"], "label-lg": ["Inter"], "body-sm": ["Inter"], "headline-sm": ["Sora"], "display-lg-mobile": ["Sora"] }, "fontSize": { "label-sm": ["10px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }], "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }], "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }], "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }], "title-md": ["16px", { "lineHeight": "22px", "fontWeight": "600" }], "headline-md": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "display-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "headline-lg": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }], "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }], "headline-sm": ["18px", { "lineHeight": "24px", "fontWeight": "600" }], "display-lg-mobile": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }] } } } }</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface-container-lowest text-on-surface font-body-md text-body-md flex flex-col min-h-screen selection:bg-primary-container selection:text-on-primary-container"><header class="fixed top-0 w-full z-50 pt-safe bg-surface-container-lowest/85 backdrop-blur-xl"><div class="h-16 px-gutter flex items-center justify-between"><div class="flex items-center gap-space-sm min-w-0"><div class="w-10 h-10 rounded-xl bg-surface-container-low flex items-center justify-center text-primary shrink-0 shadow-[0_1px_8px_rgba(0,0,0,0.35)]"><span class="material-symbols-outlined text-[24px]">hexagon</span></div><div class="flex flex-col min-w-0"><div class="flex items-center gap-space-xs"><span class="font-headline-sm text-headline-sm tracking-tight text-on-surface truncate">Poros</span><div class="w-2 h-2 rounded-full bg-tertiary animate-pulse shrink-0"></div></div><span class="font-label-sm text-label-sm text-on-surface-variant truncate uppercase tracking-widest">Settings</span></div></div><div class="flex items-center gap-space-sm shrink-0"><button aria-label="Notifications" class="w-11 h-11 rounded-full flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" type="button"><span class="material-symbols-outlined text-[22px]">notifications</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex flex-col relative w-full pt-16 pb-28 bg-surface-container-lowest min-h-screen"><div class="flex flex-col w-full px-margin-mobile pb-6 space-y-space-lg">
+<!-- Profile Card -->
+<div class="relative overflow-hidden rounded-xl bg-surface-container p-space-md shadow-md">
+<div class="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-primary/10 blur-2xl pointer-events-none"></div>
+<div class="flex items-center gap-space-md relative z-10">
+<div class="relative w-14 h-14 rounded-full overflow-hidden shrink-0 shadow-sm bg-surface-container-high">
+<img class="w-full h-full object-cover" data-alt="Stylized portrait of Nadia Ramadhani, modern tech professional with subtle cybernetic aesthetic, soft moody neon rim lighting, obsidian deep space dark background, vibrant purple and cyan reflection, clean studio editorial look" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCQh-xxfsh_yardJwLF3y9oMCzOhdcUbVk4Q6Hv3EPCrDrXHToTBbrk1YB-hoc0f61wJsqItYd8U1i8696VtLBl8Yf51Y5e7jagjugMpZQmR5-_8eZbLy2LEJtoQY30-Dkj3dbwDAy9BYjxr4VOjxGRJ1zl3Idu18ruvoEuoAxOq3ZtCU6IK5Iaeq0HN30VH1r0I2CqVHgRVt2wrb6_VcwpGxUlNAw3cXqwr6DRUw"/>
+<div class="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-tertiary"></div>
+</div>
+<div class="flex flex-col min-w-0 flex-1">
+<div class="flex items-center gap-space-xs">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">Nadia Ramadhani</span>
+<span class="material-symbols-outlined text-[16px] text-tertiary" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">nadia@poros.internal</span>
+<div class="mt-space-xs flex items-center gap-space-xs">
+<div class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-container-low text-tertiary text-label-sm font-label-sm shadow-sm">
+<span class="material-symbols-outlined text-[12px]">lock</span>
+<span>AES-256 Encrypted</span>
+</div>
+</div>
+</div>
+<button aria-label="Edit Profile" class="w-10 h-10 rounded-xl bg-surface-container-high text-on-surface-variant hover:text-on-surface hover:bg-surface-bright flex items-center justify-center transition-colors" type="button">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+</button>
+</div>
+</div>
+<!-- Appearance & Theme Section -->
+<div class="space-y-space-sm">
+<div class="flex items-center justify-between px-space-xs">
+<div class="flex items-center gap-space-xs text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]">palette</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider">Appearance &amp; Theme</span>
+</div>
+<span class="font-label-sm text-label-sm text-primary">Obsidian Kinetic</span>
+</div>
+<div class="rounded-xl bg-surface-container p-space-md space-y-space-md shadow-md">
+<!-- 3-Way Segmented Control -->
+<div class="p-1 rounded-xl bg-surface-container-low flex items-center gap-1 relative" id="theme-segmented">
+<button class="flex-1 py-2 rounded-lg flex items-center justify-center gap-1.5 text-on-surface-variant hover:text-on-surface transition-colors font-label-md text-label-md" type="button">
+<span class="material-symbols-outlined text-[16px]">light_mode</span>
+<span>Light</span>
+</button>
+<button class="flex-1 py-2 rounded-lg flex items-center justify-center gap-1.5 bg-primary text-on-primary font-label-md text-label-md shadow-sm transition-all" type="button">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">dark_mode</span>
+<span>Dark</span>
+</button>
+<button class="flex-1 py-2 rounded-lg flex items-center justify-center gap-1.5 text-on-surface-variant hover:text-on-surface transition-colors font-label-md text-label-md" type="button">
+<span class="material-symbols-outlined text-[16px]">settings_system_daydream</span>
+<span>System</span>
+</button>
+</div>
+<!-- Theme variant pill indicator -->
+<div class="flex items-center justify-between p-3 rounded-xl bg-surface-container-high/60">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-lg bg-surface-container-lowest flex items-center justify-center text-primary shadow-sm">
+<span class="material-symbols-outlined text-[18px]">lens_blur</span>
+</div>
+<div class="flex flex-col">
+<span class="font-title-md text-title-md text-on-surface">Obsidian Void Engine</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Pure #0D0E16 base with OLED kinetic reactive glow</span>
+</div>
+</div>
+<span class="w-2.5 h-2.5 rounded-full bg-primary animate-pulse"></span>
+</div>
+<!-- Auto Theme Switch -->
+<div class="flex items-center justify-between pt-space-xs">
+<div class="flex flex-col pr-space-md">
+<span class="font-title-md text-title-md text-on-surface">Dynamic Contrast Sync</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Adjust obsidian luminance based on ambient light</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer shrink-0">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-12 h-7 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-on-primary peer-checked:bg-primary after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-on-surface after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:after:bg-on-primary"></div>
+</label>
+</div>
+</div>
+</div>
+<!-- Finance & Budget Section -->
+<div class="space-y-space-sm">
+<div class="flex items-center gap-space-xs px-space-xs text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]">payments</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider">Finance &amp; Budget Engine</span>
+</div>
+<div class="rounded-xl bg-surface-container p-space-md space-y-space-md shadow-md">
+<!-- Currency selector row -->
+<div class="flex items-center justify-between py-1">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-xl bg-surface-container-high flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[20px]">currency_exchange</span>
+</div>
+<div class="flex flex-col">
+<span class="font-title-md text-title-md text-on-surface">Primary Currency</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Indonesian Rupiah</span>
+</div>
+</div>
+<div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container-low text-on-surface font-label-md text-label-md shadow-sm">
+<span class="font-label-md text-label-md text-primary">IDR</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">(Rp)</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">expand_more</span>
+</div>
+</div>
+<!-- Budget cycle day -->
+<div class="flex items-center justify-between py-1">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-xl bg-surface-container-high flex items-center justify-center text-secondary shrink-0">
+<span class="material-symbols-outlined text-[20px]">event_repeat</span>
+</div>
+<div class="flex flex-col">
+<span class="font-title-md text-title-md text-on-surface">Budget Reset Day</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Monthly cycle begins</span>
+</div>
+</div>
+<span class="px-3 py-1 rounded-lg bg-surface-container-low font-label-md text-label-md text-secondary">Day 1</span>
+</div>
+<!-- Today Budget Selection -->
+<div class="p-space-sm rounded-xl bg-surface-container-low space-y-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-on-surface">Today's Daily Target</span>
+<span class="font-label-md text-label-md text-tertiary">Rp 350.000 / day</span>
+</div>
+<div class="w-full bg-surface-container-highest h-2 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 62%;"></div>
+</div>
+<div class="flex justify-between items-center text-label-sm font-label-sm text-on-surface-variant">
+<span>Spent: Rp 217.000</span>
+<span>Remaining: Rp 133.000</span>
+</div>
+</div>
+<!-- Spending Limits Switch -->
+<div class="flex items-center justify-between pt-1">
+<div class="flex flex-col pr-space-md">
+<span class="font-title-md text-title-md text-on-surface">Spending Limit Alerts</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Instant push notification at 85% and 100% threshold</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer shrink-0">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-12 h-7 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-on-primary peer-checked:bg-primary after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-on-surface after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:after:bg-on-primary"></div>
+</label>
+</div>
+</div>
+</div>
+<!-- Privacy & Storage Section -->
+<div class="space-y-space-sm">
+<div class="flex items-center gap-space-xs px-space-xs text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]">security</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider">Privacy &amp; Local Storage</span>
+</div>
+<div class="rounded-xl bg-surface-container p-space-md space-y-space-md shadow-md">
+<!-- Offline First Mode Status -->
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-xl bg-surface-container-high flex items-center justify-center text-tertiary shrink-0">
+<span class="material-symbols-outlined text-[20px]">cloud_off</span>
+</div>
+<div class="flex flex-col">
+<span class="font-title-md text-title-md text-on-surface">Zero-Knowledge Offline</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">No remote analytics or tracking telemetry</span>
+</div>
+</div>
+<div class="px-2.5 py-1 rounded-full bg-surface-container-low text-tertiary font-label-sm text-label-sm flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-ping"></span>
+<span>Active</span>
+</div>
+</div>
+<!-- Biometric Fingerprint -->
+<div class="flex items-center justify-between py-1">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-xl bg-surface-container-high flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[20px]">fingerprint</span>
+</div>
+<div class="flex flex-col">
+<span class="font-title-md text-title-md text-on-surface">Biometric Unlock</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Require fingerprint for high-value vault ops</span>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer shrink-0">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-12 h-7 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-on-primary peer-checked:bg-primary after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-on-surface after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:after:bg-on-primary"></div>
+</label>
+</div>
+<!-- Export database button -->
+<button class="w-full h-12 rounded-xl bg-surface-container-high hover:bg-surface-bright active:scale-[0.98] transition-all flex items-center justify-between px-space-md text-on-surface" type="button">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-[20px] text-secondary">file_download</span>
+<span class="font-label-lg text-label-lg">Export Encrypted Database (.sqlite)</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">14.8 MB</span>
+</button>
+</div>
+</div>
+<!-- Visual Feature Graphic / Storage Map -->
+<div class="rounded-xl bg-surface-container p-space-md space-y-space-sm shadow-md">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-on-surface">Local Vault Allocation</span>
+<span class="font-label-sm text-label-sm text-primary">14.8 MB / 512 MB reserved</span>
+</div>
+<!-- Simple Storage Bar -->
+<div class="h-3 w-full bg-surface-container-low rounded-full overflow-hidden flex gap-0.5 p-0.5">
+<div class="bg-primary h-full rounded-l-full" style="width: 45%;"></div>
+<div class="bg-tertiary h-full" style="width: 30%;"></div>
+<div class="bg-secondary h-full rounded-r-full" style="width: 15%;"></div>
+</div>
+<div class="flex items-center justify-between text-label-sm font-label-sm text-on-surface-variant pt-1">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span>Transactions</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span>Schedules</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span>Receipts</span>
+</div>
+</div>
+</div>
+<!-- About Poros Section -->
+<div class="space-y-space-sm">
+<div class="flex items-center gap-space-xs px-space-xs text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]">info</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider">About Poros</span>
+</div>
+<div class="rounded-xl bg-surface-container p-space-md space-y-space-sm shadow-md">
+<div class="flex items-center justify-between py-1">
+<span class="font-body-md text-body-md text-on-surface-variant">Core Engine</span>
+<span class="font-label-md text-label-md text-on-surface">Poros Core v2.4.0 (x86_64/arm64)</span>
+</div>
+<div class="flex items-center justify-between py-1">
+<span class="font-body-md text-body-md text-on-surface-variant">License</span>
+<span class="font-label-md text-label-md text-tertiary">Personal Pro (Lifetime)</span>
+</div>
+<div class="flex items-center justify-between py-1">
+<span class="font-body-md text-body-md text-on-surface-variant">Sync Driver</span>
+<div class="flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span class="font-label-md text-label-md text-on-surface">SQLite-WASM + Room</span>
+</div>
+</div>
+<div class="flex items-center justify-between py-1">
+<span class="font-body-md text-body-md text-on-surface-variant">Architecture</span>
+<span class="font-label-md text-label-md text-on-surface">Pure Obsidian Kinetic Dark</span>
+</div>
+<!-- Action buttons -->
+<div class="pt-space-sm grid grid-cols-2 gap-space-sm">
+<button class="h-10 rounded-xl bg-surface-container-high hover:bg-surface-bright active:scale-95 transition-all text-on-surface font-label-md text-label-md flex items-center justify-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[16px]">terminal</span>
+<span>Changelog</span>
+</button>
+<button class="h-10 rounded-xl bg-surface-container-high hover:bg-surface-bright active:scale-95 transition-all text-on-surface font-label-md text-label-md flex items-center justify-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[16px]">bug_report</span>
+<span>Diagnostics</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Sign out / purge button -->
+<div class="pt-space-xs pb-space-sm">
+<button class="w-full h-12 rounded-xl bg-surface-container-low hover:bg-error-container/40 active:scale-[0.98] text-error flex items-center justify-center gap-2 transition-all" type="button">
+<span class="material-symbols-outlined text-[20px]">lock_reset</span>
+<span class="font-label-lg text-label-lg">Lock Session &amp; Flush Memory</span>
+</button>
+<p class="text-center font-label-sm text-label-sm text-outline-variant mt-space-sm">
+      Poros Mobile • Build 2409.84.1 • All data remains strictly local
+    </p>
+</div>
+</div>
+<script>
+  // Simple segmented control click visual state
+  document.querySelectorAll('#theme-segmented button').forEach((btn) => {
+    btn.addEventListener('click', function() {
+      const parent = this.parentElement;
+      parent.querySelectorAll('button').forEach(b => {
+        b.className = 'flex-1 py-2 rounded-lg flex items-center justify-center gap-1.5 text-on-surface-variant hover:text-on-surface transition-colors font-label-md text-label-md';
+        const icon = b.querySelector('.material-symbols-outlined');
+        if (icon) icon.style.fontVariationSettings = "'FILL' 0";
+      });
+      this.className = 'flex-1 py-2 rounded-lg flex items-center justify-center gap-1.5 bg-primary text-on-primary font-label-md text-label-md shadow-sm transition-all';
+      const activeIcon = this.querySelector('.material-symbols-outlined');
+      if (activeIcon) activeIcon.style.fontVariationSettings = "'FILL' 1";
+    });
+  });
+</script></main><div class="fixed bottom-24 right-margin-mobile z-40"><button aria-label="Quick Action" class="w-14 h-14 rounded-2xl bg-primary text-on-primary flex items-center justify-center shadow-[0_0_16px_-2px_rgba(118,101,245,0.45)] hover:scale-95 active:scale-90 transition-transform" type="button"><span class="material-symbols-outlined text-[28px]">add</span></button></div><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface-container-low/95 backdrop-blur-xl shadow-[0_-1px_12px_rgba(0,0,0,0.5)]" data-active-classes="text-primary font-label-md"><div class="flex justify-around items-center h-16 px-space-xs"><a class="flex flex-col items-center justify-center gap-space-xs w-14 h-14 text-on-surface-variant hover:text-on-surface transition-all select-none" data-path="today" href="#"><span class="material-symbols-outlined text-[22px]">calendar_today</span><span class="font-label-sm text-label-sm">Today</span></a><a class="flex flex-col items-center justify-center gap-space-xs w-14 h-14 text-on-surface-variant hover:text-on-surface transition-all select-none" data-path="money" href="#"><span class="material-symbols-outlined text-[22px]">account_balance_wallet</span><span class="font-label-sm text-label-sm">Money</span></a><a class="flex flex-col items-center justify-center gap-space-xs w-14 h-14 text-on-surface-variant hover:text-on-surface transition-all select-none" data-path="schedule" href="#"><span class="material-symbols-outlined text-[22px]">pending_actions</span><span class="font-label-sm text-label-sm">Schedule</span></a><a class="flex flex-col items-center justify-center gap-space-xs w-14 h-14 text-on-surface-variant hover:text-on-surface transition-all select-none" data-path="library" href="#"><span class="material-symbols-outlined text-[22px]">folder_special</span><span class="font-label-sm text-label-sm">Library</span></a><a aria-current="page" class="flex flex-col items-center justify-center gap-space-xs w-14 h-14 transition-all select-none text-primary font-label-md" data-path="settings" href="#"><span class="material-symbols-outlined text-[22px]">tune</span><span class="font-label-sm text-label-sm">Settings</span></a></div><div class="w-full flex justify-center py-space-xs"><div class="w-32 h-1 bg-outline-variant/60 rounded-full"></div></div></nav></body></html>

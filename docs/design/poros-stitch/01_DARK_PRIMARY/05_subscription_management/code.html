@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Sora:wght@600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;background-color:#0d0e16;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "secondary": "#c7bfff", "surface-bright": "#383842", "primary-container": "#8d7fff", "secondary-fixed-dim": "#c7bfff", "on-primary-container": "#23008d", "on-primary-fixed-variant": "#4027be", "on-error-container": "#ffdad6", "on-tertiary-fixed": "#002117", "error-container": "#93000a", "surface-container-highest": "#33343d", "surface-dim": "#12131b", "outline-variant": "#474554", "surface-variant": "#33343d", "surface-container-low": "#1a1b23", "tertiary-fixed": "#84f8ce", "on-secondary-fixed": "#170164", "secondary-fixed": "#e4dfff", "tertiary-fixed-dim": "#66dbb3", "tertiary": "#66dbb3", "on-surface-variant": "#c8c4d7", "on-tertiary-container": "#003123", "on-primary-fixed": "#170065", "on-error": "#690005", "primary": "#c7bfff", "inverse-on-surface": "#2f3039", "surface-tint": "#c7bfff", "on-tertiary-fixed-variant": "#00513d", "surface-container": "#1e1f28", "on-tertiary": "#003829", "error": "#ffb4ab", "surface-container-lowest": "#0d0e16", "primary-fixed": "#e4dfff", "outline": "#928ea0", "on-secondary": "#2d2178", "surface-container-high": "#292932", "on-background": "#e3e1ed", "tertiary-container": "#21a37f", "secondary-container": "#473c92", "inverse-primary": "#5945d6", "background": "#12131b", "on-secondary-fixed-variant": "#443a8f", "on-surface": "#e3e1ed", "surface": "#12131b", "on-secondary-container": "#b8afff", "inverse-surface": "#e3e1ed", "primary-fixed-dim": "#c7bfff", "on-primary": "#29009f" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "margin": "1.5rem", "gutter-mobile": "0.75rem", "margin-mobile": "1rem", "space-md": "1rem", "gutter": "1rem", "space-xs": "0.25rem", "space-xl": "2rem", "space-sm": "0.5rem", "space-lg": "1.5rem" }, "fontFamily": { "label-sm": ["Inter"], "body-md": ["Inter"], "body-lg": ["Inter"], "label-md": ["Inter"], "title-md": ["Inter"], "headline-md": ["Sora"], "display-lg": ["Sora"], "headline-lg": ["Sora"], "label-lg": ["Inter"], "body-sm": ["Inter"], "headline-sm": ["Sora"], "display-lg-mobile": ["Sora"] }, "fontSize": { "label-sm": ["10px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }], "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }], "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }], "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }], "title-md": ["16px", { "lineHeight": "22px", "fontWeight": "600" }], "headline-md": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "display-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "headline-lg": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }], "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }], "headline-sm": ["18px", { "lineHeight": "24px", "fontWeight": "600" }], "display-lg-mobile": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }] } } } }</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface-container-lowest text-on-surface font-body-md text-body-md flex flex-col min-h-screen selection:bg-primary-container selection:text-on-primary-container"><header class="fixed top-0 w-full z-50 pt-safe bg-surface-container-lowest/85 backdrop-blur-xl"><div class="h-16 px-gutter flex items-center justify-between"><div class="flex items-center gap-space-sm min-w-0"><div class="w-10 h-10 rounded-xl bg-surface-container-low flex items-center justify-center text-primary shrink-0 shadow-[0_1px_8px_rgba(0,0,0,0.35)]"><span class="material-symbols-outlined text-[24px]">hexagon</span></div><div class="flex flex-col min-w-0"><div class="flex items-center gap-space-xs"><span class="font-headline-sm text-headline-sm tracking-tight text-on-surface truncate">Poros</span><div class="w-2 h-2 rounded-full bg-tertiary animate-pulse shrink-0"></div></div><span class="font-label-sm text-label-sm text-on-surface-variant truncate uppercase tracking-widest">Money</span></div></div><div class="flex items-center gap-space-sm shrink-0"><button aria-label="Notifications" class="w-11 h-11 rounded-full flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" type="button"><span class="material-symbols-outlined text-[22px]">notifications</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex flex-col relative w-full pt-16 pb-28 bg-surface-container-lowest min-h-screen"><div class="flex flex-col w-full px-margin-mobile pb-space-lg gap-space-md">
+<!-- Sub-header bar inside content slot -->
+<div class="flex items-center justify-between py-space-xs">
+<div class="flex items-center gap-space-sm min-w-0">
+<button aria-label="Go back to Money Overview" class="w-10 h-10 rounded-xl bg-surface-container-low flex items-center justify-center text-on-surface-variant hover:text-on-surface active:scale-95 transition-all" type="button">
+<span class="material-symbols-outlined text-[20px]">arrow_back</span>
+</button>
+<div class="flex flex-col min-w-0">
+<h1 class="font-headline-sm text-headline-sm text-on-surface truncate tracking-tight">Subscriptions</h1>
+<div class="flex items-center gap-space-xs">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+<span class="font-label-sm text-label-sm text-tertiary uppercase tracking-wider">Local SQLite synced</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-space-xs">
+<button aria-label="Subscription Insights" class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-primary active:scale-95 transition-all" type="button">
+<span class="material-symbols-outlined text-[20px]">analytics</span>
+</button>
+<button aria-label="Add Subscription" class="h-10 px-space-md rounded-xl bg-primary text-on-primary flex items-center gap-space-xs active:scale-95 transition-transform shadow-[0_0_14px_-2px_rgba(118,101,245,0.4)]" type="button">
+<span class="material-symbols-outlined text-[18px]">add_circle</span>
+<span class="font-label-md text-label-md">Add Plan</span>
+</button>
+</div>
+</div>
+<!-- Monthly Commitment Hero Card -->
+<section class="relative overflow-hidden rounded-xl bg-surface-container p-space-md flex flex-col gap-space-md shadow-xl">
+<div class="absolute -right-10 -bottom-10 w-44 h-44 rounded-full bg-primary/10 blur-2xl pointer-events-none"></div>
+<div class="absolute -left-12 -top-12 w-36 h-36 rounded-full bg-tertiary/10 blur-xl pointer-events-none"></div>
+<div class="flex items-start justify-between relative z-10">
+<div class="flex flex-col gap-0.5">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[18px]">event_repeat</span>
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Total Monthly Commitment</span>
+</div>
+<div class="flex items-baseline gap-space-xs mt-1">
+<span class="font-display-lg-mobile text-display-lg-mobile text-on-surface tracking-tight">Rp 481.900</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">/ mo</span>
+</div>
+</div>
+<span class="px-space-sm py-1 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+        6 Active
+      </span>
+</div>
+<!-- Metrics Row -->
+<div class="grid grid-cols-2 gap-space-sm relative z-10">
+<div class="p-space-sm rounded-lg bg-surface-container-low flex flex-col gap-1">
+<span class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">calendar_month</span> Yearly Outlook
+        </span>
+<span class="font-title-md text-title-md text-on-surface">Rp 5.782.800</span>
+<span class="font-label-sm text-label-sm text-tertiary-fixed-dim">Locked fixed rates</span>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-container-low flex flex-col gap-1">
+<span class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">trending_down</span> vs Last Month
+        </span>
+<div class="flex items-center gap-space-xs">
+<span class="font-title-md text-title-md text-tertiary">-2.4%</span>
+<span class="material-symbols-outlined text-tertiary text-[16px]">south_east</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Optimized Rp 12.000</span>
+</div>
+</div>
+<!-- Mini Burn Progress bar -->
+<div class="flex flex-col gap-1.5 relative z-10">
+<div class="flex justify-between items-center font-label-sm text-label-sm">
+<span class="text-on-surface-variant">October Scheduled Outflow</span>
+<span class="text-on-surface font-label-md text-label-md">Rp 317.900 / 481.900</span>
+</div>
+<div class="w-full h-2 rounded-full bg-surface-container-high overflow-hidden flex">
+<div class="h-full bg-primary" style="width: 66%;"></div>
+<div class="h-full bg-tertiary" style="width: 18%;"></div>
+<div class="h-full bg-secondary-container" style="width: 16%;"></div>
+</div>
+</div>
+</section>
+<!-- Filter / Switch pills -->
+<div class="flex items-center gap-space-xs overflow-x-auto py-0.5 no-scrollbar">
+<button class="px-space-md py-1.5 rounded-full bg-primary text-on-primary font-label-md text-label-md shrink-0 active:scale-95 transition-transform flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px]">view_timeline</span>
+      All Subscriptions (6)
+    </button>
+<button class="px-space-md py-1.5 rounded-full bg-surface-container text-on-surface-variant font-label-md text-label-md shrink-0 active:scale-95 transition-transform flex items-center gap-1.5 hover:text-on-surface">
+<span class="material-symbols-outlined text-[16px]">priority_high</span>
+      Due Soon (3)
+    </button>
+<button class="px-space-md py-1.5 rounded-full bg-surface-container text-on-surface-variant font-label-md text-label-md shrink-0 active:scale-95 transition-transform flex items-center gap-1.5 hover:text-on-surface">
+<span class="material-symbols-outlined text-[16px]">group</span>
+      Shared Plans (2)
+    </button>
+<button class="px-space-md py-1.5 rounded-full bg-surface-container text-on-surface-variant font-label-md text-label-md shrink-0 active:scale-95 transition-transform flex items-center gap-1.5 hover:text-on-surface">
+<span class="material-symbols-outlined text-[16px]">archive</span>
+      Paused (1)
+    </button>
+</div>
+<!-- Section 1: Renewals in Next 7 Days (Timeline) -->
+<section class="flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[20px]">notifications_active</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Next 7 Days</h2>
+</div>
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded bg-surface-container text-primary-fixed-dim">3 bills pending</span>
+</div>
+<!-- Renewal Card 1: Spotify Family -->
+<div class="p-space-md rounded-xl bg-surface-container flex flex-col gap-space-sm relative overflow-hidden transition-all duration-200" id="sub-card-spotify">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-11 h-11 rounded-xl bg-surface-container-high flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-tertiary text-[24px]">graphic_eq</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-space-xs">
+<span class="font-title-md text-title-md text-on-surface truncate">Spotify Family</span>
+<span class="px-1.5 py-0.5 rounded bg-tertiary-container text-on-tertiary font-label-sm text-label-sm uppercase tracking-wider">Due Tomorrow</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Auto-debit • BCA Everyday Card</span>
+</div>
+</div>
+<div class="flex flex-col items-end shrink-0">
+<span class="font-title-md text-title-md text-on-surface">Rp 86.900</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">25 Oct 2024</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-space-xs bg-surface-container-low/50 -mx-space-md -mb-space-md px-space-md py-space-sm rounded-b-xl">
+<div class="flex items-center gap-space-xs">
+<span class="px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface font-label-sm text-label-sm flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span> Monthly
+          </span>
+<span class="px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface font-label-sm text-label-sm">BCA • 8410</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="px-space-sm py-1 rounded-lg bg-primary text-on-primary font-label-sm text-label-sm flex items-center gap-1 active:scale-95 transition-all" onclick="recordPayment('Spotify Family', 'Rp 86.900')" type="button">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+            Mark Paid
+          </button>
+<button aria-label="Edit Spotify" class="w-7 h-7 rounded-lg bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-on-surface" type="button">
+<span class="material-symbols-outlined text-[16px]">more_vert</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Renewal Card 2: iCloud+ 200GB -->
+<div class="p-space-md rounded-xl bg-surface-container flex flex-col gap-space-sm relative overflow-hidden transition-all duration-200" id="sub-card-icloud">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-11 h-11 rounded-xl bg-surface-container-high flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-secondary text-[24px]">cloud_queue</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-space-xs">
+<span class="font-title-md text-title-md text-on-surface truncate">iCloud+ 200GB</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface font-label-sm text-label-sm">In 4 days</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Auto-debit • Jenius m-Card</span>
+</div>
+</div>
+<div class="flex flex-col items-end shrink-0">
+<span class="font-title-md text-title-md text-on-surface">Rp 45.000</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">28 Oct 2024</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-space-xs bg-surface-container-low/50 -mx-space-md -mb-space-md px-space-md py-space-sm rounded-b-xl">
+<div class="flex items-center gap-space-xs">
+<span class="px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface font-label-sm text-label-sm">Monthly</span>
+<span class="px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface font-label-sm text-label-sm">Jenius Visa</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="px-space-sm py-1 rounded-lg bg-surface-container-high text-on-surface hover:bg-primary hover:text-on-primary font-label-sm text-label-sm flex items-center gap-1 active:scale-95 transition-all" onclick="recordPayment('iCloud+', 'Rp 45.000')" type="button">
+<span class="material-symbols-outlined text-[14px]">check</span>
+            Record
+          </button>
+<button aria-label="Edit iCloud" class="w-7 h-7 rounded-lg bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-on-surface" type="button">
+<span class="material-symbols-outlined text-[16px]">more_vert</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Renewal Card 3: Netflix Premium (4K) -->
+<div class="p-space-md rounded-xl bg-surface-container flex flex-col gap-space-sm relative overflow-hidden transition-all duration-200" id="sub-card-netflix">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-11 h-11 rounded-xl bg-surface-container-high flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-primary text-[24px]">movie</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-space-xs">
+<span class="font-title-md text-title-md text-on-surface truncate">Netflix Premium (4K)</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface font-label-sm text-label-sm">In 6 days</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Shared plan • 2 of 4 slots collected</span>
+</div>
+</div>
+<div class="flex flex-col items-end shrink-0">
+<span class="font-title-md text-title-md text-on-surface">Rp 186.000</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">30 Oct 2024</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-space-xs bg-surface-container-low/50 -mx-space-md -mb-space-md px-space-md py-space-sm rounded-b-xl">
+<div class="flex items-center gap-space-xs">
+<span class="px-2 py-0.5 rounded-md bg-secondary-container text-on-secondary-container font-label-sm text-label-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">group</span> Split Rp 93.000/2
+          </span>
+<span class="px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface font-label-sm text-label-sm">BCA Virtual Account</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="px-space-sm py-1 rounded-lg bg-surface-container-high text-on-surface hover:bg-primary hover:text-on-primary font-label-sm text-label-sm flex items-center gap-1 active:scale-95 transition-all" onclick="recordPayment('Netflix Premium', 'Rp 186.000')" type="button">
+<span class="material-symbols-outlined text-[14px]">check</span>
+            Record
+          </button>
+<button aria-label="Edit Netflix" class="w-7 h-7 rounded-lg bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-on-surface" type="button">
+<span class="material-symbols-outlined text-[16px]">more_vert</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 2: Grouped Catalog / All Subscriptions -->
+<section class="flex flex-col gap-space-md mt-space-xs">
+<div class="flex items-center justify-between">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Categories &amp; Details</h2>
+<button class="font-label-sm text-label-sm text-primary flex items-center gap-0.5">
+<span>Sort by Date</span>
+<span class="material-symbols-outlined text-[14px]">unfold_more</span>
+</button>
+</div>
+<!-- Category A: Digital Entertainment -->
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between px-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary-fixed text-[18px]">smart_display</span>
+<span class="font-label-md text-label-md text-on-surface">Digital Entertainment</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Rp 331.900 / mo</span>
+</div>
+<div class="flex flex-col rounded-xl bg-surface-container overflow-hidden">
+<!-- Item: YouTube Premium -->
+<div class="p-space-md flex items-center justify-between hover:bg-surface-container-high/40 transition-colors">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-9 h-9 rounded-lg bg-surface-container-high flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-error text-[20px]">play_circle</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-title-md text-title-md text-on-surface truncate">YouTube Premium</span>
+<div class="flex items-center gap-space-xs">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Due 12 Nov</span>
+<span class="w-1 h-1 rounded-full bg-outline"></span>
+<span class="font-label-sm text-label-sm text-tertiary">GoPay Auto</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-space-sm shrink-0">
+<span class="font-title-md text-title-md text-on-surface">Rp 59.000</span>
+<button aria-label="Record YouTube" class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-on-surface-variant hover:text-on-surface active:scale-95" onclick="recordPayment('YouTube Premium', 'Rp 59.000')" type="button">
+<span class="material-symbols-outlined text-[18px]">payments</span>
+</button>
+</div>
+</div>
+<div class="h-[1px] bg-surface-container-high/60 mx-space-md"></div>
+<!-- Item: Netflix Premium -->
+<div class="p-space-md flex items-center justify-between hover:bg-surface-container-high/40 transition-colors">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-9 h-9 rounded-lg bg-surface-container-high flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-primary text-[20px]">movie</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-title-md text-title-md text-on-surface truncate">Netflix Premium (4K)</span>
+<div class="flex items-center gap-space-xs">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Due 30 Oct</span>
+<span class="w-1 h-1 rounded-full bg-outline"></span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Shared (2 slots)</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-space-sm shrink-0">
+<span class="font-title-md text-title-md text-on-surface">Rp 186.000</span>
+<button aria-label="Record Netflix" class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-on-surface-variant hover:text-on-surface active:scale-95" onclick="recordPayment('Netflix Premium', 'Rp 186.000')" type="button">
+<span class="material-symbols-outlined text-[18px]">payments</span>
+</button>
+</div>
+</div>
+<div class="h-[1px] bg-surface-container-high/60 mx-space-md"></div>
+<!-- Item: Spotify Family -->
+<div class="p-space-md flex items-center justify-between hover:bg-surface-container-high/40 transition-colors">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-9 h-9 rounded-lg bg-surface-container-high flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-tertiary text-[20px]">graphic_eq</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-title-md text-title-md text-on-surface truncate">Spotify Family</span>
+<div class="flex items-center gap-space-xs">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Due 25 Oct</span>
+<span class="w-1 h-1 rounded-full bg-outline"></span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">BCA Everyday</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-space-sm shrink-0">
+<span class="font-title-md text-title-md text-on-surface">Rp 86.900</span>
+<button aria-label="Record Spotify" class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-on-surface-variant hover:text-on-surface active:scale-95" onclick="recordPayment('Spotify Family', 'Rp 86.900')" type="button">
+<span class="material-symbols-outlined text-[18px]">payments</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Category B: Productivity & Storage -->
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between px-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary-fixed text-[18px]">terminal</span>
+<span class="font-label-md text-label-md text-on-surface">Productivity &amp; Cloud</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Rp 200.000 / mo</span>
+</div>
+<div class="flex flex-col rounded-xl bg-surface-container overflow-hidden">
+<!-- Item: GitHub Copilot -->
+<div class="p-space-md flex items-center justify-between hover:bg-surface-container-high/40 transition-colors">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-9 h-9 rounded-lg bg-surface-container-high flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-primary text-[20px]">code_blocks</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-space-xs">
+<span class="font-title-md text-title-md text-on-surface truncate">GitHub Copilot</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm">$10 eqv</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Due 03 Nov</span>
+<span class="w-1 h-1 rounded-full bg-outline"></span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Jenius Visa</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-space-sm shrink-0">
+<span class="font-title-md text-title-md text-on-surface">Rp 155.000</span>
+<button aria-label="Record Copilot" class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-on-surface-variant hover:text-on-surface active:scale-95" onclick="recordPayment('GitHub Copilot', 'Rp 155.000')" type="button">
+<span class="material-symbols-outlined text-[18px]">payments</span>
+</button>
+</div>
+</div>
+<div class="h-[1px] bg-surface-container-high/60 mx-space-md"></div>
+<!-- Item: iCloud+ -->
+<div class="p-space-md flex items-center justify-between hover:bg-surface-container-high/40 transition-colors">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-9 h-9 rounded-lg bg-surface-container-high flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-secondary text-[20px]">cloud_queue</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-title-md text-title-md text-on-surface truncate">iCloud+ 200GB</span>
+<div class="flex items-center gap-space-xs">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Due 28 Oct</span>
+<span class="w-1 h-1 rounded-full bg-outline"></span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Monthly</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-space-sm shrink-0">
+<span class="font-title-md text-title-md text-on-surface">Rp 45.000</span>
+<button aria-label="Record iCloud" class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-on-surface-variant hover:text-on-surface active:scale-95" onclick="recordPayment('iCloud+', 'Rp 45.000')" type="button">
+<span class="material-symbols-outlined text-[18px]">payments</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Category C: Utilities & Living -->
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between px-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary-fixed text-[18px]">fitness_center</span>
+<span class="font-label-md text-label-md text-on-surface">Living &amp; Wellness</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Rp 350.000 / mo</span>
+</div>
+<div class="flex flex-col rounded-xl bg-surface-container overflow-hidden">
+<!-- Item: Gym Membership -->
+<div class="p-space-md flex items-center justify-between hover:bg-surface-container-high/40 transition-colors">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-9 h-9 rounded-lg bg-surface-container-high flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-tertiary text-[20px]">exercise</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-space-xs">
+<span class="font-title-md text-title-md text-on-surface truncate">Megafit Membership</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-low text-tertiary font-label-sm text-label-sm">QRIS Auto</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Due 15 Nov</span>
+<span class="w-1 h-1 rounded-full bg-outline"></span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Monthly manual confirm</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-space-sm shrink-0">
+<span class="font-title-md text-title-md text-on-surface">Rp 350.000</span>
+<button aria-label="Record Gym" class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-on-surface-variant hover:text-on-surface active:scale-95" onclick="recordPayment('Megafit Gym', 'Rp 350.000')" type="button">
+<span class="material-symbols-outlined text-[18px]">payments</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Interactive Offline-first Prompt Card -->
+<div class="p-space-md rounded-xl bg-surface-container-low flex items-center justify-between mt-space-xs">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[20px]">sync_saved_locally</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-title-md text-title-md text-on-surface truncate">Room Database Active</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">No remote servers tracking your recurring subscriptions.</span>
+</div>
+</div>
+<button class="px-space-sm py-1 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm shrink-0" type="button">
+      Export .db
+    </button>
+</div>
+<!-- Micro Toast for One-Tap Feedback -->
+<div class="fixed bottom-24 left-1/2 -translate-x-1/2 px-space-md py-2.5 rounded-xl bg-surface-container-highest text-on-surface shadow-2xl flex items-center gap-2 transform translate-y-16 opacity-0 pointer-events-none transition-all duration-300 z-50" id="payment-toast">
+<span class="material-symbols-outlined text-tertiary text-[18px]">check_circle</span>
+<span class="font-label-md text-label-md" id="toast-message">Recorded payment successfully</span>
+</div>
+</div>
+<script>
+  function recordPayment(subscriptionTitle, amount) {
+    const toast = document.getElementById('payment-toast');
+    const toastMsg = document.getElementById('toast-message');
+    if (!toast || !toastMsg) return;
+
+    toastMsg.textContent = `${subscriptionTitle} (${amount}) recorded in Ledger`;
+    toast.classList.remove('translate-y-16', 'opacity-0', 'pointer-events-none');
+    toast.classList.add('translate-y-0', 'opacity-100');
+
+    setTimeout(() => {
+      toast.classList.remove('translate-y-0', 'opacity-100');
+      toast.classList.add('translate-y-16', 'opacity-0', 'pointer-events-none');
+    }, 2800);
+  }
+</script></main><div class="fixed bottom-24 right-margin-mobile z-40"><button aria-label="Quick Action" class="w-14 h-14 rounded-2xl bg-primary text-on-primary flex items-center justify-center shadow-[0_0_16px_-2px_rgba(118,101,245,0.45)] hover:scale-95 active:scale-90 transition-transform" type="button"><span class="material-symbols-outlined text-[28px]">add</span></button></div><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface-container-low/95 backdrop-blur-xl shadow-[0_-1px_12px_rgba(0,0,0,0.5)]" data-active-classes="text-primary font-label-md"><div class="flex justify-around items-center h-16 px-space-xs"><a class="flex flex-col items-center justify-center gap-space-xs w-14 h-14 text-on-surface-variant hover:text-on-surface transition-all select-none" data-path="today" href="#"><span class="material-symbols-outlined text-[22px]">calendar_today</span><span class="font-label-sm text-label-sm">Today</span></a><a class="flex flex-col items-center justify-center gap-space-xs w-14 h-14 text-on-surface-variant hover:text-on-surface transition-all select-none" data-path="money" href="#"><span class="material-symbols-outlined text-[22px]">account_balance_wallet</span><span class="font-label-sm text-label-sm">Money</span></a><a class="flex flex-col items-center justify-center gap-space-xs w-14 h-14 text-on-surface-variant hover:text-on-surface transition-all select-none" data-path="schedule" href="#"><span class="material-symbols-outlined text-[22px]">pending_actions</span><span class="font-label-sm text-label-sm">Schedule</span></a><a class="flex flex-col items-center justify-center gap-space-xs w-14 h-14 text-on-surface-variant hover:text-on-surface transition-all select-none" data-path="library" href="#"><span class="material-symbols-outlined text-[22px]">folder_special</span><span class="font-label-sm text-label-sm">Library</span></a><a class="flex flex-col items-center justify-center gap-space-xs w-14 h-14 text-on-surface-variant hover:text-on-surface transition-all select-none" data-path="settings" href="#"><span class="material-symbols-outlined text-[22px]">tune</span><span class="font-label-sm text-label-sm">Settings</span></a></div><div class="w-full flex justify-center py-space-xs"><div class="w-32 h-1 bg-outline-variant/60 rounded-full"></div></div></nav></body></html>

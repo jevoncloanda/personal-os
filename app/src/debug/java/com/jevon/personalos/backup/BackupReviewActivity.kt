@@ -29,7 +29,7 @@ class BackupReviewActivity : ComponentActivity() {
         setContent {
             var dark by remember { mutableStateOf(false) }
             PersonalOsTheme(Settings(if (dark) ThemeMode.DARK else ThemeMode.LIGHT, false)) {
-                AtmosphericBackground {
+                PorosBackground {
                     SystemBarAppearance()
                     Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.systemBars)) {
                         Text("Isolated backup review · disposable data", Modifier.padding(20.dp), style = MaterialTheme.typography.titleSmall)

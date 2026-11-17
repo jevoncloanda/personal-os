@@ -118,6 +118,26 @@ class MoneyDatabaseTest {
         // A legacy/custom catalog is preserved rather than supplemented silently.
         dao.ensureDefaultCategories(); assertEquals(1, dao.categories().size)
     }
+    @Test fun entrySelectionsAreRememberedOnlyAfterSuccessfulCreation() = runBlocking {
+        val instrument = InstrumentationRegistry.getInstrumentation()
+        val saved = androidx.lifecycle.SavedStateHandle()
+        val model = com.jevon.personalos.money.MoneyViewModel(instrument.targetContext.applicationContext as android.app.Application, saved, db)
+        val models = androidx.lifecycle.ViewModelStore().apply { put("review", model) }
+        try {
+            withTimeout(5000) { model.busy.first { !it } }
+            val done = CompletableDeferred<Unit>()
+            model.entry(expense(), true) { done.complete(Unit) }
+            withTimeout(5000) { done.await(); model.busy.first { !it } }
+            assertEquals("a", model.lastEntryAccount(EntryKind.EXPENSE))
+            assertEquals("food", model.lastEntryCategory(EntryKind.EXPENSE))
+            assertEquals("", model.lastEntryAccount(EntryKind.INCOME))
+            model.entry(expense("invalid", 100).copy(fromAccountId = "b", categoryId = "missing"), true) {}
+            withTimeout(5000) { model.busy.first { !it } }
+            assertNotNull(model.error.value)
+            assertEquals("a", model.lastEntryAccount(EntryKind.EXPENSE))
+            assertEquals("food", model.lastEntryCategory(EntryKind.EXPENSE))
+        } finally { instrument.runOnMainSync { models.clear() } }
+    }
     @Test fun explicitEmptyAccountCurrencyCorrectionPreservesDollarHistory() = runBlocking {
         dao.recordEntry(expense())
         dao.saveAccount(AccountEntity("b", "Corrected empty account", "IDR", -500), false)

@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Sora:wght@600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;background-color:#0d0e16;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "secondary": "#c7bfff", "surface-bright": "#383842", "primary-container": "#8d7fff", "secondary-fixed-dim": "#c7bfff", "on-primary-container": "#23008d", "on-primary-fixed-variant": "#4027be", "on-error-container": "#ffdad6", "on-tertiary-fixed": "#002117", "error-container": "#93000a", "surface-container-highest": "#33343d", "surface-dim": "#12131b", "outline-variant": "#474554", "surface-variant": "#33343d", "surface-container-low": "#1a1b23", "tertiary-fixed": "#84f8ce", "on-secondary-fixed": "#170164", "secondary-fixed": "#e4dfff", "tertiary-fixed-dim": "#66dbb3", "tertiary": "#66dbb3", "on-surface-variant": "#c8c4d7", "on-tertiary-container": "#003123", "on-primary-fixed": "#170065", "on-error": "#690005", "primary": "#c7bfff", "inverse-on-surface": "#2f3039", "surface-tint": "#c7bfff", "on-tertiary-fixed-variant": "#00513d", "surface-container": "#1e1f28", "on-tertiary": "#003829", "error": "#ffb4ab", "surface-container-lowest": "#0d0e16", "primary-fixed": "#e4dfff", "outline": "#928ea0", "on-secondary": "#2d2178", "surface-container-high": "#292932", "on-background": "#e3e1ed", "tertiary-container": "#21a37f", "secondary-container": "#473c92", "inverse-primary": "#5945d6", "background": "#12131b", "on-secondary-fixed-variant": "#443a8f", "on-surface": "#e3e1ed", "surface": "#12131b", "on-secondary-container": "#b8afff", "inverse-surface": "#e3e1ed", "primary-fixed-dim": "#c7bfff", "on-primary": "#29009f" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "margin": "1.5rem", "gutter-mobile": "0.75rem", "margin-mobile": "1rem", "space-md": "1rem", "gutter": "1rem", "space-xs": "0.25rem", "space-xl": "2rem", "space-sm": "0.5rem", "space-lg": "1.5rem" }, "fontFamily": { "label-sm": ["Inter"], "body-md": ["Inter"], "body-lg": ["Inter"], "label-md": ["Inter"], "title-md": ["Inter"], "headline-md": ["Sora"], "display-lg": ["Sora"], "headline-lg": ["Sora"], "label-lg": ["Inter"], "body-sm": ["Inter"], "headline-sm": ["Sora"], "display-lg-mobile": ["Sora"] }, "fontSize": { "label-sm": ["10px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }], "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }], "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }], "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }], "title-md": ["16px", { "lineHeight": "22px", "fontWeight": "600" }], "headline-md": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "display-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "headline-lg": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }], "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }], "headline-sm": ["18px", { "lineHeight": "24px", "fontWeight": "600" }], "display-lg-mobile": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }] } } } }</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface-container-lowest text-on-surface font-body-md text-body-md flex flex-col min-h-screen selection:bg-primary-container selection:text-on-primary-container"><header class="fixed top-0 w-full z-50 pt-safe bg-surface-container-lowest/85 backdrop-blur-xl"><div class="h-16 px-gutter flex items-center justify-between"><div class="flex items-center gap-space-sm min-w-0"><div class="w-10 h-10 rounded-xl bg-surface-container-low flex items-center justify-center text-primary shrink-0 shadow-[0_1px_8px_rgba(0,0,0,0.35)]"><span class="material-symbols-outlined text-[24px]">hexagon</span></div><div class="flex flex-col min-w-0"><div class="flex items-center gap-space-xs"><span class="font-headline-sm text-headline-sm tracking-tight text-on-surface truncate">Poros</span><div class="w-2 h-2 rounded-full bg-tertiary animate-pulse shrink-0"></div></div><span class="font-label-sm text-label-sm text-on-surface-variant truncate uppercase tracking-widest">Money</span></div></div><div class="flex items-center gap-space-sm shrink-0"><button aria-label="Notifications" class="w-11 h-11 rounded-full flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" type="button"><span class="material-symbols-outlined text-[22px]">notifications</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex flex-col relative w-full pt-16 pb-28 bg-surface-container-lowest min-h-screen"><div class="flex flex-col w-full px-margin-mobile pb-space-xl gap-space-lg">
+<!-- Internal Navigation Subheader & Cycle Ribbon -->
+<section class="flex flex-col gap-space-sm pt-space-xs">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<button aria-label="Go Back" class="w-11 h-11 rounded-xl bg-surface-container-low flex items-center justify-center text-on-surface hover:bg-surface-container-high transition-transform active:scale-95 shadow-sm" type="button">
+<span class="material-symbols-outlined text-[20px]">arrow_back</span>
+</button>
+<div class="flex flex-col">
+<h1 class="font-headline-sm text-headline-sm text-on-surface tracking-tight">Budget Management</h1>
+<span class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px] text-tertiary">lock</span>
+            Encrypted Offline Vault
+          </span>
+</div>
+</div>
+<button class="h-11 px-space-md rounded-xl bg-primary text-on-primary font-label-lg text-label-lg flex items-center gap-1.5 shadow-[0_0_16px_-2px_rgba(118,101,245,0.4)] active:scale-95 transition-transform" type="button">
+<span class="material-symbols-outlined text-[20px]">add</span>
+<span>New Budget</span>
+</button>
+</div>
+<!-- Cycle Selector Pill Strip -->
+<div class="flex items-center justify-between p-space-sm rounded-xl bg-surface-container-low mt-space-xs">
+<button aria-label="Previous Month" class="w-9 h-9 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">chevron_left</span>
+</button>
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary text-[18px]">event_repeat</span>
+<div class="flex flex-col items-center">
+<span class="font-title-md text-title-md text-on-surface leading-none">October 2024</span>
+<span class="font-label-sm text-label-sm text-tertiary mt-0.5">7 days remaining in cycle</span>
+</div>
+</div>
+<button aria-label="Next Month" class="w-9 h-9 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
+</section>
+<!-- Master Budget Gauge Hero Card -->
+<section class="relative overflow-hidden rounded-2xl bg-surface-container p-space-lg shadow-md">
+<!-- Ambient Kinetic Glow Spot -->
+<div class="absolute -right-10 -top-10 w-44 h-44 rounded-full bg-primary-container/20 blur-3xl pointer-events-none"></div>
+<div class="absolute -left-12 -bottom-12 w-40 h-40 rounded-full bg-tertiary-container/15 blur-2xl pointer-events-none"></div>
+<div class="relative z-10 flex flex-col gap-space-md">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">Global Monthly Allocation</span>
+<div class="flex items-baseline gap-space-xs mt-0.5">
+<span class="font-headline-lg text-headline-lg text-on-surface font-headline-lg">Rp 5.250.000</span>
+<span class="font-label-md text-label-md text-on-surface-variant">/ Rp 8.000.000</span>
+</div>
+</div>
+<div class="px-space-sm py-1 rounded-full bg-surface-container-high flex items-center gap-1 shadow-sm">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span class="font-label-sm text-label-sm text-primary font-semibold">65.6% Active</span>
+</div>
+</div>
+<!-- Segmented Kinetic Indicator -->
+<div class="flex flex-col gap-1.5 pt-space-xs">
+<div class="w-full h-3 rounded-full bg-surface-container-lowest overflow-hidden flex p-0.5">
+<div class="h-full rounded-full bg-gradient-to-r from-primary to-tertiary transition-all duration-700" style="width: 65.6%;"></div>
+</div>
+<div class="flex justify-between items-center text-on-surface-variant font-label-sm text-label-sm">
+<span>Spent: Rp 5.250.000</span>
+<span>Target Cap: Rp 8.000.000</span>
+</div>
+</div>
+<!-- Safe-to-Spend Metric Pods -->
+<div class="grid grid-cols-2 gap-space-sm pt-space-xs">
+<div class="p-space-md rounded-xl bg-surface-container-low flex flex-col gap-1">
+<div class="flex items-center gap-1 text-tertiary">
+<span class="material-symbols-outlined text-[16px]">format_image_left</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider">Safe Runway</span>
+</div>
+<span class="font-title-md text-title-md text-on-surface">Rp 2.750.000</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Untouched cushion</span>
+</div>
+<div class="p-space-md rounded-xl bg-surface-container-low flex flex-col gap-1">
+<div class="flex items-center gap-1 text-primary">
+<span class="material-symbols-outlined text-[16px]">speed</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider">Daily Allowance</span>
+</div>
+<span class="font-title-md text-title-md text-on-surface">Rp 392.000<span class="font-label-sm text-label-sm text-on-surface-variant">/day</span></span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Safe pacing for 7 days</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Critical Thresholds & Over-Budget Attention Section -->
+<section class="flex flex-col gap-space-sm">
+<div class="flex items-center justify-between px-space-xs">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px] text-error">notification_important</span>
+<h2 class="font-title-md text-title-md text-on-surface">Attention Envelopes</h2>
+</div>
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-error-container/40 text-on-error-container font-semibold">2 Flags</span>
+</div>
+<!-- Alert Envelope Card 1: Direct Overrun -->
+<div class="rounded-2xl bg-surface-container p-space-md shadow-sm flex flex-col gap-space-sm relative overflow-hidden">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-10 h-10 rounded-xl bg-error-container text-on-error-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">cloud_off</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-title-md text-title-md text-on-surface truncate">Digital Tools</span>
+<span class="px-2 py-0.5 rounded-md bg-error text-on-error font-label-sm text-label-sm uppercase tracking-wide">Over-Budget</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Monthly cap: Rp 600.000</span>
+</div>
+</div>
+<div class="text-right shrink-0">
+<span class="font-title-md text-title-md text-error">+Rp 50.000</span>
+<span class="block font-label-sm text-label-sm text-on-surface-variant">Exceeded</span>
+</div>
+</div>
+<div class="p-space-sm rounded-xl bg-surface-container-low flex items-center justify-between gap-space-sm">
+<div class="flex items-center gap-2 min-w-0">
+<span class="material-symbols-outlined text-tertiary text-[18px] shrink-0">savings</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Auto-heal from Transportation (+Rp 550k free)</span>
+</div>
+<button class="shrink-0 h-8 px-space-sm rounded-lg bg-surface-container-high text-primary hover:bg-surface-bright font-label-sm text-label-sm font-semibold transition-all flex items-center gap-1" type="button">
+<span>Rebalance</span>
+<span class="material-symbols-outlined text-[14px]">shuffle</span>
+</button>
+</div>
+</div>
+<!-- Alert Envelope Card 2: Near-Cap Food -->
+<div class="rounded-2xl bg-surface-container p-space-md shadow-sm flex flex-col gap-space-sm">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-10 h-10 rounded-xl bg-surface-container-high text-on-surface flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">restaurant</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-title-md text-title-md text-on-surface truncate">Food &amp; Dining</span>
+<span class="px-2 py-0.5 rounded-md bg-surface-container-highest text-tertiary-fixed-dim font-label-sm text-label-sm uppercase tracking-wide">84% Cap</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Rp 2.100.000 spent of Rp 2.500.000</span>
+</div>
+</div>
+<div class="text-right shrink-0">
+<span class="font-title-md text-title-md text-on-surface">Rp 400.000</span>
+<span class="block font-label-sm text-label-sm text-on-surface-variant">Left (Rp 57k/d)</span>
+</div>
+</div>
+<!-- Linear Micro Progress -->
+<div class="w-full h-2 rounded-full bg-surface-container-lowest overflow-hidden">
+<div class="h-full rounded-full bg-secondary-fixed-dim" style="width: 84%;"></div>
+</div>
+</div>
+</section>
+<!-- Budget Envelopes Breakdown List -->
+<section class="flex flex-col gap-space-sm">
+<div class="flex items-center justify-between px-space-xs">
+<h2 class="font-title-md text-title-md text-on-surface">Category Envelopes (4)</h2>
+<div class="flex items-center gap-space-xs text-on-surface-variant font-label-sm text-label-sm">
+<span>Sort by Remaining</span>
+<span class="material-symbols-outlined text-[16px]">swap_vert</span>
+</div>
+</div>
+<div class="flex flex-col gap-space-xs">
+<!-- Item 1: Groceries & Household -->
+<div class="p-space-md rounded-2xl bg-surface-container flex flex-col gap-space-sm transition-colors active:bg-surface-container-high">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-10 h-10 rounded-xl bg-surface-container-low text-tertiary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">local_grocery_store</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-title-md text-title-md text-on-surface truncate">Groceries &amp; Household</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Rp 1.400.000 of Rp 2.000.000</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm shrink-0">
+<span class="px-2 py-0.5 rounded-full bg-tertiary-container/40 text-on-tertiary font-label-sm text-label-sm">70% ON TRACK</span>
+<button aria-label="Edit Groceries Budget" class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-on-surface" type="button">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+</div>
+</div>
+<div class="w-full h-1.5 rounded-full bg-surface-container-lowest overflow-hidden">
+<div class="h-full rounded-full bg-tertiary" style="width: 70%;"></div>
+</div>
+<div class="flex justify-between items-center font-label-sm text-label-sm text-on-surface-variant">
+<span>Remaining: <strong class="text-on-surface font-semibold">Rp 600.000</strong></span>
+<span>Pace: Healthy</span>
+</div>
+</div>
+<!-- Item 2: Transportation & Fuel -->
+<div class="p-space-md rounded-2xl bg-surface-container flex flex-col gap-space-sm transition-colors active:bg-surface-container-high">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-10 h-10 rounded-xl bg-surface-container-low text-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">local_gas_station</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-title-md text-title-md text-on-surface truncate">Transportation &amp; Fuel</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Rp 650.000 of Rp 1.200.000</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm shrink-0">
+<span class="px-2 py-0.5 rounded-full bg-tertiary-container/40 text-on-tertiary font-label-sm text-label-sm">54% SAFE</span>
+<button aria-label="Edit Transportation Budget" class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-on-surface" type="button">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+</div>
+</div>
+<div class="w-full h-1.5 rounded-full bg-surface-container-lowest overflow-hidden">
+<div class="h-full rounded-full bg-primary" style="width: 54.1%;"></div>
+</div>
+<div class="flex justify-between items-center font-label-sm text-label-sm text-on-surface-variant">
+<span>Remaining: <strong class="text-on-surface font-semibold">Rp 550.000</strong></span>
+<span class="text-tertiary">Surplus available</span>
+</div>
+</div>
+<!-- Item 3: Personal Care & Health -->
+<div class="p-space-md rounded-2xl bg-surface-container flex flex-col gap-space-sm transition-colors active:bg-surface-container-high">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-10 h-10 rounded-xl bg-surface-container-low text-secondary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">cardiology</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-title-md text-title-md text-on-surface truncate">Personal Care &amp; Health</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Rp 450.000 of Rp 1.000.000</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm shrink-0">
+<span class="px-2 py-0.5 rounded-full bg-tertiary-container/40 text-on-tertiary font-label-sm text-label-sm">45% SAFE</span>
+<button aria-label="Edit Healthcare Budget" class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-on-surface" type="button">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+</div>
+</div>
+<div class="w-full h-1.5 rounded-full bg-surface-container-lowest overflow-hidden">
+<div class="h-full rounded-full bg-primary-container" style="width: 45%;"></div>
+</div>
+<div class="flex justify-between items-center font-label-sm text-label-sm text-on-surface-variant">
+<span>Remaining: <strong class="text-on-surface font-semibold">Rp 550.000</strong></span>
+<span>On plan</span>
+</div>
+</div>
+<!-- Item 4: Digital Subscriptions -->
+<div class="p-space-md rounded-2xl bg-surface-container flex flex-col gap-space-sm transition-colors active:bg-surface-container-high">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-10 h-10 rounded-xl bg-surface-container-low text-tertiary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">subscriptions</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-title-md text-title-md text-on-surface truncate">Digital Subscriptions</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Rp 350.000 of Rp 500.000</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm shrink-0">
+<span class="px-2 py-0.5 rounded-full bg-tertiary-container/40 text-on-tertiary font-label-sm text-label-sm">70% LOCKED</span>
+<button aria-label="Edit Subscriptions Budget" class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-on-surface" type="button">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+</div>
+</div>
+<div class="w-full h-1.5 rounded-full bg-surface-container-lowest overflow-hidden">
+<div class="h-full rounded-full bg-tertiary" style="width: 70%;"></div>
+</div>
+<div class="flex justify-between items-center font-label-sm text-label-sm text-on-surface-variant">
+<span>Remaining: <strong class="text-on-surface font-semibold">Rp 150.000</strong></span>
+<span>Fixed recurring</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Budget Strategies & Automated Automation Pill Hub -->
+<section class="rounded-2xl bg-surface-container-low p-space-md flex flex-col gap-space-md shadow-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded-xl bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">tune</span>
+</div>
+<div class="flex flex-col">
+<span class="font-title-md text-title-md text-on-surface">Rules &amp; Automation</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Zero-knowledge local rules</span>
+</div>
+</div>
+<span class="font-label-sm text-label-sm text-tertiary uppercase tracking-wider font-semibold">Autonomous</span>
+</div>
+<div class="grid grid-cols-2 gap-space-sm">
+<button class="p-space-md rounded-xl bg-surface-container text-left flex flex-col gap-2 hover:bg-surface-container-high transition-colors active:scale-95" type="button">
+<span class="material-symbols-outlined text-primary text-[20px]">cycle</span>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-on-surface">Rollover Envelopes</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Surplus rolls to savings</span>
+</div>
+</button>
+<button class="p-space-md rounded-xl bg-surface-container text-left flex flex-col gap-2 hover:bg-surface-container-high transition-colors active:scale-95" type="button">
+<span class="material-symbols-outlined text-tertiary text-[20px]">security_update_good</span>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-on-surface">Hard Caps Guard</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Disallow offline writes</span>
+</div>
+</button>
+</div>
+<!-- Quick Footer Action Strip -->
+<div class="flex items-center justify-between pt-space-xs border-t-0">
+<button class="flex items-center gap-1.5 text-on-surface-variant hover:text-on-surface font-label-md text-label-md" type="button">
+<span class="material-symbols-outlined text-[16px]">file_download</span>
+<span>Export Monthly CSV</span>
+</button>
+<button class="flex items-center gap-1.5 text-primary hover:text-primary-fixed font-label-md text-label-md font-semibold" type="button">
+<span>Edit Budget Limits</span>
+<span class="material-symbols-outlined text-[16px]">tune</span>
+</button>
+</div>
+</section>
+</div>
+<script>
+  // Micro-interaction: Highlight tab button in shell if loaded dynamically
+  document.addEventListener('DOMContentLoaded', () => {
+    const moneyNav = document.querySelector('nav a[data-path="money"]');
+    if (moneyNav) {
+      moneyNav.classList.remove('text-on-surface-variant');
+      moneyNav.classList.add('text-primary');
+    }
+  });
+</script></main><div class="fixed bottom-24 right-margin-mobile z-40"><button aria-label="Quick Action" class="w-14 h-14 rounded-2xl bg-primary text-on-primary flex items-center justify-center shadow-[0_0_16px_-2px_rgba(118,101,245,0.45)] hover:scale-95 active:scale-90 transition-transform" type="button"><span class="material-symbols-outlined text-[28px]">add</span></button></div><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface-container-low/95 backdrop-blur-xl shadow-[0_-1px_12px_rgba(0,0,0,0.5)]" data-active-classes="text-primary font-label-md"><div class="flex justify-around items-center h-16 px-space-xs"><a class="flex flex-col items-center justify-center gap-space-xs w-14 h-14 text-on-surface-variant hover:text-on-surface transition-all select-none" data-path="today" href="#"><span class="material-symbols-outlined text-[22px]">calendar_today</span><span class="font-label-sm text-label-sm">Today</span></a><a class="flex flex-col items-center justify-center gap-space-xs w-14 h-14 text-on-surface-variant hover:text-on-surface transition-all select-none" data-path="money" href="#"><span class="material-symbols-outlined text-[22px]">account_balance_wallet</span><span class="font-label-sm text-label-sm">Money</span></a><a class="flex flex-col items-center justify-center gap-space-xs w-14 h-14 text-on-surface-variant hover:text-on-surface transition-all select-none" data-path="schedule" href="#"><span class="material-symbols-outlined text-[22px]">pending_actions</span><span class="font-label-sm text-label-sm">Schedule</span></a><a class="flex flex-col items-center justify-center gap-space-xs w-14 h-14 text-on-surface-variant hover:text-on-surface transition-all select-none" data-path="library" href="#"><span class="material-symbols-outlined text-[22px]">folder_special</span><span class="font-label-sm text-label-sm">Library</span></a><a class="flex flex-col items-center justify-center gap-space-xs w-14 h-14 text-on-surface-variant hover:text-on-surface transition-all select-none" data-path="settings" href="#"><span class="material-symbols-outlined text-[22px]">tune</span><span class="font-label-sm text-label-sm">Settings</span></a></div><div class="w-full flex justify-center py-space-xs"><div class="w-32 h-1 bg-outline-variant/60 rounded-full"></div></div></nav></body></html>

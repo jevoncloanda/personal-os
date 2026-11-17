@@ -41,6 +41,7 @@ private enum class Destination(val route: String, val label: String, val icon: I
     MONEY("money", "Money", AppIcons.AccountBalanceWallet),
     SCHEDULE("schedule", "Schedule", AppIcons.CalendarMonth),
     LIBRARY("library", "Library", AppIcons.MenuBook),
+    SETTINGS("settings", "Settings", AppIcons.Settings),
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -68,7 +69,6 @@ fun PersonalOsApp(model: TodayViewModel, settings: Settings, externalTarget:Reco
     val snackbars = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var quickAdd by rememberSaveable { mutableStateOf(false) }
-    var showSettings by rememberSaveable { mutableStateOf(false) }
     var showDeveloper by rememberSaveable { mutableStateOf(false) }
     var requestedMoney by rememberSaveable { mutableStateOf<String?>(null) }
     var requestedSubscription by rememberSaveable { mutableStateOf<String?>(null) }
@@ -102,7 +102,7 @@ fun PersonalOsApp(model: TodayViewModel, settings: Settings, externalTarget:Reco
     LaunchedEffect(externalTarget,backStack){if(backStack!=null)externalTarget?.let{target->if(target.domain=="SUBSCRIPTION"){requestedSubscription=target.id;navigate("subscriptions")}else{requestSchedule(target);navigate("schedule")};externalHandled()}}
     LaunchedEffect(settingsError) { if (settingsError) snackbars.showSnackbar("Settings couldn’t be saved. Please try again.") }
 
-    AtmosphericBackground { BoxWithConstraints(Modifier.fillMaxSize()) {
+    PorosBackground { BoxWithConstraints(Modifier.fillMaxSize()) {
         val rail = maxWidth >= 600.dp
         Row(Modifier.fillMaxSize()) {
             if (rail) NavigationRail(Modifier.fillMaxHeight().windowInsetsPadding(WindowInsets.statusBars), containerColor = Color.Transparent) {
@@ -117,34 +117,42 @@ fun PersonalOsApp(model: TodayViewModel, settings: Settings, externalTarget:Reco
             Scaffold(
                 modifier = Modifier.weight(1f),
                 containerColor = Color.Transparent,
-                topBar = { TopAppBar(title = { Text(when (route) { "alerts" -> "Notifications"; "backup" -> "Backup & restore"; "subscriptions" -> "Subscriptions"; else -> current.label }, style = MaterialTheme.typography.titleLarge) },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
-                    navigationIcon = { if (route in listOf("subscriptions", "backup","alerts")) IconButton(onClick = { backDispatcher?.onBackPressed() }) { Icon(AppIcons.ArrowBack, "Back") } },
-                    actions = {
-                        if (DemoCatalog.available) IconButton(onClick = { showDeveloper = true }) { Icon(AppIcons.Code, "Developer previews") }
-                        IconButton(onClick = { showSettings = true }) { Icon(AppIcons.Settings, "Settings") }
-                    }) },
+                topBar = {
+                    val nested = route in listOf("subscriptions", "backup", "alerts")
+                    val title = when (route) { "alerts" -> "Notifications"; "backup" -> "Backup & restore"; "subscriptions" -> "Subscriptions"; else -> current.label }
+                    TopAppBar(title = {
+                        if (nested) Text(title, style = MaterialTheme.typography.titleLarge)
+                        else Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            PorosMark()
+                            Column {
+                                Text("Poros", style = MaterialTheme.typography.titleLarge)
+                                Text(title, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    }, colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
+                        navigationIcon = { if (nested) IconButton(onClick = { backDispatcher?.onBackPressed() }) { Icon(AppIcons.ArrowBack, "Back") } },
+                        actions = {
+                            if (DemoCatalog.available) IconButton(onClick = { showDeveloper = true }) { Icon(AppIcons.Code, "Developer previews") }
+                            if (route != "settings") IconButton(onClick = { navigate("settings") }) { Icon(AppIcons.Settings, "Settings") }
+                        })
+                },
                 bottomBar = {
-                    if (!rail && route !in listOf("backup","alerts")) Surface(color = LocalAtmosphere.current.panel, shape = androidx.compose.foundation.shape.RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)) {
-                      Column(Modifier.navigationBarsPadding()) {
-                        val largeText = androidx.compose.ui.platform.LocalDensity.current.fontScale > 1.3f
-                        if (largeText) FilledTonalButton(onClick = { quickAdd = true }, modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 8.dp)) { Icon(AppIcons.Add, null); Text("Quick add", Modifier.padding(start = 8.dp)) }
-                        NavigationBar(containerColor = Color.Transparent, tonalElevation = 0.dp,
-                            windowInsets = WindowInsets(0, 0, 0, 0), modifier = Modifier.height(if (largeText) 80.dp else 72.dp)) {
-                        Destination.entries.forEachIndexed { index, destination ->
-                            if (index == 2 && !largeText) FloatingActionButton(onClick = { quickAdd = true },
-                                containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary,
-                                shape = androidx.compose.foundation.shape.CircleShape,
-                                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 2.dp, pressedElevation = 4.dp),
-                                modifier = Modifier.padding(horizontal = 4.dp).size(48.dp)) { Icon(AppIcons.Add, "Quick add", Modifier.size(24.dp)) }
+                    if (!rail && route !in listOf("backup", "alerts")) NavigationBar(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow, tonalElevation = 0.dp) {
+                        Destination.entries.forEach { destination ->
                             NavigationBarItem(selected = destination == current, onClick = { navigate(destination.route) },
-                                colors = NavigationBarItemDefaults.colors(indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f),
-                                    selectedIconColor = MaterialTheme.colorScheme.primary, selectedTextColor = MaterialTheme.colorScheme.primary),
-                                icon = { Icon(destination.icon, null, Modifier.size(22.dp)) }, label = { Text(destination.label) })
+                                colors = NavigationBarItemDefaults.colors(indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                    selectedIconColor = MaterialTheme.colorScheme.primary, selectedTextColor = MaterialTheme.colorScheme.primary,
+                                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant, unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant),
+                                icon = { Icon(destination.icon, null, Modifier.size(22.dp)) },
+                                label = { Text(destination.label, style = MaterialTheme.typography.labelSmall) })
                         }
-                        }
-                      }
                     }
+                },
+                floatingActionButton = {
+                    if (!rail && route !in listOf("backup", "alerts")) FloatingActionButton(onClick = { quickAdd = true },
+                        containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary,
+                        shape = MaterialTheme.shapes.medium) { Icon(AppIcons.Add, "Quick add") }
                 },
                 snackbarHost = { SnackbarHost(snackbars) },
             ) { padding ->
@@ -152,7 +160,10 @@ fun PersonalOsApp(model: TodayViewModel, settings: Settings, externalTarget:Reco
                     if (DemoCatalog.available && mode != DataMode.PERSONAL && route == "today") Text("Developer preview · sample data, never saved", Modifier.padding(horizontal = 24.dp), style = MaterialTheme.typography.labelMedium)
                     NavHost(navController = nav, startDestination = "today", modifier = Modifier.weight(1f)) {
                         composable("today") { TodayScreen(state, model::retry, ::navigate, selectBudget = model::setTodayBudget) {schedule.complete(it,!it.completed)} }
-                        composable("money") { MoneyScreen(money, requestedMoney, { requestedMoney = null }, { nav.navigate("subscriptions") }, settings.preferredCurrency) }
+                        composable("money") { MoneyScreen(money, requestedMoney, { requestedMoney = null }, { nav.navigate("subscriptions") }, settings.preferredCurrency, { navigate("subscription/$it") }) }
+                        composable("settings") { SettingsScreen(settings, (state as? TodayState.Ready)?.content,
+                            model::setTheme, model::setDynamicColor, model::setPreferredCurrency, model::setTodayBudget,
+                            { nav.navigate("backup") { launchSingleTop = true } }, { navigate("money-budgets") }) }
                         composable("backup") { BackupScreen(backup) }
                         composable("subscriptions") { SubscriptionScreen(subscriptions, requestedSubscription, { requestedSubscription = null }, {configureAlerts(RecordTarget("SUBSCRIPTION",it))}, settings.preferredCurrency) }
                         composable("schedule") { ScheduleScreen(schedule,scheduleDomain?.let{RecordTarget(it,scheduleId,scheduleDay)},{scheduleDomain=null},{navigate("subscription/$it")},::configureAlerts) }
@@ -163,23 +174,11 @@ fun PersonalOsApp(model: TodayViewModel, settings: Settings, externalTarget:Reco
             }
         }
     } }
-    if (quickAdd) ModalBottomSheet(onDismissRequest = { quickAdd = false }) {
-        Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 24.dp).padding(bottom = 32.dp)) {
-            Text("Quick add", style = MaterialTheme.typography.headlineSmall)
-            Text("A small action, a clearer day.", Modifier.padding(top = 8.dp, bottom = 16.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
-            listOf(Triple("Add expense", "EXPENSE", AppIcons.NorthEast), Triple("Add income", "INCOME", AppIcons.SouthWest), Triple("Transfer", "TRANSFER", AppIcons.SwapHoriz),
-                Triple("New event", "new-event", AppIcons.CalendarMonth), Triple("New reminder", "new-reminder", AppIcons.RadioButtonUnchecked), Triple("New subscription", "subscription/new", AppIcons.Autorenew),
-                Triple("Add to Library", "library/new", AppIcons.MenuBook)).forEach { (label, destination, icon) ->
-                ListItem(headlineContent = { Text(label, style = MaterialTheme.typography.bodyLarge) }, leadingContent = { IconBadge(icon, positive = destination == "INCOME") }, trailingContent = { Icon(AppIcons.ChevronRight, null, Modifier.size(18.dp)) },
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent), modifier = Modifier.clickable { quickAdd = false
-                        if (destination in listOf("EXPENSE", "INCOME", "TRANSFER")) { requestedMoney = destination; navigate("money") }
-                        else navigate(destination)
-                    }.heightIn(min = 56.dp))
-            }
-        }
+    if (quickAdd) QuickAddSheet({ quickAdd = false }) { destination ->
+        quickAdd = false
+        if (destination in listOf("EXPENSE", "INCOME", "TRANSFER")) { requestedMoney = destination; navigate("money") }
+        else navigate(destination)
     }
-    if (showSettings) SettingsDialog(settings, model::setTheme, model::setDynamicColor, model::setPreferredCurrency,
-        openBackup = { showSettings = false; nav.navigate("backup") { launchSingleTop = true } }) { showSettings = false }
     if (showDeveloper && DemoCatalog.available) AlertDialog(onDismissRequest = { showDeveloper = false }, title = { Text("Developer previews") },
         text = { DemoControls(mode) { model.setMode(it); showDeveloper = false } }, confirmButton = { TextButton(onClick = { showDeveloper = false }) { Text("Done") } })
 }
@@ -196,49 +195,4 @@ private fun DemoControls(mode: DataMode, setMode: (DataMode) -> Unit) {
             }
         }
     }
-}
-
-@Composable
-private fun FoundationScreen(title: String, body: String, icon: ImageVector, extra: @Composable () -> Unit = {}) {
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp).padding(bottom = 100.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        IconBadge(icon, modifier = Modifier.padding(top = 12.dp))
-        Text(title, style = MaterialTheme.typography.headlineMedium)
-        FrostedPanel {
-            Text("Foundation screen", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-            Text(body, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        extra()
-    }
-}
-
-@Composable
-private fun SettingsDialog(settings: Settings, setTheme: (ThemeMode) -> Unit, setDynamicColor: (Boolean) -> Unit, setCurrency: (String) -> Unit, openBackup: () -> Unit, dismiss: () -> Unit) {
-    var currency by rememberSaveable(settings.preferredCurrency) { mutableStateOf(settings.preferredCurrency) }
-    val valid = runCatching { currencyDigits(currency) }.isSuccess
-    AlertDialog(onDismissRequest = dismiss, title = { Text("Settings") }, confirmButton = { TextButton(onClick = dismiss) { Text("Done") } },
-        text = {
-            Column(Modifier.verticalScroll(rememberScrollState())) {
-                OutlinedTextField(currency, { currency = it.uppercase(java.util.Locale.ROOT) }, label = { Text("Preferred currency (ISO code)") },
-                    singleLine = true, isError = !valid, modifier = Modifier.fillMaxWidth(),
-                    supportingText = { if (!valid) Text("Use a valid monetary ISO code, such as IDR, AUD or USD.") })
-                Text("Defaults for new records and Today. Existing amounts and currencies stay unchanged. These settings stay on this device and are excluded from backup files.", style = MaterialTheme.typography.bodySmall)
-                TextButton(enabled = valid && currency != settings.preferredCurrency, onClick = { setCurrency(currency) }) { Text("Save currency") }
-                ThemeMode.entries.forEach { theme ->
-                    Row(Modifier.fillMaxWidth().selectable(selected = theme == settings.theme, role = Role.RadioButton,
-                        onClick = { setTheme(theme) }).heightIn(min = 56.dp), verticalAlignment = Alignment.CenterVertically) {
-                        RadioButton(selected = theme == settings.theme, onClick = null)
-                        Text(when (theme) { ThemeMode.SYSTEM -> "Use device theme"; ThemeMode.LIGHT -> "Light"; ThemeMode.DARK -> "Dark" }, Modifier.padding(start = 12.dp))
-                    }
-                }
-                if (android.os.Build.VERSION.SDK_INT >= 31) {
-                    HorizontalDivider(Modifier.padding(vertical = 12.dp))
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Text("Wallpaper colors", Modifier.weight(1f))
-                        Switch(checked = settings.dynamicColor, onCheckedChange = setDynamicColor, modifier = Modifier.semantics { contentDescription = "Wallpaper colors" })
-                    }
-                }
-                HorizontalDivider(Modifier.padding(vertical = 12.dp))
-                TextButton(onClick = openBackup) { Text("Backup & restore") }
-            }
-        })
 }

@@ -4,6 +4,8 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -49,6 +51,7 @@ fun LibraryScreen(model: LibraryViewModel, requested: String? = null, handled: (
             if (current == null) item { Text("Item unavailable. It may have been removed. Return to your Library.") }
             else {
                 item {
+                    PorosCard {
                     Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                         LibraryCover(current, Modifier.width(100.dp).height(150.dp))
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -58,17 +61,19 @@ fun LibraryScreen(model: LibraryViewModel, requested: String? = null, handled: (
                             if (current.favorite) Text("Favorite", color = MaterialTheme.colorScheme.primary)
                         }
                     }
+                    LibraryProgress(current)
+                    }
                 }
                 item {
                     Choice("Status", current.status.name, LibraryStatus.entries.map { it.name to statusLabel(current.kind, it) }, !busy) { model.save(current.withStatus(LibraryStatus.valueOf(it)), false) {} }
                 }
-                item { FrostedPanel {
-                    Text(progressLabel(current), style = MaterialTheme.typography.titleMedium)
+                item { PorosCard {
+                    Text("Progress", style = MaterialTheme.typography.titleMedium)
                     if (current.kind != LibraryKind.MOVIE) TextButton(enabled = !busy, onClick = { model.clearError(); editor = "progress" }) { Text("Update progress") }
                     current.totalSeasons?.let { Text("Total seasons: $it") }
                     if (current.platform.isNotEmpty()) Text("Platform: ${current.platform}")
                 } }
-                item {
+                item { PorosCard {
                     Text(current.rating?.let { "Your rating: $it / 5" } ?: "Not rated", style = MaterialTheme.typography.titleMedium)
                     if (current.author.isNotEmpty()) Text("Author: ${current.author}")
                     if (current.isbn.isNotEmpty()) Text("ISBN: ${current.isbn}")
@@ -76,9 +81,9 @@ fun LibraryScreen(model: LibraryViewModel, requested: String? = null, handled: (
                     Text("Started: ${current.startedEpochDay?.let(LocalDate::ofEpochDay) ?: "Not recorded"}")
                     Text("Completed: ${current.completedEpochDay?.let(LocalDate::ofEpochDay) ?: "Not recorded"}")
                     Text("Updated: ${Instant.ofEpochMilli(current.updatedAtMillis).atZone(ZoneId.systemDefault()).toLocalDate()}")
-                }
+                } }
                 if (current.description.isNotBlank()) item { Text("Synopsis", style = MaterialTheme.typography.titleMedium); Text(current.description) }
-                item { Text("Your notes", style = MaterialTheme.typography.titleMedium); Text(current.notes.ifBlank { "No notes yet" }) }
+                item { PorosCard { Text("Your notes", style = MaterialTheme.typography.titleMedium); Text(current.notes.ifBlank { "No notes yet" }, color = MaterialTheme.colorScheme.onSurfaceVariant) } }
                 if (current.provider != null) item { Text("Metadata: ${current.provider} · ${current.providerId}", style = MaterialTheme.typography.bodySmall) }
                 item { Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Button(enabled = !busy, onClick = { model.clearError(); editor = "edit" }) { Text("Edit item") }
@@ -95,18 +100,30 @@ fun LibraryScreen(model: LibraryViewModel, requested: String? = null, handled: (
             LazyColumn(Modifier.fillMaxSize().testTag("LibraryList"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 item { SectionHeading("Your Library", "Add to Library", { chooseType = true }) }
                 item { OutlinedTextField(filter.search, { model.setFilter(filter.copy(search = it, page = 0)) }, label = { Text("Search titles") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
-                item { Choice("Media", filter.kind, listOf("" to "All media") + LibraryKind.entries.map { it.name to mediaLabel(it) }) { model.setFilter(filter.copy(kind = it, page = 0)) } }
-                item { Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Box(Modifier.weight(1f)) { Choice("Status", filter.status, listOf("" to "All statuses", "PLANNED" to "Planned / Backlog", "ACTIVE" to "In progress", "COMPLETED" to "Completed", "ON_HOLD" to "On Hold", "DROPPED" to "Dropped")) { model.setFilter(filter.copy(status = it, page = 0)) } }
-                    Box(Modifier.weight(1f)) { Choice("Sort", filter.sort, listOf("UPDATED" to "Recently updated", "ADDED" to "Recently added", "TITLE" to "Title")) { model.setFilter(filter.copy(sort = it, page = 0)) } }
-                } }
+                item {
+                    val compact = androidx.compose.ui.platform.LocalDensity.current.fontScale <= 1.15f
+                    FlowRow(if (compact) Modifier.horizontalScroll(rememberScrollState()) else Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), maxItemsInEachRow = if (compact) 3 else 1) {
+                        Choice("Media", filter.kind, listOf("" to "All media") + LibraryKind.entries.map { it.name to mediaLabel(it) }, compact = compact) { model.setFilter(filter.copy(kind = it, page = 0)) }
+                        Choice("Status", filter.status, listOf("" to "All statuses", "PLANNED" to "Planned / Backlog", "ACTIVE" to "In progress", "COMPLETED" to "Completed", "ON_HOLD" to "On Hold", "DROPPED" to "Dropped"), compact = compact) { model.setFilter(filter.copy(status = it, page = 0)) }
+                        Choice("Sort", filter.sort, listOf("UPDATED" to "Recently updated", "ADDED" to "Recently added", "TITLE" to "Title"), compact = compact) { model.setFilter(filter.copy(sort = it, page = 0)) }
+                    }
+                }
                 if (filter.search.isBlank() && filter.status.isBlank() && filter.page == 0) {
                     if (data.active.isNotEmpty()) {
                         item { SectionHeading("Currently enjoying", "View all", { model.setFilter(filter.copy(status = "ACTIVE", page = 0)) }) }
-                        items(data.active, key = { "active/${it.id}" }) { LibraryRow(it) { model.select(it.id) } }
+                        items(data.active, key = { "active/${it.id}" }) { active ->
+                            LibraryRow(active, update = if (active.kind == LibraryKind.MOVIE) null else { { model.select(active.id); model.clearError(); editor = "progress" } }) { model.select(active.id) }
+                        }
                     }
-                    if (data.planned.isNotEmpty()) item { SectionHeading("Pick next", "Backlog", { model.setFilter(filter.copy(status = "PLANNED", page = 0)) }); Text(data.planned.joinToString(" · ") { it.title }, maxLines = 3) }
-                    if (data.completed.isNotEmpty()) item { SectionHeading("Recently completed", "View completed", { model.setFilter(filter.copy(status = "COMPLETED", page = 0)) }); Text(data.completed.joinToString(" · ") { it.title }, maxLines = 3) }
+                    if (data.planned.isNotEmpty()) {
+                        item { SectionHeading("Pick next", "Backlog", { model.setFilter(filter.copy(status = "PLANNED", page = 0)) }) }
+                        items(data.planned, key = { "planned/${it.id}" }) { LibraryRow(it) { model.select(it.id) } }
+                    }
+                    if (data.completed.isNotEmpty()) {
+                        item { SectionHeading("Recently completed", "View completed", { model.setFilter(filter.copy(status = "COMPLETED", page = 0)) }) }
+                        items(data.completed, key = { "completed/${it.id}" }) { LibraryRow(it) { model.select(it.id) } }
+                    }
                 }
                 item { Text("Collection · ${data.count}", style = MaterialTheme.typography.titleMedium) }
                 if (data.items.isEmpty()) item {
@@ -137,16 +154,36 @@ fun LibraryScreen(model: LibraryViewModel, requested: String? = null, handled: (
 }
 
 @Composable
-internal fun LibraryRow(item: LibraryItemEntity, open: () -> Unit) {
-    Row(Modifier.fillMaxWidth().clickable(onClick = open).padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
+internal fun LibraryRow(item: LibraryItemEntity, update: (() -> Unit)? = null, open: () -> Unit) {
+    Surface(onClick = open, color = LocalAtmosphere.current.panel, shape = MaterialTheme.shapes.medium) {
+    Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
         LibraryCover(item)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(item.title, style = MaterialTheme.typography.titleMedium)
             Text("${mediaLabel(item.kind)} · ${statusLabel(item.kind, item.status)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(progressLabel(item), style = MaterialTheme.typography.bodyMedium)
+            LibraryProgress(item)
             if (item.rating != null) Text("${item.rating} / 5", style = MaterialTheme.typography.bodySmall)
         }
         Icon(AppIcons.ChevronRight, null, Modifier.size(18.dp))
+    }
+    if (update != null) TextButton(onClick = update, modifier = Modifier.align(Alignment.End)) { Text("Update progress") }
+    }
+    }
+}
+
+@Composable
+private fun LibraryProgress(item: LibraryItemEntity) {
+    val fraction = when {
+        item.kind == LibraryKind.GAME -> item.completionPercent?.div(100f)
+        item.kind in listOf(LibraryKind.BOOK, LibraryKind.SERIES) && item.total != null && item.total > 0 -> item.progress.toFloat() / item.total
+        else -> null
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(progressLabel(item), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (fraction != null) LinearProgressIndicator(progress = { fraction.coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth().height(5.dp),
+            color = if (item.kind == LibraryKind.BOOK) LocalAtmosphere.current.positive else MaterialTheme.colorScheme.primary,
+            trackColor = MaterialTheme.colorScheme.surfaceContainerHighest, drawStopIndicator = {})
     }
 }
 

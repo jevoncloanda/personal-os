@@ -20,7 +20,7 @@ import java.time.format.DateTimeFormatter
 internal fun BalanceHeader(data: MoneySnapshot, currency: String, choose: (String) -> Unit, create: () -> Unit) {
     val balances = activeCurrencyBalances(data.accounts)
     val selected = balances.firstOrNull { it.code == currency }
-    Column(Modifier.fillMaxWidth().padding(top = 0.dp, bottom = 4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    PorosCard {
         if (selected == null) {
             Text("A clearer view of your money.", style = MaterialTheme.typography.headlineLarge)
             Text("Start with an account. Your balances and spending stay on this device.", color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -64,30 +64,33 @@ internal fun LazyListScope.moneyOverview(data: MoneySnapshot, currency: String, 
     item {
         val spent = data.totals.firstOrNull { it.currencyCode == currency && it.kind == EntryKind.EXPENSE }?.amount ?: 0L
         val income = data.totals.firstOrNull { it.currencyCode == currency && it.kind == EntryKind.INCOME }?.amount ?: 0L
-        FrostedPanel(contentPadding = 16.dp) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             MonthSelector(month, { changeMonth(month.minusMonths(1)) }, { changeMonth(month.plusMonths(1)) })
             FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Column(Modifier.weight(1f).widthIn(min = 140.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text("Monthly spending · $currency", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(formatMoney(spent, currency), style = MaterialTheme.typography.headlineLarge)
+                    Text(formatMoney(spent, currency), style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.error)
                 }
                 Column(Modifier.weight(1f).widthIn(min = 110.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text("Income · $currency", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(formatMoney(income, currency), style = MaterialTheme.typography.titleLarge, color = LocalAtmosphere.current.positive)
                 }
             }
-            Text("Recorded expenses only. Transfers and forecasts excluded.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
     val budgets = data.budgets.filter { it.budget.currencyCode == currency }
     item { SectionHeading("Budgets", "Manage", { section("Budgets") }) }
     if (budgets.isEmpty()) item {
-        FrostedPanel { EmptyMessage("Make room for what matters", "Set a monthly limit in $currency and see what remains."); TextButton(onClick = { edit("budget", null) }) { Text("Create monthly budget") } }
+        Column {
+            Text("No $currency budget for this month", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            TextButton(onClick = { edit("budget", null) }) { Text("Create monthly budget") }
+        }
     }
-    items(budgets, key = { "overview-budget-${it.budget.id}" }) { BudgetBlock(it, data.categories) { edit("budget", it.budget.id) } }
+    val preview = budgets.filter { it.budget.categoryId == null }.take(1) + budgets.filter { it.budget.categoryId != null }.take(1)
+    items(preview, key = { "overview-budget-${it.budget.id}" }) { BudgetBlock(it, data.categories) { edit("budget", it.budget.id) } }
     item {
         val slices = spendingSlices(data.categorySpending, data.categories, currency)
-        if (slices.isNotEmpty()) FrostedPanel {
+        if (slices.isNotEmpty()) PorosCard {
             Text("Where it went", style = MaterialTheme.typography.titleMedium)
             Text("Share of ${month.format(DateTimeFormatter.ofPattern("MMMM"))} spending · $currency", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             slices.forEach { slice ->
@@ -101,12 +104,12 @@ internal fun LazyListScope.moneyOverview(data: MoneySnapshot, currency: String, 
             }
         }
     }
+    item { LedgerRow(AppIcons.Autorenew, "Subscriptions", "Recurring plans & payment history", "Open", onClick = subscriptions) }
     item { SectionHeading("Account balances", "All accounts", { section("Accounts") }) }
     items(data.accounts.filter { !it.account.archived && it.account.currencyCode == currency }.take(3), key = { "overview-account-${it.account.id}" }) { AccountRow(it) { edit("account", it.account.id) } }
     item { SectionHeading("Recent transactions", "View history", { section("History") }) }
     items(data.recent, key = { "recent-${it.id}" }) { EntryRow(it, data) { edit("entry", it.id) } }
     if (data.recent.isEmpty()) item { EmptyMessage("A fresh start", "Recorded transactions will appear here. Choose an account to add your first entry.") }
-    item { OutlinedButton(onClick = subscriptions) { Icon(AppIcons.Autorenew, null); Text("Subscriptions", Modifier.padding(start = 8.dp)) } }
 }
 
 @Composable private fun MoneyActions(add: (String) -> Unit) {
@@ -125,7 +128,9 @@ internal fun LazyListScope.moneyOverview(data: MoneySnapshot, currency: String, 
 @Composable private fun MoneyAction(kind: String, label: String, icon: ImageVector, modifier: Modifier, add: (String) -> Unit) {
     FilledTonalButton(onClick = { add(kind) }, modifier = modifier.heightIn(min = 48.dp), contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
         shape = MaterialTheme.shapes.medium,
-        colors = ButtonDefaults.filledTonalButtonColors(containerColor = LocalAtmosphere.current.panel, contentColor = MaterialTheme.colorScheme.primary)) {
+        colors = ButtonDefaults.filledTonalButtonColors(
+            containerColor = if (kind == "EXPENSE") MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color.Transparent,
+            contentColor = if (kind == "EXPENSE") MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary)) {
         Icon(icon, null, Modifier.size(18.dp)); Text(label, Modifier.padding(start = 4.dp), maxLines = 1)
     }
 }

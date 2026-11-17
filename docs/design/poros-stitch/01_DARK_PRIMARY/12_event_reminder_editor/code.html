@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_stack" name="shell-type"/><title>Transaction Detail</title><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Sora:wght@600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "error-container": "#93000a", "primary-container": "#8d7fff", "on-tertiary-fixed": "#002117", "inverse-on-surface": "#2f3039", "outline": "#928ea0", "surface-container-low": "#1a1b23", "surface-container-lowest": "#0d0e16", "tertiary-fixed": "#84f8ce", "primary-fixed": "#e4dfff", "on-tertiary-fixed-variant": "#00513d", "secondary-fixed-dim": "#c7bfff", "tertiary": "#66dbb3", "on-background": "#e3e1ed", "secondary": "#c7bfff", "on-primary-container": "#23008d", "on-secondary-fixed-variant": "#443a8f", "on-primary-fixed-variant": "#4027be", "on-tertiary-container": "#003123", "tertiary-container": "#21a37f", "on-primary-fixed": "#170065", "surface-container-highest": "#33343d", "error": "#ffb4ab", "outline-variant": "#474554", "background": "#12131b", "tertiary-fixed-dim": "#66dbb3", "on-surface-variant": "#c8c4d7", "inverse-surface": "#e3e1ed", "on-secondary-container": "#b8afff", "surface-variant": "#33343d", "on-primary": "#29009f", "primary-fixed-dim": "#c7bfff", "on-error": "#690005", "primary": "#c7bfff", "surface-container": "#1e1f28", "on-secondary-fixed": "#170164", "surface": "#12131b", "secondary-fixed": "#e4dfff", "surface-tint": "#c7bfff", "inverse-primary": "#5945d6", "on-surface": "#e3e1ed", "surface-container-high": "#292932", "on-tertiary": "#003829", "secondary-container": "#473c92", "on-error-container": "#ffdad6", "surface-bright": "#383842", "surface-dim": "#12131b", "on-secondary": "#2d2178" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "space-lg": "1.5rem", "space-xs": "0.25rem", "space-md": "1rem", "gutter-mobile": "0.75rem", "margin": "1.5rem", "margin-mobile": "1rem", "gutter": "1rem", "space-xl": "2rem", "space-sm": "0.5rem" }, "fontFamily": { "headline-sm": ["Sora"], "label-md": ["Inter"], "display-lg": ["Sora"], "label-lg": ["Inter"], "display-lg-mobile": ["Sora"], "label-sm": ["Inter"], "body-lg": ["Inter"], "headline-md": ["Sora"], "headline-lg": ["Sora"], "body-md": ["Inter"], "title-md": ["Inter"], "body-sm": ["Inter"] }, "fontSize": { "headline-sm": ["18px", { "lineHeight": "24px", "fontWeight": "600" }], "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }], "display-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }], "display-lg-mobile": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "label-sm": ["10px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }], "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }], "headline-md": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "headline-lg": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }], "title-md": ["16px", { "lineHeight": "22px", "fontWeight": "600" }], "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }] } } } };</script><style>@layer base { .pb-safe { padding-bottom: max(env(safe-area-inset-bottom, 0px), 16px); } .pt-safe { padding-top: max(env(safe-area-inset-top, 0px), 0px); } } ::-webkit-scrollbar { display: none; }</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface-container-lowest text-on-surface font-body-md text-body-md min-h-screen selection:bg-primary-container selection:text-on-primary-container"><header class="fixed top-0 w-full z-50 pt-safe bg-surface-container/85 backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.35)]"><div class="h-16 px-margin-mobile flex items-center justify-between"><div class="flex items-center gap-space-sm"><button aria-label="Go back or dismiss" class="w-11 h-11 -ml-1 flex items-center justify-center rounded-xl bg-surface-container-high text-on-surface hover:text-primary transition-all active:scale-95" onclick="history.back()"><span class="material-symbols-outlined text-[20px]">arrow_back</span></button><h1 class="font-headline-sm text-headline-sm text-on-surface tracking-tight truncate max-w-[210px]">Transaction Detail</h1></div><div class="flex items-center gap-space-xs"><button aria-label="More actions" class="w-11 h-11 flex items-center justify-center rounded-xl text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all active:scale-95"><span class="material-symbols-outlined text-[20px]">more_vert</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center ml-1"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full min-h-screen pt-16 pb-safe px-margin-mobile bg-surface-container-lowest"><div class="flex flex-col w-full pb-safe space-y-space-md">
+<!-- Segmented Type Selector -->
+<div class="p-1 bg-surface-container rounded-xl flex items-center shadow-sm">
+<button class="flex-1 py-2.5 px-space-sm rounded-lg flex items-center justify-center gap-2 bg-primary text-on-primary font-label-lg text-label-lg shadow-sm transition-all duration-200" id="tab-event">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">calendar_today</span>
+<span>Event</span>
+</button>
+<button class="flex-1 py-2.5 px-space-sm rounded-lg flex items-center justify-center gap-2 text-on-surface-variant hover:text-on-surface font-label-lg text-label-lg transition-all duration-200" id="tab-reminder">
+<span class="material-symbols-outlined text-[18px]">notifications</span>
+<span>Reminder</span>
+</button>
+</div>
+<!-- Title Input Field -->
+<div class="bg-surface-container rounded-xl p-space-md flex flex-col gap-1 shadow-sm relative overflow-hidden">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-primary uppercase tracking-wider">Title</span>
+<div class="flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"></span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Live Draft</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm mt-1">
+<input class="w-full bg-transparent text-on-surface font-title-md text-title-md focus:outline-none placeholder-outline" placeholder="What's happening?" type="text" value="Product Sync with Core Team"/>
+</div>
+</div>
+<!-- Date & Time Card -->
+<div class="bg-surface-container rounded-xl p-space-md flex flex-col space-y-space-md shadow-sm">
+<!-- All Day Toggle -->
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded-lg bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">schedule</span>
+</div>
+<div>
+<p class="font-title-md text-title-md text-on-surface">All-day event</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Full calendar slot coverage</p>
+</div>
+</div>
+<button aria-checked="false" class="w-12 h-7 rounded-full bg-surface-container-highest flex items-center p-0.5 transition-colors duration-200" id="all-day-toggle" role="switch">
+<span class="w-6 h-6 rounded-full bg-on-surface-variant shadow-sm transition-transform duration-200 translate-x-0" id="all-day-knob"></span>
+</button>
+</div>
+<div class="h-[1px] bg-surface-container-high w-full"></div>
+<!-- Start / End Selectors -->
+<div class="grid grid-cols-2 gap-space-sm">
+<div class="bg-surface-container-high p-3 rounded-lg flex flex-col gap-1 active:bg-surface-bright transition-colors cursor-pointer">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Starts</span>
+<p class="font-label-lg text-label-lg text-on-surface">Thu, 24 Oct</p>
+<div class="flex items-center gap-1 text-primary">
+<span class="material-symbols-outlined text-[15px]">alarm</span>
+<span class="font-body-sm text-body-sm text-primary">10:30 AM</span>
+</div>
+</div>
+<div class="bg-surface-container-high p-3 rounded-lg flex flex-col gap-1 active:bg-surface-bright transition-colors cursor-pointer">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Ends</span>
+<p class="font-label-lg text-label-lg text-on-surface">Thu, 24 Oct</p>
+<div class="flex items-center gap-1 text-primary">
+<span class="material-symbols-outlined text-[15px]">alarm_on</span>
+<span class="font-body-sm text-body-sm text-primary">11:30 AM</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Recurrence Selector -->
+<div class="bg-surface-container rounded-xl p-space-md flex flex-col space-y-space-sm shadow-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded-lg bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">repeat</span>
+</div>
+<div>
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Recurrence</span>
+<p class="font-title-md text-title-md text-on-surface">Weekly on Thursday</p>
+</div>
+</div>
+<button class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-on-surface-variant hover:text-on-surface">
+<span class="material-symbols-outlined text-[18px]">expand_more</span>
+</button>
+</div>
+<!-- Quick Chips -->
+<div class="flex items-center gap-2 pt-1 overflow-x-auto no-scrollbar">
+<button class="px-3 py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant font-label-md text-label-md shrink-0 active:scale-95 transition-all">Never</button>
+<button class="px-3 py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant font-label-md text-label-md shrink-0 active:scale-95 transition-all">Daily</button>
+<button class="px-3 py-1.5 rounded-lg bg-primary text-on-primary font-label-md text-label-md shrink-0 shadow-sm transition-all flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check</span>
+        Weekly
+      </button>
+<button class="px-3 py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant font-label-md text-label-md shrink-0 active:scale-95 transition-all">Monthly</button>
+</div>
+</div>
+<!-- Notification & Local WorkManager Lead Time -->
+<div class="bg-surface-container rounded-xl p-space-md flex flex-col space-y-space-sm shadow-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded-lg bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">alarm</span>
+</div>
+<div>
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Lead Time Alarm</span>
+<p class="font-title-md text-title-md text-on-surface">15 minutes before</p>
+</div>
+</div>
+<span class="inline-flex items-center px-2 py-0.5 rounded bg-surface-container-high text-tertiary font-label-sm text-label-sm">
+        WorkManager
+      </span>
+</div>
+<div class="pt-2">
+<button class="w-full py-2.5 px-space-sm rounded-lg bg-surface-container-high hover:bg-surface-bright text-primary font-label-md text-label-md flex items-center justify-center gap-2 transition-all active:scale-[0.99]">
+<span class="material-symbols-outlined text-[18px]">add_alert</span>
+<span>+ Add second alert</span>
+</button>
+</div>
+</div>
+<!-- Location & Meeting Details -->
+<div class="bg-surface-container rounded-xl p-space-md flex flex-col space-y-space-md shadow-sm">
+<!-- In-person Location -->
+<div class="flex items-start gap-space-sm">
+<div class="w-9 h-9 rounded-lg bg-surface-container-high flex items-center justify-center text-primary shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[20px]">location_on</span>
+</div>
+<div class="flex-1 min-w-0">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Physical Location</span>
+<p class="font-title-md text-title-md text-on-surface truncate">Meeting Room Merdeka • Floor 4</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Poros Local Office Hub</p>
+</div>
+</div>
+<div class="h-[1px] bg-surface-container-high w-full"></div>
+<!-- Virtual Conference Link -->
+<div class="flex items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-9 h-9 rounded-lg bg-secondary-container flex items-center justify-center text-on-secondary-container shrink-0">
+<span class="material-symbols-outlined text-[20px]">videocam</span>
+</div>
+<div class="min-w-0">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Conference</span>
+<p class="font-body-md text-body-md text-primary truncate">meet.google.com/xyz-core</p>
+</div>
+</div>
+<button class="w-9 h-9 rounded-lg bg-surface-container-high flex items-center justify-center text-on-surface-variant hover:text-primary active:scale-90 transition-all shrink-0" id="copy-btn">
+<span class="material-symbols-outlined text-[18px]">content_copy</span>
+</button>
+</div>
+</div>
+<!-- Domain Classification Tags -->
+<div class="bg-surface-container rounded-xl p-space-md flex flex-col space-y-space-sm shadow-sm">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Classification Domain</span>
+<div class="flex flex-wrap gap-2">
+<button class="px-3.5 py-1.5 rounded-lg bg-primary text-on-primary font-label-md text-label-md flex items-center gap-1.5 shadow-sm">
+<span class="w-2 h-2 rounded-full bg-on-primary"></span>
+<span>Work</span>
+</button>
+<button class="px-3.5 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-bright text-on-surface-variant font-label-md text-label-md flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span>Personal</span>
+</button>
+<button class="px-3.5 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-bright text-on-surface-variant font-label-md text-label-md flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span>Finance</span>
+</button>
+<button class="px-3.5 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-bright text-on-surface-variant font-label-md text-label-md flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-error"></span>
+<span>Health</span>
+</button>
+</div>
+</div>
+<!-- Primary CTA Action -->
+<div class="pt-2">
+<button class="w-full h-12 rounded-xl bg-primary hover:bg-primary-fixed-dim text-on-primary font-label-lg text-label-lg flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-md" id="save-action-btn">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">done_all</span>
+<span>Save Changes</span>
+</button>
+</div>
+<!-- Encrypted Local Vault Trust Footer -->
+<div class="flex items-center justify-center gap-2 py-3 px-space-sm opacity-80">
+<span class="material-symbols-outlined text-tertiary text-[16px]">verified_user</span>
+<p class="font-label-sm text-label-sm text-on-surface-variant text-center">
+      AES-256 local encrypted storage • Zero cloud telemetry
+    </p>
+</div>
+</div>
+<script>
+  // Simple micro-interactions for tab and toggle behavior
+  const tabEvent = document.getElementById('tab-event');
+  const tabReminder = document.getElementById('tab-reminder');
+  const allDayToggle = document.getElementById('all-day-toggle');
+  const allDayKnob = document.getElementById('all-day-knob');
+  const copyBtn = document.getElementById('copy-btn');
+  const saveBtn = document.getElementById('save-action-btn');
+
+  let isAllDay = false;
+
+  tabEvent?.addEventListener('click', () => {
+    tabEvent.className = 'flex-1 py-2.5 px-space-sm rounded-lg flex items-center justify-center gap-2 bg-primary text-on-primary font-label-lg text-label-lg shadow-sm transition-all duration-200';
+    tabReminder.className = 'flex-1 py-2.5 px-space-sm rounded-lg flex items-center justify-center gap-2 text-on-surface-variant hover:text-on-surface font-label-lg text-label-lg transition-all duration-200';
+  });
+
+  tabReminder?.addEventListener('click', () => {
+    tabReminder.className = 'flex-1 py-2.5 px-space-sm rounded-lg flex items-center justify-center gap-2 bg-primary text-on-primary font-label-lg text-label-lg shadow-sm transition-all duration-200';
+    tabEvent.className = 'flex-1 py-2.5 px-space-sm rounded-lg flex items-center justify-center gap-2 text-on-surface-variant hover:text-on-surface font-label-lg text-label-lg transition-all duration-200';
+  });
+
+  allDayToggle?.addEventListener('click', () => {
+    isAllDay = !isAllDay;
+    if (isAllDay) {
+      allDayToggle.classList.remove('bg-surface-container-highest');
+      allDayToggle.classList.add('bg-primary');
+      allDayKnob.classList.remove('bg-on-surface-variant', 'translate-x-0');
+      allDayKnob.classList.add('bg-on-primary', 'translate-x-5');
+      allDayToggle.setAttribute('aria-checked', 'true');
+    } else {
+      allDayToggle.classList.remove('bg-primary');
+      allDayToggle.classList.add('bg-surface-container-highest');
+      allDayKnob.classList.remove('bg-on-primary', 'translate-x-5');
+      allDayKnob.classList.add('bg-on-surface-variant', 'translate-x-0');
+      allDayToggle.setAttribute('aria-checked', 'false');
+    }
+  });
+
+  copyBtn?.addEventListener('click', () => {
+    const icon = copyBtn.querySelector('span');
+    if (icon) {
+      icon.textContent = 'check';
+      setTimeout(() => {
+        icon.textContent = 'content_copy';
+      }, 1500);
+    }
+  });
+
+  saveBtn?.addEventListener('click', () => {
+    const origText = saveBtn.innerHTML;
+    saveBtn.innerHTML = '<span class="material-symbols-outlined text-[20px] animate-spin">refresh</span><span>Saving locally...</span>';
+    setTimeout(() => {
+      saveBtn.innerHTML = '<span class="material-symbols-outlined text-[20px]">check_circle</span><span>Entry Encrypted & Saved</span>';
+      setTimeout(() => {
+        saveBtn.innerHTML = origText;
+      }, 1800);
+    }, 600);
+  });
+</script></main></body></html>

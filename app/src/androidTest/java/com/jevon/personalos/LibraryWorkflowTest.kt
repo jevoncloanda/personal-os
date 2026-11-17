@@ -31,6 +31,8 @@ class LibraryWorkflowTest {
     private fun capture(name: String) {
         compose.waitForIdle()
         val i = InstrumentationRegistry.getInstrumentation()
+        i.uiAutomation.waitForIdle(600, 5000)
+        android.os.SystemClock.sleep(1200)
         val bitmap = requireNotNull(i.uiAutomation.takeScreenshot())
         val folder = File(i.targetContext.getExternalFilesDir(null), "review/phase-4").apply { mkdirs() }
         File(folder, "$name.png").outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }; bitmap.recycle()
@@ -65,7 +67,14 @@ class LibraryWorkflowTest {
             compose.waitUntil(10000) { compose.onAllNodesWithText("Review book").fetchSemanticsNodes().isEmpty() }
             field("Search titles", ""); tap("Media: All media"); tap("Book"); waitFor("Review book")
             tap("Media: Book"); tap("All media")
-            tap("Review Today"); waitFor("Review book"); capture("today-library")
+            scenario.onActivity { host -> host.currentFocus?.let { view ->
+                (host.getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager)
+                    .hideSoftInputFromWindow(view.windowToken, 0)
+                view.clearFocus()
+            } }
+            tap("Review Today"); waitFor("Review book")
+            compose.onNodeWithText("Review book").performScrollTo()
+            capture("today-library")
             tap("Review Library"); scenario.recreate(); scenario.onActivity { activity = it }; waitFor("Your Library")
             assertEquals(4, runBlocking { activity!!.databaseForTest().personalDao().libraryCount("", "", "") })
             val records = runBlocking { dao.libraryPage("", "", "", "TITLE") }

@@ -33,12 +33,12 @@ internal fun BackupScreen(model: BackupViewModel) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Text("Keep a copy. Recover with confidence.", style = MaterialTheme.typography.headlineMedium)
         Text("Back up all stored accounts, transactions, categories, budgets and other personal records, including archived history. Appearance stays on this device.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        FrostedPanel {
+        PorosCard {
             Text("Your backup file", style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
             Text("Backups are unencrypted JSON. Anyone who can read the file can read your financial and personal information. Choose a trusted location.", style = MaterialTheme.typography.bodyMedium)
             Text("A checksum checks for damage; it does not verify who created a backup. No cloud account or storage permission is required.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Button(enabled = state.working == null, onClick = {
-                create.launch(DateTimeFormatter.ofPattern("'personal-os-'uuuuMMdd-HHmmss'.json'").withZone(ZoneOffset.UTC).format(Instant.now()))
+                create.launch(DateTimeFormatter.ofPattern("'poros-'uuuuMMdd-HHmmss'.json'").withZone(ZoneOffset.UTC).format(Instant.now()))
             }, shape = MaterialTheme.shapes.medium, modifier = Modifier.heightIn(min = 48.dp)) { Text("Export backup") }
             OutlinedButton(enabled = state.working == null, onClick = { open.launch(arrayOf("application/json", "text/plain", "application/octet-stream")) }, shape = MaterialTheme.shapes.medium, modifier = Modifier.heightIn(min = 48.dp)) { Text("Restore backup") }
         }
@@ -54,7 +54,7 @@ internal fun BackupScreen(model: BackupViewModel) {
             }
         }
         state.preview?.let { preview ->
-            FrostedPanel {
+            PorosCard {
                 Text("Restore preview", style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
                 Text("Created ${preview.createdAt} · app ${preview.appVersion}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 preview.data.counts.forEach { (label, count) -> Row(Modifier.fillMaxWidth()) { Text(label, Modifier.weight(1f)); Text(count.toString(), style = MaterialTheme.typography.titleSmall) } }

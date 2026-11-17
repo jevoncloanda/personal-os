@@ -20,32 +20,38 @@ import com.jevon.personalos.data.ThemeMode
 import com.jevon.personalos.R
 
 private val LightColors = lightColorScheme(
-    primary = Color(0xFF2462C3), onPrimary = Color.White,
-    primaryContainer = Color(0xFFD5E8FF), onPrimaryContainer = Color(0xFF103566),
-    secondary = Color(0xFF4A6283), onSecondary = Color.White,
-    secondaryContainer = Color(0xFFE0EBF7), onSecondaryContainer = Color(0xFF263E59),
-    surface = Color(0xFFF6FAFE), onSurface = Color(0xFF172533),
-    background = Color(0xFFE8F3FC), onBackground = Color(0xFF172533),
-    surfaceContainer = Color(0xFFEDF4FC), surfaceContainerLow = Color(0xFFF3F8FE),
-    surfaceContainerLowest = Color.White, surfaceContainerHigh = Color(0xFFE4EFF9), surfaceContainerHighest = Color(0xFFDCE9F7),
-    surfaceBright = Color(0xFFF6FAFE), surfaceDim = Color(0xFFD7E5F2),
-    surfaceVariant = Color(0xFFE0EBF5), onSurfaceVariant = Color(0xFF43576A),
-    outline = Color(0xFF718599), outlineVariant = Color(0xFFC2D4E5),
-    error = Color(0xFFAE302E), onError = Color.White, errorContainer = Color(0xFFFFDAD5), onErrorContainer = Color(0xFF46120F),
+    primary = Color(0xFF4648D4), onPrimary = Color.White,
+    primaryContainer = Color(0xFFE4DFFF), onPrimaryContainer = Color(0xFF29009F),
+    secondary = Color(0xFF62549B), onSecondary = Color.White,
+    secondaryContainer = Color(0xFFEEE9FF), onSecondaryContainer = Color(0xFF35266B),
+    tertiary = Color(0xFF006C50), onTertiary = Color.White,
+    tertiaryContainer = Color(0xFFCEFAE9), onTertiaryContainer = Color(0xFF002117),
+    surface = Color(0xFFFAF8FF), onSurface = Color(0xFF131B2E),
+    background = Color(0xFFFAF8FF), onBackground = Color(0xFF131B2E),
+    surfaceContainer = Color(0xFFF2F0FA), surfaceContainerLow = Color(0xFFF6F3FF),
+    surfaceContainerLowest = Color.White, surfaceContainerHigh = Color(0xFFEBE8F5), surfaceContainerHighest = Color(0xFFE4E0EF),
+    surfaceBright = Color.White, surfaceDim = Color(0xFFE4E0EF),
+    surfaceVariant = Color(0xFFEEEBF6), onSurfaceVariant = Color(0xFF585466),
+    outline = Color(0xFF767586), outlineVariant = Color(0xFFE3DFEE),
+    inverseSurface = Color(0xFF2F3039), inverseOnSurface = Color(0xFFFAF8FF), inversePrimary = Color(0xFFC7BFFF),
+    error = Color(0xFFBA1A1A), onError = Color.White, errorContainer = Color(0xFFFFDAD6), onErrorContainer = Color(0xFF93000A),
 )
 private val DarkColors = darkColorScheme(
-    primary = Color(0xFFA8CDFF), onPrimary = Color(0xFF003163),
-    primaryContainer = Color(0xFF214B7F), onPrimaryContainer = Color(0xFFDAEBFF),
-    secondary = Color(0xFFBCD0EA), onSecondary = Color(0xFF203750),
-    secondaryContainer = Color(0xFF304861), onSecondaryContainer = Color(0xFFDDEBFA),
-    surface = Color(0xFF12243A), onSurface = Color(0xFFEAF2FD),
-    background = Color(0xFF0B1829), onBackground = Color(0xFFEAF2FD),
-    surfaceContainer = Color(0xFF1C3049), surfaceContainerLow = Color(0xFF162940),
-    surfaceContainerLowest = Color(0xFF0B1829), surfaceContainerHigh = Color(0xFF263C56), surfaceContainerHighest = Color(0xFF304760),
-    surfaceBright = Color(0xFF344C66), surfaceDim = Color(0xFF0B1829),
-    surfaceVariant = Color(0xFF30455C), onSurfaceVariant = Color(0xFFBACCDD),
-    outline = Color(0xFF899FB6), outlineVariant = Color(0xFF3A526C),
-    error = Color(0xFFFFB4A9), onError = Color(0xFF690005), errorContainer = Color(0xFF73312E), onErrorContainer = Color(0xFFFFDAD5),
+    primary = Color(0xFFC7BFFF), onPrimary = Color(0xFF29009F),
+    primaryContainer = Color(0xFF8D7FFF), onPrimaryContainer = Color(0xFF23008D),
+    secondary = Color(0xFFB8AFFF), onSecondary = Color(0xFF2D2178),
+    secondaryContainer = Color(0xFF473C92), onSecondaryContainer = Color(0xFFE4DFFF),
+    tertiary = Color(0xFF66DBB3), onTertiary = Color(0xFF003829),
+    tertiaryContainer = Color(0xFF164E3D), onTertiaryContainer = Color(0xFF84F8CE),
+    surface = Color(0xFF12131B), onSurface = Color(0xFFE3E1ED),
+    background = Color(0xFF0D0E16), onBackground = Color(0xFFE3E1ED),
+    surfaceContainer = Color(0xFF1E1F28), surfaceContainerLow = Color(0xFF1A1B23),
+    surfaceContainerLowest = Color(0xFF0D0E16), surfaceContainerHigh = Color(0xFF292932), surfaceContainerHighest = Color(0xFF33343D),
+    surfaceBright = Color(0xFF383842), surfaceDim = Color(0xFF12131B),
+    surfaceVariant = Color(0xFF33343D), onSurfaceVariant = Color(0xFFC8C4D7),
+    outline = Color(0xFF928EA0), outlineVariant = Color(0xFF353443),
+    inverseSurface = Color(0xFFE3E1ED), inverseOnSurface = Color(0xFF2F3039), inversePrimary = Color(0xFF5945D6),
+    error = Color(0xFFFFB4AB), onError = Color(0xFF690005), errorContainer = Color(0xFF5E2027), onErrorContainer = Color(0xFFFFDAD6),
 )
 // One bundled variable face, explicitly instantiated for Android 26+; no network font loading.
 @OptIn(ExperimentalTextApi::class)
@@ -75,8 +81,8 @@ private val AppTypography = Typography(
 
 @Immutable
 data class Atmosphere(val sky: Color, val mist: Color, val ground: Color, val panel: Color, val border: Color, val positive: Color, val warning: Color)
-private val DayAtmosphere = Atmosphere(Color(0xFFB2DDF8), Color(0xFFE8F3FC), Color(0xFFF2F5FC), Color(0xFFF0F7FD), Color.White.copy(alpha = 0.72f), Color(0xFF176847), Color(0xFF805400))
-private val NightAtmosphere = Atmosphere(Color(0xFF173E66), Color(0xFF11273F), Color(0xFF0B1829), Color(0xFF1C334D), Color(0xFFB2DDF8).copy(alpha = 0.14f), Color(0xFF90DAB7), Color(0xFFF0CC84))
+private val DayAtmosphere = Atmosphere(LightColors.background, LightColors.background, LightColors.background, Color.White, LightColors.outlineVariant, Color(0xFF006C50), Color(0xFF805400))
+private val NightAtmosphere = Atmosphere(DarkColors.background, DarkColors.background, DarkColors.background, DarkColors.surfaceContainer, DarkColors.outlineVariant, DarkColors.tertiary, Color(0xFFF0CC84))
 val LocalAtmosphere = staticCompositionLocalOf { DayAtmosphere }
 
 @Composable
@@ -85,12 +91,12 @@ fun PersonalOsTheme(settings: Settings = Settings(), content: @Composable () -> 
     val base = if (dark) DarkColors else LightColors
     val colors = if (settings.dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         val dynamic = if (dark) dynamicDarkColorScheme(LocalContext.current) else dynamicLightColorScheme(LocalContext.current)
-        // Wallpaper personalizes supporting roles; brand blue and readable atmosphere stay stable.
+        // Preserve the existing opt-in wallpaper setting without changing Poros primary/surfaces.
         base.copy(secondary = dynamic.secondary, onSecondary = dynamic.onSecondary, secondaryContainer = dynamic.secondaryContainer,
             onSecondaryContainer = dynamic.onSecondaryContainer, tertiary = dynamic.tertiary, onTertiary = dynamic.onTertiary)
     } else base
     CompositionLocalProvider(LocalAtmosphere provides if (dark) NightAtmosphere else DayAtmosphere) {
         MaterialTheme(colorScheme = colors, typography = AppTypography,
-            shapes = Shapes(extraSmall = RoundedCornerShape(8.dp), small = RoundedCornerShape(12.dp), medium = RoundedCornerShape(20.dp), large = RoundedCornerShape(28.dp), extraLarge = RoundedCornerShape(32.dp)), content = content)
+            shapes = Shapes(extraSmall = RoundedCornerShape(8.dp), small = RoundedCornerShape(12.dp), medium = RoundedCornerShape(16.dp), large = RoundedCornerShape(16.dp), extraLarge = RoundedCornerShape(24.dp)), content = content)
     }
 }

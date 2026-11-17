@@ -52,7 +52,7 @@ class Phase16UiTest {
             compose.onNodeWithContentDescription("Cancel editing").performClick()
             compose.onNodeWithContentDescription("Quick add").performClick(); click("Transfer"); capture("transfer-editor")
             compose.onNodeWithContentDescription("Cancel editing").performClick()
-            compose.onNodeWithContentDescription("Settings").performClick(); capture("appearance-light"); click("Done")
+            compose.onNodeWithContentDescription("Settings").performClick(); capture("appearance-light"); click("Money")
             runBlocking { app.settings.setTheme(ThemeMode.DARK) }
             click("Today"); capture("today-personal-dark")
             click("Money"); section("Overview"); capture("money-overview-dark")

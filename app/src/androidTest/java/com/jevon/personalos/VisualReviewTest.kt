@@ -45,13 +45,16 @@ class VisualReviewTest {
         }
         if (savedDynamic != dynamic) toggle.performClick()
         compose.waitUntil(timeoutMillis = 5_000) { runBlocking { store.settings.first().let { it.theme == expectedTheme && it.dynamicColor == dynamic } } }
-        compose.onNodeWithText("Done").performClick()
+        compose.onAllNodesWithText("Today").filter(hasClickAction()).onLast().performClick()
     }
     private fun preview(label: String) {
         compose.onNodeWithContentDescription("Developer previews").performClick()
         compose.onNodeWithText(label, useUnmergedTree = true).performClick()
     }
     @Test fun captureReviewStates() {
+        val store = (compose.activity.application as PersonalOsApplication).settings
+        val original = runBlocking { store.settings.first() }
+        try {
         val prefix = InstrumentationRegistry.getArguments().getString("capturePrefix") ?: "phone"
         preview("Populated")
         appearance("Light")
@@ -76,5 +79,8 @@ class VisualReviewTest {
         appearance("Light")
         compose.onNodeWithContentDescription("Quick add").performClick()
         capture("$prefix-quick-add")
+        } finally {
+            runBlocking { store.setTheme(original.theme); store.setDynamicColor(original.dynamicColor) }
+        }
     }
 }

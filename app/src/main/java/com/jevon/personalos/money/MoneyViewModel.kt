@@ -66,7 +66,15 @@ class MoneyViewModel @JvmOverloads constructor(app: Application, private val sav
         }
     }
     fun account(value: AccountEntity, create: Boolean, done: () -> Unit) = write(done) { db.personalDao().saveAccount(value, create) }
-    fun entry(value: EntryEntity, create: Boolean, done: () -> Unit) = write(done) { db.personalDao().saveEntry(value, create) }
+    fun lastEntryAccount(kind: EntryKind): String = saved["entry-account-${kind.name}"] ?: ""
+    fun lastEntryCategory(kind: EntryKind): String = saved["entry-category-${kind.name}"] ?: ""
+    fun entry(value: EntryEntity, create: Boolean, done: () -> Unit) = write(done) {
+        db.personalDao().saveEntry(value, create)
+        if (create && value.kind != EntryKind.TRANSFER) {
+            saved["entry-account-${value.kind.name}"] = if (value.kind == EntryKind.INCOME) value.toAccountId else value.fromAccountId
+            saved["entry-category-${value.kind.name}"] = value.categoryId
+        }
+    }
     fun deleteEntry(id: String, done: () -> Unit) = write(done) { db.personalDao().deleteEntry(id) }
     fun category(value: CategoryEntity, create: Boolean, done: () -> Unit) = write(done) { db.personalDao().saveCategory(value, create) }
     fun budget(value: BudgetEntity, create: Boolean, done: () -> Unit) = write(done) { db.personalDao().saveBudget(value, create) }

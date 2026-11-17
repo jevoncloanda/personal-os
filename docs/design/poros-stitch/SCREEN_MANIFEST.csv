@@ -1,0 +1,29 @@
+priority,theme,label,original_id,new_folder,status,notes
+Primary,01_DARK_PRIMARY,Today Dashboard,poros_dark_today,01_DARK_PRIMARY/01_today,Keep,"Stitch HTML is a visual/reference implementation, not Kotlin Compose code"
+Primary,01_DARK_PRIMARY,Money Overview,poros_dark_money,01_DARK_PRIMARY/02_money,Keep,"Stitch HTML is a visual/reference implementation, not Kotlin Compose code"
+Primary,01_DARK_PRIMARY,Transaction History,poros_dark_transaction_history,01_DARK_PRIMARY/03_transaction_history,Keep,"Stitch HTML is a visual/reference implementation, not Kotlin Compose code"
+Primary,01_DARK_PRIMARY,Budget Management,poros_dark_budget_management,01_DARK_PRIMARY/04_budget_management,Keep,"Stitch HTML is a visual/reference implementation, not Kotlin Compose code"
+Primary,01_DARK_PRIMARY,Subscriptions Overview,poros_dark_subscription_management,01_DARK_PRIMARY/05_subscription_management,Keep,"Stitch HTML is a visual/reference implementation, not Kotlin Compose code"
+Primary,01_DARK_PRIMARY,Schedule Overview,poros_dark_schedule,01_DARK_PRIMARY/06_schedule,Keep,"Stitch HTML is a visual/reference implementation, not Kotlin Compose code"
+Primary,01_DARK_PRIMARY,Library Overview,poros_dark_library_overview,01_DARK_PRIMARY/07_library_overview,Keep,"Stitch HTML is a visual/reference implementation, not Kotlin Compose code"
+Primary,01_DARK_PRIMARY,Library Detail,poros_dark_library_detail,01_DARK_PRIMARY/08_library_detail,Keep,"Stitch HTML is a visual/reference implementation, not Kotlin Compose code"
+Primary,01_DARK_PRIMARY,Add Expense,poros_dark_add_expense,01_DARK_PRIMARY/09_add_expense,Keep,"Stitch HTML is a visual/reference implementation, not Kotlin Compose code"
+Primary,01_DARK_PRIMARY,Global Quick Add,poros_dark_quick_add,01_DARK_PRIMARY/10_quick_add,Keep,"Stitch HTML is a visual/reference implementation, not Kotlin Compose code"
+Primary,01_DARK_PRIMARY,Transaction Detail,poros_dark_transaction_detail,01_DARK_PRIMARY/11_transaction_detail,Keep,"Stitch HTML is a visual/reference implementation, not Kotlin Compose code"
+Primary,01_DARK_PRIMARY,Event & Reminder Editor,poros_dark_event_reminder_editor,01_DARK_PRIMARY/12_event_reminder_editor,Keep,"Stitch HTML is a visual/reference implementation, not Kotlin Compose code"
+Primary,01_DARK_PRIMARY,Settings,poros_dark_settings,01_DARK_PRIMARY/13_settings,Keep,"Stitch HTML is a visual/reference implementation, not Kotlin Compose code"
+Secondary / layout reference,02_LIGHT_REFERENCE,Today Dashboard,today_dashboard_obsidian_light,02_LIGHT_REFERENCE/01_today_dashboard,Keep,"Stitch HTML is a visual/reference implementation, not Kotlin Compose code"
+Secondary / layout reference,02_LIGHT_REFERENCE,Money Overview,money_overview_obsidian_light,02_LIGHT_REFERENCE/02_money_overview,Keep,"Stitch HTML is a visual/reference implementation, not Kotlin Compose code"
+Secondary / layout reference,02_LIGHT_REFERENCE,Schedule Overview,schedule_agenda_obsidian_light,02_LIGHT_REFERENCE/03_schedule_agenda,Keep,"Stitch HTML is a visual/reference implementation, not Kotlin Compose code"
+Secondary / layout reference,02_LIGHT_REFERENCE,Settings & Theme,settings_theme_toggle,02_LIGHT_REFERENCE/04_settings_theme_toggle,Keep,"Stitch HTML is a visual/reference implementation, not Kotlin Compose code"
+Secondary / layout reference,02_LIGHT_REFERENCE,Budget Management,budget_management_light,02_LIGHT_REFERENCE/05_budget_management,Keep,"Stitch HTML is a visual/reference implementation, not Kotlin Compose code"
+Secondary / layout reference,02_LIGHT_REFERENCE,Subscriptions Overview,subscriptions_overview_light,02_LIGHT_REFERENCE/06_subscriptions_overview,Keep,"Stitch HTML is a visual/reference implementation, not Kotlin Compose code"
+Secondary / layout reference,02_LIGHT_REFERENCE,Event & Reminder Editor,event_reminder_editor_light,02_LIGHT_REFERENCE/07_event_reminder_editor,Keep,"Stitch HTML is a visual/reference implementation, not Kotlin Compose code"
+Secondary / layout reference,02_LIGHT_REFERENCE,Transaction Detail / Delete Confirmation,transaction_details_deletion_state,02_LIGHT_REFERENCE/08_transaction_details_deletion_state,Keep,"Stitch HTML is a visual/reference implementation, not Kotlin Compose code"
+Secondary / layout reference,02_LIGHT_REFERENCE,Library Detail / Quick Progress,library_detail_quick_progress_update,02_LIGHT_REFERENCE/09_library_detail_quick_progress_update,Keep,"Stitch HTML is a visual/reference implementation, not Kotlin Compose code"
+Excluded,03_EXCLUDED_INVENTORY,add_expense_native_android_compose,add_expense_native_android_compose,,Excluded from clean package,Blank / black screenshot
+Excluded,03_EXCLUDED_INVENTORY,global_quick_add_bottom_sheet,global_quick_add_bottom_sheet,,Excluded from clean package,Washed-out/incomplete screenshot; newer dark Quick Add is complete
+Excluded,03_EXCLUDED_INVENTORY,entertainment_library,entertainment_library,,Excluded from clean package,Partially rendered placeholder/skeleton; new dark Library is complete
+Excluded,03_EXCLUDED_INVENTORY,schedule_agenda,schedule_agenda,,Excluded from clean package,Incomplete skeleton screenshot; newer dark Schedule is complete
+Excluded,03_EXCLUDED_INVENTORY,today_dashboard,today_dashboard,,Excluded from clean package,Incomplete skeleton screenshot; newer dark Today is complete
+Excluded,03_EXCLUDED_INVENTORY,money_overview_obsidian,money_overview_obsidian,,Excluded from clean package,Incomplete skeleton screenshot; newer dark Money is complete

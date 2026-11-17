@@ -42,7 +42,7 @@ class SubscriptionReviewActivity : ComponentActivity() {
             var request by rememberSaveable { mutableStateOf<String?>(null) }
             val today by remember { host.database.observeToday(ZonedDateTime.now()) }.collectAsState(initial = null)
             PersonalOsTheme(Settings(if (dark) ThemeMode.DARK else ThemeMode.LIGHT, false)) {
-                AtmosphericBackground { SystemBarAppearance()
+                PorosBackground { SystemBarAppearance()
                     Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.systemBars)) {
                         Text("Isolated subscription review · disposable data", Modifier.padding(12.dp), style = MaterialTheme.typography.labelMedium)
                         FlowRow {

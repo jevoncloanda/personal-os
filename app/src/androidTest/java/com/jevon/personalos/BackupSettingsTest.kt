@@ -34,16 +34,32 @@ class BackupSettingsTest {
         try {
             runBlocking { app.settings.setTheme(ThemeMode.LIGHT); app.settings.setDynamicColor(false) }
             compose.onNodeWithContentDescription("Settings").performClick(); capture("settings-entry")
-            compose.onNodeWithText("Backup & restore").performClick()
+            compose.onNodeWithText("Dark").performClick()
+            compose.waitUntil(5000) { runBlocking { app.settings.settings.first().theme == ThemeMode.DARK } }
+            compose.activityRule.scenario.recreate()
+            compose.onNodeWithText("Dark").assertIsSelected()
+            capture("settings-dark")
+            compose.onNodeWithText("Light").performClick()
+            compose.onNodeWithText("Backup & restore").performScrollTo().performClick()
             compose.onNodeWithText("Export backup").assertExists(); capture("settings-backup-light")
             runBlocking { app.settings.setTheme(ThemeMode.DARK) }; capture("settings-backup-dark")
             compose.activityRule.scenario.recreate()
             compose.onNodeWithText("Restore backup").assertExists()
             compose.onNodeWithContentDescription("Back").performClick()
+            for (screen in listOf("Schedule", "Library")) {
+                compose.onAllNodesWithText(screen).filter(hasClickAction()).onLast().performClick()
+                val tag = if (screen == "Library") "LibraryList" else "ScheduleList"
+                compose.waitUntil(10000) { compose.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty() }
+                capture(screen.lowercase())
+            }
             compose.onAllNodesWithText("Money").filter(hasClickAction()).onLast().performClick()
             compose.waitUntil(10000) { compose.onAllNodesWithTag("MoneyList").fetchSemanticsNodes().isNotEmpty() }; capture("money-regression")
+            compose.onNodeWithText("Categories").assertIsDisplayed().performClick()
+            compose.onNodeWithText("Add category").assertExists()
+            compose.onNodeWithText("Overview").performClick()
             compose.onAllNodesWithText("Today").filter(hasClickAction()).onLast().performClick(); capture("today-regression")
             compose.onNodeWithContentDescription("Quick add").performClick()
+            capture("quick-add-dark")
             compose.onNodeWithText("New subscription").performClick()
             compose.onNodeWithText("Subscription name").performTextInput("Unsaved review draft")
             compose.activityRule.scenario.recreate()

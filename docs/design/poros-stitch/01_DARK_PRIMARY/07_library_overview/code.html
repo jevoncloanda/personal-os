@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><title>Library</title><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Sora:wght@600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "error-container": "#93000a", "primary-container": "#8d7fff", "on-tertiary-fixed": "#002117", "inverse-on-surface": "#2f3039", "outline": "#928ea0", "surface-container-low": "#1a1b23", "surface-container-lowest": "#0d0e16", "tertiary-fixed": "#84f8ce", "primary-fixed": "#e4dfff", "on-tertiary-fixed-variant": "#00513d", "secondary-fixed-dim": "#c7bfff", "tertiary": "#66dbb3", "on-background": "#e3e1ed", "secondary": "#c7bfff", "on-primary-container": "#23008d", "on-secondary-fixed-variant": "#443a8f", "on-primary-fixed-variant": "#4027be", "on-tertiary-container": "#003123", "tertiary-container": "#21a37f", "on-primary-fixed": "#170065", "surface-container-highest": "#33343d", "error": "#ffb4ab", "outline-variant": "#474554", "background": "#12131b", "tertiary-fixed-dim": "#66dbb3", "on-surface-variant": "#c8c4d7", "inverse-surface": "#e3e1ed", "on-secondary-container": "#b8afff", "surface-variant": "#33343d", "on-primary": "#29009f", "primary-fixed-dim": "#c7bfff", "on-error": "#690005", "primary": "#c7bfff", "surface-container": "#1e1f28", "on-secondary-fixed": "#170164", "surface": "#12131b", "secondary-fixed": "#e4dfff", "surface-tint": "#c7bfff", "inverse-primary": "#5945d6", "on-surface": "#e3e1ed", "surface-container-high": "#292932", "on-tertiary": "#003829", "secondary-container": "#473c92", "on-error-container": "#ffdad6", "surface-bright": "#383842", "surface-dim": "#12131b", "on-secondary": "#2d2178" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "space-lg": "1.5rem", "space-xs": "0.25rem", "space-md": "1rem", "gutter-mobile": "0.75rem", "margin": "1.5rem", "margin-mobile": "1rem", "gutter": "1rem", "space-xl": "2rem", "space-sm": "0.5rem" }, "fontFamily": { "headline-sm": ["Sora"], "label-md": ["Inter"], "display-lg": ["Sora"], "label-lg": ["Inter"], "display-lg-mobile": ["Sora"], "label-sm": ["Inter"], "body-lg": ["Inter"], "headline-md": ["Sora"], "headline-lg": ["Sora"], "body-md": ["Inter"], "title-md": ["Inter"], "body-sm": ["Inter"] }, "fontSize": { "headline-sm": ["18px", { "lineHeight": "24px", "fontWeight": "600" }], "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }], "display-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }], "display-lg-mobile": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "label-sm": ["10px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }], "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }], "headline-md": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "headline-lg": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }], "title-md": ["16px", { "lineHeight": "22px", "fontWeight": "600" }], "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }] } } } };</script><style>@layer base { .pb-safe { padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px); } .pt-safe { padding-top: max(env(safe-area-inset-top, 0px), 0px); } } ::-webkit-scrollbar { display: none; }</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface-container-lowest text-on-surface font-body-md text-body-md min-h-screen selection:bg-primary-container selection:text-on-primary-container"><header class="fixed top-0 w-full z-50 pt-safe bg-surface-container/85 backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.35)]"><div class="h-16 px-margin-mobile flex items-center justify-between"><div class="flex items-center gap-space-sm"><div class="w-11 h-11 flex items-center justify-center rounded-xl bg-surface-container-high text-primary hover:bg-surface-container-highest transition-colors active:scale-95"><span class="material-symbols-outlined text-[24px]">terminal</span></div><div class="flex flex-col"><div class="flex items-center gap-1.5"><span class="font-headline-sm text-headline-sm text-on-surface tracking-tight">POROS</span><span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-tertiary opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-tertiary"></span></span></div><span class="font-label-sm text-label-sm text-on-surface-variant font-mono uppercase tracking-wider">SYNCHRONIZED</span></div></div><div class="flex items-center gap-space-xs"><button aria-label="Global Search" class="w-11 h-11 flex items-center justify-center rounded-xl text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all active:scale-95"><span class="material-symbols-outlined text-[22px]">search</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center ml-1"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full min-h-screen pt-16 pb-28 px-margin-mobile bg-surface-container-lowest"><div class="flex flex-col w-full gap-space-lg">
+<!-- Header Sub-Bar & Context Overview -->
+<section class="flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="font-headline-sm text-headline-sm text-on-surface tracking-tight">Vault Library</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-primary font-label-sm text-label-sm">Offline</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<button aria-label="Sort library" class="w-10 h-10 flex items-center justify-center rounded-xl bg-surface-container text-on-surface-variant hover:text-on-surface active:scale-95 transition-all" id="sortBtn">
+<span class="material-symbols-outlined text-[20px]">swap_vert</span>
+</button>
+<button aria-label="Add new item" class="w-10 h-10 flex items-center justify-center rounded-xl bg-primary-container text-on-primary-container active:scale-95 transition-transform shadow-[0_0_16px_-2px_rgba(118,101,245,0.4)]">
+<span class="material-symbols-outlined text-[22px]">add</span>
+</button>
+</div>
+</div>
+<!-- Search Bar -->
+<div class="relative flex items-center w-full">
+<span class="material-symbols-outlined absolute left-3.5 text-on-surface-variant text-[20px] pointer-events-none">search</span>
+<input class="w-full h-12 pl-11 pr-12 rounded-xl bg-surface-container text-on-surface font-body-md text-body-md placeholder:text-outline focus:outline-none focus:bg-surface-container-high transition-colors" placeholder="Search movies, books, games, TV..." type="text"/>
+<button aria-label="Voice search or filter" class="absolute right-2.5 w-8 h-8 flex items-center justify-center rounded-lg text-on-surface-variant hover:text-on-surface active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[19px]">mic</span>
+</button>
+</div>
+<!-- Filter Chips Horizontal Scroll -->
+<div class="flex items-center gap-space-xs overflow-x-auto no-scrollbar py-0.5">
+<button class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-secondary-container text-on-secondary-container font-label-md text-label-md shrink-0 transition-transform active:scale-95 shadow-[0_0_12px_-2px_rgba(118,101,245,0.3)]">
+<span>All</span>
+<span class="px-1.5 py-0.2 rounded-full bg-primary-container/30 text-primary-fixed font-label-sm text-label-sm">14</span>
+</button>
+<button class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface font-label-md text-label-md shrink-0 transition-colors active:scale-95">
+<span>TV Shows</span>
+<span class="text-outline font-label-sm text-label-sm">3</span>
+</button>
+<button class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface font-label-md text-label-md shrink-0 transition-colors active:scale-95">
+<span>Books</span>
+<span class="text-outline font-label-sm text-label-sm">4</span>
+</button>
+<button class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface font-label-md text-label-md shrink-0 transition-colors active:scale-95">
+<span>Games</span>
+<span class="text-outline font-label-sm text-label-sm">2</span>
+</button>
+<button class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface font-label-md text-label-md shrink-0 transition-colors active:scale-95">
+<span>Movies</span>
+<span class="text-outline font-label-sm text-label-sm">5</span>
+</button>
+</div>
+</section>
+<!-- Currently Enjoying (Tactile Dynamic List) -->
+<section class="flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<h2 class="font-headline-sm text-headline-sm text-on-surface tracking-tight">Currently Enjoying</h2>
+<span class="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm font-semibold">3 Active</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-mono">LOCAL STREAM</span>
+</div>
+<!-- Active Item 1: TV Show -->
+<article class="flex flex-col gap-space-sm p-space-md rounded-xl bg-surface-container shadow-md">
+<div class="flex items-start gap-space-md">
+<div class="relative w-16 h-22 shrink-0 rounded-lg overflow-hidden bg-surface-container-high shadow-inner">
+<img class="w-full h-full object-cover" data-alt="Severance dark sci-fi TV series poster aesthetic featuring minimal office corridors, deep obsidian blue lighting, fluorescent luminescent glow, sleek futuristic corporate ambiance" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDvyBgYLja51o5qN1mY-nvsMO_lwyfuOLnJaGuGV1wNsbc0cAKWM_TMYWOx-3ixt1hyVt01XMaBT9n1DuYkRqO3uYXCTfIZFYQRVOw2wpYZ7Fg8ccadsCmFWUmTK4AfgxkOWVU50jjug4HLZZf6r0TdYpShhg-g4DVVeMMKbbfNIialOQsXi1I2yte3r3uEuvJR7NHNstXmJX3iKJAqSHBie6g74YsQrum4nuqYlQ"/>
+<div class="absolute bottom-1 right-1 px-1 rounded bg-surface-container-lowest/80 backdrop-blur-sm text-[9px] font-mono text-tertiary">4K</div>
+</div>
+<div class="flex flex-col flex-1 min-w-0">
+<div class="flex items-center justify-between gap-1">
+<span class="font-label-sm text-label-sm text-primary font-medium tracking-wide uppercase">Apple TV+</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-mono">40%</span>
+</div>
+<h3 class="font-title-md text-title-md text-on-surface truncate">Severance</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Season 2 • Ep 4 of 10</p>
+<!-- Kinetic Track -->
+<div class="w-full h-1.5 rounded-full bg-surface-container-highest mt-2 overflow-hidden">
+<div class="h-full bg-primary-container rounded-full" style="width: 40%"></div>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-1">
+<span class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-tertiary">schedule</span> Next: "The Grim Barbarity"
+        </span>
+<div class="flex items-center gap-1.5">
+<button aria-label="Decrease episode" class="w-8 h-8 rounded-lg bg-surface-container-high text-on-surface-variant hover:text-on-surface active:scale-90 flex items-center justify-center transition-all">
+<span class="material-symbols-outlined text-[18px]">remove</span>
+</button>
+<button aria-label="Next episode watched" class="h-8 px-3 rounded-lg bg-primary text-on-primary font-label-md text-label-md font-semibold active:scale-95 flex items-center gap-1 transition-all shadow-[0_0_12px_-2px_rgba(118,101,245,0.4)]">
+<span class="material-symbols-outlined text-[16px]">check</span>
+<span>+1 Ep</span>
+</button>
+</div>
+</div>
+</article>
+<!-- Active Item 2: Book -->
+<article class="flex flex-col gap-space-sm p-space-md rounded-xl bg-surface-container shadow-md">
+<div class="flex items-start gap-space-md">
+<div class="relative w-16 h-22 shrink-0 rounded-lg overflow-hidden bg-surface-container-high shadow-inner">
+<img class="w-full h-full object-cover" data-alt="Atomic Habits book cover minimal high contrast graphic design with tiny dots assembling into bold typography against dark charcoal and deep space slate background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC7S67Z57gZX36Aq2NEDUKV167MLUSgbIVEE8RG9CsTPNQBN6cTDDN0J8U8IQy47GsPqG0sdxyV2bOLdnn0mEv9dEy6okVwYV1IEjVlONEX1xWF7ctQru9rGAiMq82eiZoLfWsP9Bn0He8ZbWnsRXUZRCJJPv_xOgUVMGOp7XMe9iOewvdtX8HeR_Qq65PkzSlHTiU6jD4o1dM6VZy8gxI76huOO3PAxHTjdj92kA"/>
+<div class="absolute top-1 left-1 px-1 rounded bg-surface-container-lowest/80 backdrop-blur-sm text-[9px] font-mono text-secondary">EPUB</div>
+</div>
+<div class="flex flex-col flex-1 min-w-0">
+<div class="flex items-center justify-between gap-1">
+<span class="font-label-sm text-label-sm text-secondary font-medium tracking-wide uppercase">Non-Fiction</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-mono">52%</span>
+</div>
+<h3 class="font-title-md text-title-md text-on-surface truncate">Atomic Habits</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">James Clear • p. 168 / 320</p>
+<div class="w-full h-1.5 rounded-full bg-surface-container-highest mt-2 overflow-hidden">
+<div class="h-full bg-tertiary-container rounded-full" style="width: 52%"></div>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-1">
+<span class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-primary">local_fire_department</span> 14 day streak
+        </span>
+<div class="flex items-center gap-1.5">
+<button aria-label="Add ten pages" class="h-8 px-3 rounded-lg bg-surface-container-high text-on-surface hover:bg-surface-container-highest font-label-md text-label-md active:scale-95 flex items-center gap-1 transition-all">
+<span class="material-symbols-outlined text-[16px]">menu_book</span>
+<span>+10 pgs</span>
+</button>
+</div>
+</div>
+</article>
+<!-- Active Item 3: Game -->
+<article class="flex flex-col gap-space-sm p-space-md rounded-xl bg-surface-container shadow-md">
+<div class="flex items-start gap-space-md">
+<div class="relative w-16 h-22 shrink-0 rounded-lg overflow-hidden bg-surface-container-high shadow-inner">
+<img class="w-full h-full object-cover" data-alt="Hades II video game key art featuring Melinoe surrounded by ethereal electric green and dark magical night fire in a moody painterly underworld graphic style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCRATHC0ydOI8ONuPcI6CB5CtmXE_jjVX5tTN5gzgfwQJGAqfVHo5730lYCHSdjh6t_I4pMl_4jvsBYJvzBKFICACQ8-itxkueoh4Wt43cwZkqcjccjbREYWDMVHPiYVwZtjHmNukvAMmaEOlgmzcQBcSN7C_M0MvKbu9pxYeV8NTRyhjURkYxIb1xaRPkH9EkloYU059V8pf4sKGATfOQe35ydZeSfacV63eggcQ"/>
+<div class="absolute bottom-1 right-1 px-1 rounded bg-surface-container-lowest/80 backdrop-blur-sm text-[9px] font-mono text-tertiary">DECK</div>
+</div>
+<div class="flex flex-col flex-1 min-w-0">
+<div class="flex items-center justify-between gap-1">
+<span class="font-label-sm text-label-sm text-tertiary font-medium tracking-wide uppercase">Steam Deck</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-mono">18.5 hrs</span>
+</div>
+<h3 class="font-title-md text-title-md text-on-surface truncate">Hades II</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Underworld Run #24</p>
+<div class="w-full h-1.5 rounded-full bg-surface-container-highest mt-2 overflow-hidden">
+<div class="h-full bg-primary-container rounded-full" style="width: 68%"></div>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-1">
+<span class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-tertiary">sports_esports</span> Last played 3h ago
+        </span>
+<button aria-label="Log session" class="h-8 px-3 rounded-lg bg-surface-container-high text-on-surface hover:bg-surface-container-highest font-label-md text-label-md active:scale-95 flex items-center gap-1 transition-all">
+<span class="material-symbols-outlined text-[16px]">timer</span>
+<span>+30m session</span>
+</button>
+</div>
+</article>
+</section>
+<!-- Backlog & Watchlist -->
+<section class="flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<h2 class="font-headline-sm text-headline-sm text-on-surface tracking-tight">Backlog &amp; Queue</h2>
+</div>
+<button class="font-label-md text-label-md text-primary flex items-center gap-0.5 hover:underline active:opacity-80">
+<span>View all (8)</span>
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
+<!-- Backlog Item 1: Movie -->
+<div class="flex items-center justify-between p-3.5 rounded-xl bg-surface-container hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-12 h-14 rounded-lg overflow-hidden shrink-0 bg-surface-container-high">
+<img class="w-full h-full object-cover" data-alt="Dune Part Two cinematic key visual with vast spice desert glowing under twin moons deep warm sand tones against dark space night sky" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCTVgMFJ9oJ4bm6V5ODr7kDOEe7RLY1ugpV0TNG5KjkggI1QOaXVWzBBd96HHrsYln4D6FSgGlT_Y7iMDMqzvo2cWAsXOUqWKSkdcN6HFV0keEbQWpUkG94xuXpWkL_9kevaJtqvXlhfelr8k9BAUJTTw__8KibsnTE5xjq5oKilOVkPLe0TnpE0UpqFXGOxaexJ3mH6MxSCAXDz74R3L4Gy2DmoJmZ8HPjdIMwcw"/>
+</div>
+<div class="flex flex-col min-w-0">
+<h4 class="font-title-md text-title-md text-on-surface truncate">Dune: Part Two</h4>
+<span class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1.5">
+<span>4K HDR</span>
+<span class="text-[8px]">•</span>
+<span>2h 46m</span>
+</span>
+</div>
+</div>
+<button class="px-3 py-1.5 rounded-lg bg-surface-container-highest text-primary-fixed font-label-md text-label-md shrink-0 active:scale-95 transition-transform flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">play_arrow</span>
+<span>Start</span>
+</button>
+</div>
+<!-- Backlog Item 2: Heavy Book -->
+<div class="flex items-center justify-between p-3.5 rounded-xl bg-surface-container hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-12 h-14 rounded-lg overflow-hidden shrink-0 bg-surface-container-high">
+<img class="w-full h-full object-cover" data-alt="Designing Data-Intensive Applications technical book artwork featuring a detailed vintage mechanical wild boar diagram on dark graphite matte paper" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBrBUjkSlG4bIIR0puZQoH0t7Wu3HLK4cnJ4-KD0bicmNZrqwOO7gAbZox7mifxX786a9wvQDtFRQ94PpzL6hGPowA5b-esBzamsSHEaQ142ct0tZ3_Jp8sM-tliNpKVTREq29mGOrGDggeTQRCZTRAEjqeKFk2KEla252Qcdk9T229qVc17zBN3zDLL6tPrOgQzy2d896U7wgBvSGMEG82lR7DEKs9N-R82dr8Kg"/>
+</div>
+<div class="flex flex-col min-w-0">
+<h4 class="font-title-md text-title-md text-on-surface truncate">Data-Intensive Apps</h4>
+<span class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1.5">
+<span>Martin Kleppmann</span>
+<span class="text-[8px]">•</span>
+<span>614 pgs</span>
+</span>
+</div>
+</div>
+<span class="px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm shrink-0">
+        Backlog
+      </span>
+</div>
+<!-- Backlog Item 3: Game -->
+<div class="flex items-center justify-between p-3.5 rounded-xl bg-surface-container hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-12 h-14 rounded-lg overflow-hidden shrink-0 bg-surface-container-high">
+<img class="w-full h-full object-cover" data-alt="Baldurs Gate 3 dark fantasy emblem featuring mind flayer silhouette with deep electric indigo accents and intricate golden runic framing" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCP3GTtZdRNMfwST1hedu2N5MOatboz-vIA68ADSFKZyP1pYoKDBcrs5c98rmIKvr2IDxo8r1wwwpg-akK7QpBv8GuwBvdFF5kdfId2w7Sq6e7R_IJQ_-0yaEV4E8fH-sTFkrWffTal3kk1ne5wLSuQr5JFRGmi5ogTpnVSwpAVXFzp9Oc0HljZ62Yu4RtZkcYvzkmusZ0ni7Dvh458l9_zHiT5mixszNE8bzZ_Mw"/>
+</div>
+<div class="flex flex-col min-w-0">
+<h4 class="font-title-md text-title-md text-on-surface truncate">Baldur's Gate 3</h4>
+<span class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1.5">
+<span>PC / Steam</span>
+<span class="text-[8px]">•</span>
+<span>122 GB</span>
+</span>
+</div>
+</div>
+<span class="px-2.5 py-1 rounded-full bg-secondary-container/40 text-secondary font-label-sm text-label-sm shrink-0">
+        Queued
+      </span>
+</div>
+</section>
+<!-- Recently Completed Section -->
+<section class="flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<h2 class="font-headline-sm text-headline-sm text-on-surface tracking-tight">Recently Completed</h2>
+<span class="px-2 py-0.5 rounded-full bg-tertiary-container/30 text-tertiary-fixed font-label-sm text-label-sm">This Month</span>
+</div>
+<span class="font-label-sm text-label-sm text-outline font-mono">2 ITEMS</span>
+</div>
+<div class="grid grid-cols-2 gap-space-sm">
+<!-- Completed 1 -->
+<div class="flex flex-col gap-2 p-3 rounded-xl bg-surface-container">
+<div class="relative w-full h-28 rounded-lg overflow-hidden bg-surface-container-high">
+<img class="w-full h-full object-cover" data-alt="Blade Runner 2049 glowing neon spinner flying through dense rainy obsidian futuristic Los Angeles cityscape dark cyberpunk tone" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB1ow-lOJHDH7RxSao9H-90WMMLQv1itg4PSss9e9G4j6ImnlJWbncjrpEZy9AqxisoM0X5HxxKoKEspP2ApMg7QFrjUyeFfasbHa8t7Rmym0RHkAvsBbvzRq0RusI-IMqy6iY0Z6AvJbsurNrKImlZF_Mv8_RtUeWJuBI4MuWvaveCtwBYekqexjRfcWJrHPQ3i7eXKbDqMieqaWN26woXsyGulMbgSHrXB5ZitQ"/>
+<div class="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded bg-surface-container-lowest/80 backdrop-blur-sm flex items-center gap-0.5 text-primary text-[11px] font-semibold">
+<span class="material-symbols-outlined text-[13px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span>5.0</span>
+</div>
+</div>
+<div class="flex flex-col">
+<h4 class="font-title-md text-title-md text-on-surface truncate">Blade Runner 2049</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Rewatched Nov 12</p>
+</div>
+</div>
+<!-- Completed 2 -->
+<div class="flex flex-col gap-2 p-3 rounded-xl bg-surface-container">
+<div class="relative w-full h-28 rounded-lg overflow-hidden bg-surface-container-high">
+<img class="w-full h-full object-cover" data-alt="Annihilation shimmer iridescent lighthouse landscape surrounded by mutated crystalline trees under a dark brooding moody sky" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDoPImTIJEs-UKvHsy3Sh2OJPeFStr-ACfo_pjW9Zx3GD3Apx5Cw4Ib4RhqPPsF8_nWI7oOOecdRpBIbgSLPGv4iVufGnpLYY7pGFaWUosXy2rseYBO2dcDqs0wgssOzLfq-VH3C5pEqGxgXdDXTbldbGRypi6jIfNuAexROytTYPa3PvKyPdJx6NpnVczCSOG_zAHsrudQS08p_Q74Rj5YKpiOotqZpGbFYU2i1A"/>
+<div class="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded bg-surface-container-lowest/80 backdrop-blur-sm flex items-center gap-0.5 text-primary text-[11px] font-semibold">
+<span class="material-symbols-outlined text-[13px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span>4.8</span>
+</div>
+</div>
+<div class="flex flex-col">
+<h4 class="font-title-md text-title-md text-on-surface truncate">Annihilation</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Finished Nov 04</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Empty State Delight: Audiobooks Section -->
+<section class="flex flex-col gap-space-xs pt-1">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-label-sm text-label-sm tracking-wider uppercase font-mono">Audio Repository</span>
+<span class="font-label-sm text-label-sm text-outline">0 Tracks</span>
+</div>
+<div class="flex items-center gap-space-md p-space-md rounded-xl bg-surface-container/60 shadow-sm transition-all hover:bg-surface-container">
+<div class="w-12 h-12 rounded-xl bg-surface-container-high flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[24px]">headphones</span>
+</div>
+<div class="flex flex-col flex-1 min-w-0">
+<h4 class="font-title-md text-title-md text-on-surface">No items in Audiobooks</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Tap + to track your first offline audio listen or narration.</p>
+</div>
+<button aria-label="Add audiobook" class="w-9 h-9 rounded-lg bg-surface-container-high text-primary hover:text-on-surface flex items-center justify-center shrink-0 active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+</section>
+<!-- Offline Status Micro-Footer -->
+<footer class="flex items-center justify-between px-space-xs py-space-sm text-on-surface-variant">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span class="font-body-sm text-body-sm">Local SQLite DB • 100% Encrypted</span>
+</div>
+<span class="font-label-sm text-label-sm font-mono text-outline">v2.4.0</span>
+</footer>
+</div>
+<script>
+  (function() {
+    const sortBtn = document.getElementById('sortBtn');
+    if (sortBtn) {
+      const sortStates = ['swap_vert', 'sort_by_alpha', 'star'];
+      let idx = 0;
+      sortBtn.addEventListener('click', () => {
+        idx = (idx + 1) % sortStates.length;
+        const icon = sortBtn.querySelector('.material-symbols-outlined');
+        if (icon) icon.textContent = sortStates[idx];
+      });
+    }
+  })();
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface-container/90 backdrop-blur-xl shadow-[0_-4px_24px_rgba(0,0,0,0.45)]" data-active-classes="text-primary relative after:content-[''] after:absolute after:bottom-1.5 after:w-8 after:h-0.5 after:bg-primary after:rounded-full font-label-lg"><div class="h-16 flex items-center justify-around px-space-xs"><a class="min-w-[56px] min-h-[44px] flex flex-col items-center justify-center gap-1 text-on-surface-variant hover:text-on-surface transition-all active:scale-95" data-path="today" href="#"><span class="material-symbols-outlined text-[22px]">today</span><span class="font-label-sm text-label-sm">Today</span></a><a class="min-w-[56px] min-h-[44px] flex flex-col items-center justify-center gap-1 text-on-surface-variant hover:text-on-surface transition-all active:scale-95" data-path="money" href="#"><span class="material-symbols-outlined text-[22px]">account_balance_wallet</span><span class="font-label-sm text-label-sm">Money</span></a><a class="min-w-[56px] min-h-[44px] flex flex-col items-center justify-center gap-1 text-on-surface-variant hover:text-on-surface transition-all active:scale-95" data-path="schedule" href="#"><span class="material-symbols-outlined text-[22px]">calendar_month</span><span class="font-label-sm text-label-sm">Schedule</span></a><a class="min-w-[56px] min-h-[44px] flex flex-col items-center justify-center gap-1 text-on-surface-variant hover:text-on-surface transition-all active:scale-95" data-path="library" href="#"><span class="material-symbols-outlined text-[22px]">folder_data</span><span class="font-label-sm text-label-sm">Library</span></a><a class="min-w-[56px] min-h-[44px] flex flex-col items-center justify-center gap-1 text-on-surface-variant hover:text-on-surface transition-all active:scale-95" data-path="settings" href="#"><span class="material-symbols-outlined text-[22px]">tune</span><span class="font-label-sm text-label-sm">Settings</span></a></div></nav></body></html>

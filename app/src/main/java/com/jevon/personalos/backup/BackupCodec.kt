@@ -24,7 +24,7 @@ internal object BackupCodec {
     fun decode(input: InputStream): PreparedBackup {
         val root = objectValue(BackupJson.read(input))
         root.fields("format", "version", "schemaVersion", "createdAt", "appVersion", "data", "integrity")
-        require(root.string("format") == FORMAT) { "This is not a Personal OS backup." }
+        require(root.string("format") == FORMAT) { "This is not a Poros backup." }
         val version = root.long("version")
         require(version in 1L..4L) { "This backup format is not supported. Use an app version that supports it." }
         require(root.long("schemaVersion") == version + 1L) { "This backup uses an unsupported data schema." }

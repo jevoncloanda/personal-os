@@ -55,17 +55,29 @@ fun SubscriptionScreen(model: SubscriptionViewModel, requested: String?, handled
                 SectionHeading("Your recurring plans", "New subscription", { model.clearError(); editor = "subscription" })
                 Text("Forecasts help you plan. Only recorded payments affect Money.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            item { FrostedPanel {
+            item { PorosCard {
                 Text("Recurring cost equivalents", style = MaterialTheme.typography.titleMedium)
                 val costs = recurringCosts(snapshot.subscriptions)
                 if (costs.isEmpty()) Text("No active recurring plans yet.")
                 costs.forEach { cost ->
-                    Text("${cost.currency} · ${formatMoney(cost.monthlyMinor, cost.currency)} / month", style = MaterialTheme.typography.titleLarge)
+                    Text("${cost.currency} · ${formatMoney(cost.monthlyMinor, cost.currency)} / month", style = MaterialTheme.typography.headlineSmall)
                     Text("${formatMoney(cost.annualMinor, cost.currency)} / year", style = MaterialTheme.typography.bodyMedium)
                 }
                 Text("Estimates, not recorded spending. Rounded once per currency; daily/weekly plans use an average calendar year.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             } }
+            val upcoming = snapshot.subscriptions.filter { it.active }.mapNotNull { plan ->
+                nextUnpaid(plan, paidBySubscription[plan.id].orEmpty())?.takeIf { it <= today.plusDays(7).toEpochDay() }?.let { plan to it }
+            }.sortedWith(compareBy<Pair<SubscriptionEntity, Long>> { it.second }.thenBy { it.first.id })
+            if (upcoming.isNotEmpty()) {
+                item { SectionTitle("Due soon & overdue") }
+                items(upcoming, key = { "upcoming/${it.first.id}" }) { (plan, due) ->
+                    LedgerRow(AppIcons.Autorenew, plan.name,
+                        "${if (due < today.toEpochDay()) "Overdue" else if (due == today.toEpochDay()) "Due today" else "Due ${LocalDate.ofEpochDay(due)}"} · Unpaid forecast",
+                        formatMoney(plan.amountMinor, plan.currencyCode), onClick = { selected = plan.id; model.clearError() })
+                }
+            }
             item {
+                SectionTitle("All plans")
                 Field("Search subscriptions", search, true) { search = it }
                 Choice("Show", filter, listOf("Active", "Inactive", "All").map { it to it }) { filter = it }
             }
@@ -81,7 +93,7 @@ fun SubscriptionScreen(model: SubscriptionViewModel, requested: String?, handled
         } else {
             item { TextButton(onClick = { selected = null; model.clearError() }) { Text("All subscriptions") } }
             item { Text(value.name, style = MaterialTheme.typography.headlineMedium); if (value.description.isNotBlank()) Text(value.description) }
-            item { FrostedPanel {
+            item { PorosCard {
                 Text(formatMoney(value.amountMinor, value.currencyCode), style = MaterialTheme.typography.headlineLarge)
                 Text("${billingLabel(value)} · ${if (value.active) "Active" else "Inactive"}")
                 Text("Next unpaid: ${nextDue?.let(LocalDate::ofEpochDay) ?: "None"}${if (!value.active) " (forecast stopped)" else ""}")
@@ -192,16 +204,31 @@ private fun PaymentEditor(value: SubscriptionEntity, link: SubscriptionPaymentEn
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun BillingDateField(label: String, value: String, enabled: Boolean, change: (String) -> Unit) {
+internal fun BillingDateField(label: String, value: String, enabled: Boolean, compact: Boolean = false, change: (String) -> Unit) {
     var picker by remember { mutableStateOf(false) }
+    var typed by remember { mutableStateOf(false) }
     val dirty = LocalMarkDraftDirty.current
-    Field("$label (YYYY-MM-DD)", value, enabled) { change(it) }
-    TextButton(enabled = enabled, onClick = { picker = true }) { Text("Choose ${label.lowercase()}") }
+    if (compact) PickerTrigger(label, runCatching { LocalDate.parse(value).format(java.time.format.DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.MEDIUM)) }.getOrDefault("Choose date"), AppIcons.CalendarMonth, enabled) { picker = true }
+    else Field("$label (YYYY-MM-DD)", value, enabled, trailing = {
+        IconButton(enabled = enabled, onClick = { picker = true }) { Icon(AppIcons.CalendarMonth, "Choose ${label.lowercase()}") }
+    }) { change(it) }
     if (picker) {
         val initial = runCatching { LocalDate.parse(value).takeIf { it.year in 1900..2100 }?.toEpochDay()?.times(86_400_000) }.getOrNull()
         val state = rememberDatePickerState(initialSelectedDateMillis = initial)
         DatePickerDialog(onDismissRequest = { picker = false }, confirmButton = { TextButton(enabled = state.selectedDateMillis != null, onClick = {
             state.selectedDateMillis?.let { dirty(); change(LocalDate.ofEpochDay(it / 86_400_000).toString()) }; picker = false
-        }) { Text("Use date") } }, dismissButton = { TextButton(onClick = { picker = false }) { Text("Cancel") } }) { DatePicker(state) }
+        }) { Text("Use date") } }, dismissButton = { Row {
+            if (compact) TextButton(onClick = { picker = false; typed = true }) { Text("Type date") }
+            TextButton(onClick = { picker = false }) { Text("Cancel") }
+        } }) { DatePicker(state) }
+    }
+    if (typed) {
+        var input by rememberSaveable { mutableStateOf(value) }
+        val valid = runCatching { LocalDate.parse(input) }.isSuccess
+        AlertDialog(onDismissRequest = { typed = false }, title = { Text(label) }, text = {
+            OutlinedTextField(input, { input = it }, label = { Text("Date (YYYY-MM-DD)") }, singleLine = true, isError = !valid,
+                supportingText = { if (!valid) Text("Enter a valid date.") })
+        }, confirmButton = { TextButton(enabled = valid, onClick = { dirty(); change(input); typed = false }) { Text("Use date") } },
+            dismissButton = { TextButton(onClick = { typed = false }) { Text("Cancel") } })
     }
 }

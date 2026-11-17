@@ -13,6 +13,10 @@ import androidx.compose.ui.unit.dp
  * Native vectors only: no icon font, raster assets, or runtime library.
  */
 internal object AppIcons {
+    val Clock by lazy { outline("Clock", false,
+        "M22 12A10 10 0 1 1 2 12A10 10 0 1 1 22 12",
+        "M12 6v6l4 2",
+    ) }
     val Today by lazy { outline("Today", false,
         "M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8",
         "M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z",

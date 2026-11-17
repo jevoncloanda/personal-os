@@ -62,7 +62,7 @@ class SubscriptionWorkflowTest {
             compose.onNodeWithText("Renewal occurrence (YYYY-MM-DD)").assertExists()
             compose.onNodeWithText(day.plusMonths(1).toString()).assertExists()
             field("Renewal occurrence (YYYY-MM-DD)", "2500-01-31")
-            tap("Choose renewal occurrence")
+            compose.onNodeWithContentDescription("Choose renewal occurrence").performScrollTo().performClick()
             compose.onNodeWithText("Use date").assertExists()
             compose.onNodeWithText("Cancel").performClick()
             compose.onNodeWithText("2500-01-31").assertExists()
@@ -84,6 +84,8 @@ class SubscriptionWorkflowTest {
             field("Next renewal date (YYYY-MM-DD)", LocalDate.now().toString())
             tap("Default payment account: Choose when paying"); tap("Review bank")
             tap("Default expense category: Uncategorized"); tap("Services")
+            androidx.test.espresso.Espresso.closeSoftKeyboard()
+            compose.onNodeWithText("Subscription name").performScrollTo()
             capture("subscription-editor")
             compose.onNodeWithText("Save").performClick(); waitFor("Record payment")
             val subscriptionId = runBlocking { database().personalDao().subscriptions().single().id }

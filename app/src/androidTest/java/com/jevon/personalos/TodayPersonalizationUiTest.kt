@@ -23,8 +23,11 @@ class TodayPersonalizationUiTest {
     private fun capture(name: String) {
         compose.waitForIdle()
         val instrument = InstrumentationRegistry.getInstrumentation()
+        instrument.uiAutomation.waitForIdle(600, 5000)
+        android.os.SystemClock.sleep(1200)
         val bitmap = requireNotNull(instrument.uiAutomation.takeScreenshot())
-        val folder = File(instrument.targetContext.getExternalFilesDir(null), "review/phase-3.5").apply { mkdirs() }
+        val captureFolder = InstrumentationRegistry.getArguments().getString("captureFolder") ?: "phase-3.5"
+        val folder = File(instrument.targetContext.getExternalFilesDir(null), "review/$captureFolder").apply { mkdirs() }
         File(folder, "$name.png").outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
         bitmap.recycle()
     }
@@ -44,7 +47,7 @@ class TodayPersonalizationUiTest {
         }
         compose.onNodeWithText("No IDR budget this month").performScrollTo().assertIsDisplayed()
         capture("today-no-preferred-budget-light")
-        compose.onNodeWithText("Choose Today budget").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Choose Today budget").performScrollTo().performClick()
         compose.onNodeWithText("Review AUD plan · AUD").performClick()
         compose.onNodeWithText("Review AUD plan · AUD").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("${formatMoney(2000, "AUD")} over budget").assertExists()
@@ -52,7 +55,7 @@ class TodayPersonalizationUiTest {
         capture("today-explicit-aud-overspent-light")
         compose.runOnIdle { preferences.value = preferences.value.copy(theme = ThemeMode.DARK) }
         capture("today-explicit-aud-overspent-dark")
-        compose.onNodeWithText("Choose Today budget").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Choose Today budget").performScrollTo().performClick()
         compose.onNodeWithText("Automatic · IDR").performClick()
         compose.onNodeWithText("No IDR budget this month").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Manage budgets").performScrollTo().performClick()

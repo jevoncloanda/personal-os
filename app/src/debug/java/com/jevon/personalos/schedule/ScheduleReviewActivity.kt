@@ -47,7 +47,7 @@ class ScheduleReviewActivity:ComponentActivity(){
             fun alert(target:RecordTarget){alertDomain=target.domain;alertId=target.id}
             LaunchedEffect(request){request?.let{if(it.domain=="SUBSCRIPTION"){route="subscriptions";subRequest=it.id}else route="schedule"}}
             PersonalOsTheme(Settings(if(dark)ThemeMode.DARK else ThemeMode.LIGHT,false)){
-                AtmosphericBackground{SystemBarAppearance()
+                PorosBackground{SystemBarAppearance()
                     Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.systemBars)){
                         Text("Isolated Schedule review · disposable data",Modifier.padding(12.dp),style=MaterialTheme.typography.labelMedium)
                         FlowRow{
