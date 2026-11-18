@@ -18,7 +18,7 @@ if (-not $SkipInstall) {
 }
 $classes = if ($DataOnly) { 'com.jevon.personalos.MoneyDatabaseTest,com.jevon.personalos.MigrationTest' } else { 'com.jevon.personalos.FoundationTest,com.jevon.personalos.VisualReviewTest,com.jevon.personalos.MoneyWorkflowTest' }
 if ($TestClass) { $classes = $TestClass }
-$result = (& $adb @deviceArgs shell am instrument --user $androidUser -w -e class $classes -e capturePrefix $CapturePrefix -e captureFolder $CapturePrefix 'com.jevon.personalos.debug.test/androidx.test.runner.AndroidJUnitRunner' 2>&1 | Out-String)
+$result = (& $adb @deviceArgs shell am instrument --user $androidUser -w -e class $classes -e capturePrefix $CapturePrefix -e captureFolder $CapturePrefix 'com.jevon.personalos.dev.test/androidx.test.runner.AndroidJUnitRunner' 2>&1 | Out-String)
 Write-Output $result
 $report = if ($DataOnly) { 'phase-1-data' } else { 'phase-1-ui' }
 if ($ReportName) { $report = $ReportName }
@@ -27,7 +27,7 @@ Set-Content -LiteralPath (Join-Path $root "app\build\reports\$report.txt") -Valu
 if (-not $DataOnly) {
     $destination = Join-Path $root $ScreenshotDirectory
     New-Item -ItemType Directory -Force -Path $destination | Out-Null
-    & $adb @deviceArgs pull '/sdcard/Android/data/com.jevon.personalos.debug/files/review' (Join-Path $root '.tools')
+    & $adb @deviceArgs pull '/sdcard/Android/data/com.jevon.personalos.dev/files/review' (Join-Path $root '.tools')
     Get-ChildItem -LiteralPath (Join-Path $root '.tools\review') -Filter "$CapturePrefix-*.png" -ErrorAction SilentlyContinue | Copy-Item -Destination $destination
     $flowCaptures = Join-Path $root ".tools\review\$CapturePrefix"
     if (Test-Path -LiteralPath $flowCaptures) { Get-ChildItem -LiteralPath $flowCaptures -Filter '*.png' | Copy-Item -Destination $destination }

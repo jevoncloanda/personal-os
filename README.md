@@ -21,22 +21,22 @@ PowerShell, from this directory:
 ```powershell
 $env:JAVA_HOME = 'C:\path\to\jdk-21'
 $env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\sdk"
-.\gradlew.bat assembleDebug testDebugUnitTest lintDebug assembleRelease
+.\gradlew.bat assembleDebug
 .\gradlew.bat installDebug
-& "$env:ANDROID_HOME\platform-tools\adb.exe" shell am start -n com.jevon.personalos.debug/com.jevon.personalos.MainActivity
+& "$env:ANDROID_HOME\platform-tools\adb.exe" shell am start -n com.jevon.personalos.dev/com.jevon.personalos.MainActivity
 ```
 
 On this workstation an isolated JDK is available in `.tools/`; the convenience script finds it without changing system Java:
 
 ```powershell
-rtk proxy powershell -NoProfile -ExecutionPolicy Bypass -File tools/gradle.ps1 assembleDebug testDebugUnitTest lintDebug assembleRelease --console plain
+rtk proxy powershell -NoProfile -ExecutionPolicy Bypass -File tools/gradle.ps1 assembleDebug --console plain
 ```
 
-If a compatible JDK is absent, `tools/bootstrap-jdk.ps1` downloads Microsoft OpenJDK 21 into the ignored workspace `.tools/`. It does not install Java globally. Android Studio can open the project root; select JDK 21 for Gradle. Release APKs are unsigned and not intended for distribution.
+If a compatible JDK is absent, `tools/bootstrap-jdk.ps1` downloads Microsoft OpenJDK 21 into the ignored workspace `.tools/`. It does not install Java globally. Android Studio can open the project root; select JDK 21 for Gradle. Release APKs require a permanent local signing key. See [build identities and release signing](docs/release-signing.md) for private setup, cross-PC certificate verification and the later data transition.
 
 ## Run and test
 
-Debug APK: `app/build/outputs/apk/debug/app-debug.apk`. Debug and release start in Personal mode, reading real Room data. The debug-only Developer previews app-bar action offers Populated / Empty / Personal Today previews. Fixtures never seed a database; Money always uses real storage. Default categories are ordinary editable catalog records. Release uses a separate application ID. No notifications are scheduled.
+Debug APK: `app/build/outputs/apk/debug/app-debug.apk`. Debug and release start in Personal mode, reading real Room data. The debug-only Developer previews app-bar action offers Populated / Empty / Personal Today previews. Fixtures never seed a database; Money always uses real storage. Default categories are ordinary editable catalog records. Production is Poros (com.jevon.personalos), and debug is Poros DEV (com.jevon.personalos.dev) with independent storage and a DEV launcher badge. Existing local alert permissions and scheduling apply independently in each app.
 
 ```powershell
 # Use an authorized, unlocked physical phone. Phone Link alone does not enable ADB.

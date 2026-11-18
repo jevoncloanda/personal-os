@@ -26,4 +26,6 @@
     <color name="widget_action_surface">#4648D4</color>
     <color name="widget_on_action">#FFFFFF</color>
     <color name="widget_feedback_surface">#E4DFFF</color>
+    <color name="dashboard_positive">#006C50</color>
+    <color name="dashboard_warning">#805400</color>
 </resources>

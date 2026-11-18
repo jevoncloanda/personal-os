@@ -60,3 +60,24 @@ after cleanup and the screen timeout remained 120000 milliseconds.
 Device screenshots, logs, local fixture tooling and build outputs remain ignored and are excluded
 from the commit. This verification covers the current dark-mode launcher layouts. Light mode,
 other font scales and a comprehensive resize matrix were outside this focused device pass.
+
+
+## Stitch widget visual update — 18 November 2026
+
+Today now leads with a large day number and the existing selected commitment, with budget and
+renewal context secondary. Upcoming uses an open date/time rail with labeled indigo events,
+amber reminders and green renewal forecasts. Budget leads with remaining amount, a 12dp
+spending track and responsive spent/limit context. Repeated branding and nested content panels
+were removed. Existing actual-dp/font-scale sizing, data projections, actions, refresh paths and
+provider minimum sizes are unchanged. Quick Expense source and existing colors are unchanged.
+
+The supplied Stitch screen.png and code.html governed composition and colors; static opaque
+surfaces and platform widget type replace CSS blur, shadows, web fonts and animation.
+One assembleDebug passed. Samsung SM-S942B checks covered 201×234dp Today and 429×234dp
+Schedule/Budget, including populated and empty states. Temporary visual-check records supplied
+a commitment, reminder, renewal and unspent budget; the original database/WAL/SHM were restored
+with exact SHA-256 equality afterward. The initial signing mismatch required user-authorized
+uninstall/reinstall; all 19 original data/preference files were restored and verified before
+visual verification. Widget placements were recreated. No focused data tests were needed because
+selection/calculation code was unchanged. Tall sizes, light mode, larger font scales and
+overspending rendering were not device-verified in this bounded pass. Local evidence is ignored.

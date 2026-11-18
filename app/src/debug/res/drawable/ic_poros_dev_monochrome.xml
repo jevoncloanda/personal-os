@@ -1,0 +1,5 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:left="10dp" android:right="10dp" android:bottom="20dp"
+        android:drawable="@drawable/ic_poros_monochrome" />
+    <item android:drawable="@drawable/ic_poros_dev_badge_monochrome" />
+</layer-list>

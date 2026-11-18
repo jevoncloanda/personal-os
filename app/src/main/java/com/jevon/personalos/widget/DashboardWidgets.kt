@@ -46,13 +46,15 @@ import java.time.LocalDate
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
-private val surface = ColorProvider(R.color.widget_surface)
+private val surface = ColorProvider(R.color.widget_panel)
 private val panel = ColorProvider(R.color.widget_panel)
 private val text = ColorProvider(R.color.widget_text)
 private val muted = ColorProvider(R.color.widget_muted)
 private val indigo = ColorProvider(R.color.widget_accent)
 private val error = ColorProvider(R.color.widget_error)
 private val track = ColorProvider(R.color.widget_progress_track)
+private val positive = ColorProvider(R.color.dashboard_positive)
+private val warning = ColorProvider(R.color.dashboard_warning)
 
 internal data class DashboardLayout(
     val compact: Boolean,
@@ -94,9 +96,9 @@ abstract class DashboardWidget internal constructor(private val kind: DashboardK
             )
             val open = dashboardAction(context, kind.destination)
             Column(
-                GlanceModifier.fillMaxSize().background(surface).cornerRadius(16.dp)
+                GlanceModifier.fillMaxSize().background(surface).cornerRadius(24.dp)
                     .clickable(open).semantics { contentDescription = kind.title }
-                    .padding(if (layout.short) 4.dp else 8.dp),
+                    .padding(if (layout.short) 10.dp else 16.dp),
             ) {
                 val data = result?.getOrNull()
                 if (data == null) {
@@ -162,59 +164,51 @@ private fun dashboardAction(
 @Composable
 private fun ColumnScope.BudgetContent(data: DashboardData, layout: DashboardLayout) {
     val summary = data.budget
-    val fontScale = LocalContext.current.resources.configuration.fontScale.coerceAtLeast(1f)
-    val availableHeight = LocalSize.current.height.value / fontScale
-    val compact = availableHeight < 184
-    if (!compact) WidgetHeader("Budget")
     if (summary == null) {
-        Panel(GlanceModifier.fillMaxWidth().defaultWeight(), padding = if (compact) 8 else 16) {
-            if (compact) WidgetText("Budget", color = muted, size = 11)
-            WidgetText("Set up a budget", color = indigo,
-                size = if (compact) 16 else 24, bold = true, lines = 2)
-            if (!compact) {
+        WidgetHeader("Budget")
+        Column(GlanceModifier.fillMaxWidth().defaultWeight(),
+            verticalAlignment = Alignment.CenterVertically) {
+            WidgetText("Set up a budget", color = indigo, size = 22, bold = true, lines = 2)
+            if (!layout.short) {
                 Gap(8)
                 WidgetText("Choose your spending limit in Budget Management.",
-                    color = muted, size = 13, lines = 3)
+                    color = muted, size = 14, lines = 3)
             }
         }
         return
     }
-    val tiny = availableHeight < 88
-    Panel(GlanceModifier.fillMaxWidth().defaultWeight(), padding = when {
-        tiny -> 4
-        compact -> 8
-        else -> 12
-    }) {
-        WidgetText(summary.budget.name, color = muted,
-            size = if (compact) 11 else 14, bold = true)
-        if (compact) {
-            Remaining(summary, if (tiny) 18 else 26, compact = true)
-        } else {
-            WidgetText(budgetPeriod(summary), color = muted, size = 11)
-            Column(GlanceModifier.fillMaxWidth().defaultWeight(),
-                verticalAlignment = Alignment.CenterVertically) {
-                Remaining(summary, if (layout.compact) 28 else if (layout.spacious) 36 else 32)
-            }
+    WidgetText(summary.budget.name, color = muted, size = 12, bold = true)
+    if (layout.showSecondary) WidgetText(budgetPeriod(summary), color = muted, size = 12)
+    Column(GlanceModifier.fillMaxWidth().defaultWeight(),
+        verticalAlignment = Alignment.CenterVertically) {
+        Remaining(summary, if (layout.short) 26 else if (layout.spacious) 36 else 32)
+    }
+    BudgetProgress(summary)
+    if (!layout.short) {
+        Gap(10)
+        if (!layout.compact || layout.spacious) {
             Row(GlanceModifier.fillMaxWidth()) {
                 Column(GlanceModifier.defaultWeight()) {
-                    WidgetText("Spent", color = muted, size = 11)
+                    WidgetText("Spent", color = muted, size = 12)
                     MoneyValue(summary.spentMinor, summary.budget.currencyCode, 16)
                 }
+                Spacer(GlanceModifier.width(12.dp))
                 Column(GlanceModifier.defaultWeight()) {
-                    WidgetText("Limit", color = muted, size = 11)
+                    WidgetText("Limit", color = muted, size = 12)
                     MoneyValue(summary.budget.limitMinor, summary.budget.currencyCode, 16)
                 }
             }
+        } else {
+            WidgetText("Spent ${formatMoney(summary.spentMinor, summary.budget.currencyCode)}",
+                color = muted, size = 12)
+            WidgetText("of ${formatMoney(summary.budget.limitMinor, summary.budget.currencyCode)}",
+                color = muted, size = 12)
         }
-        if (!compact || availableHeight >= 96) {
-            Gap(if (compact) 4 else 10)
-            BudgetProgress(summary)
-        }
-        if (layout.spacious) {
-            Gap(10)
-            val scope = if (summary.budget.categoryId == null) "Overall budget" else "Category budget"
-            WidgetText("$scope · ${summary.budget.currencyCode}", color = muted, size = 11)
-        }
+    }
+    if (layout.spacious) {
+        Gap(12)
+        val scope = if (summary.budget.categoryId == null) "Overall budget" else "Category budget"
+        WidgetText("$scope · ${summary.budget.currencyCode}", color = muted, size = 12)
     }
 }
 
@@ -236,14 +230,14 @@ private fun Remaining(summary: BudgetSummary, size: Int, compact: Boolean = fals
         summary.spentMinor == 0L -> "Remaining · Unspent"
         else -> "Remaining"
     }
-    WidgetText(label, color = if (over) error else indigo, size = if (compact) 10 else 12)
+    WidgetText(label, color = if (over) error else positive, size = 12)
 }
 
 @Composable
 private fun BudgetProgress(summary: BudgetSummary) {
     LinearProgressIndicator(
         progress = summary.fraction,
-        modifier = GlanceModifier.fillMaxWidth().height(7.dp),
+        modifier = GlanceModifier.fillMaxWidth().height(12.dp),
         color = if (summary.remainingMinor < 0) error else indigo,
         backgroundColor = track,
     )
@@ -251,51 +245,57 @@ private fun BudgetProgress(summary: BudgetSummary) {
 
 @Composable
 private fun ColumnScope.TodayContent(context: Context, data: DashboardData, layout: DashboardLayout) {
-    val date = data.today.date.format(DateTimeFormatter.ofPattern("EEE, d MMM"))
-    if (layout.short) {
-        WidgetText(date, color = muted, size = 11, bold = true)
-        Gap(4)
-    } else WidgetHeader(date)
-    val budget = data.today.budget
-    val next = data.items.firstOrNull()
-    val renewal = data.renewal
-    val showNext = budget != null && next != null && layout.showSecondary
-    val showRenewal = renewal != null && (budget != null || next != null) &&
-        layout.showSecondary && (budget == null || next == null || !layout.compact || layout.spacious)
-    val primary = GlanceModifier.fillMaxWidth().defaultWeight()
-    if (budget != null) {
-        Panel(primary, dashboardAction(context, "money-budgets"), padding = 8) {
-            WidgetText("${budget.budget.name} · This month", color = muted, size = 11, bold = true)
-            Remaining(budget, if (layout.short) 20 else if (layout.spacious) 34 else 26)
-        }
-    } else if (next != null) {
-        AgendaTile(context, next, primary, wide = !layout.compact,
-            hero = !showRenewal, minimal = layout.short)
-    } else if (renewal != null) {
-        Renewal(context, data, primary, hero = true)
-    } else {
-        Panel(primary) {
-            WidgetText("Your day is clear", size = if (layout.short) 18 else 24,
-                bold = true, lines = 2)
-            Gap(8)
-            WidgetText("No events or reminders due", color = muted, size = 13, lines = 2)
+    val date = data.today.date
+    Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        WidgetText(date.dayOfMonth.toString(), size = if (layout.short) 32 else 44, bold = true)
+        Spacer(GlanceModifier.width(10.dp))
+        Column(GlanceModifier.defaultWeight()) {
+            WidgetText(date.format(DateTimeFormatter.ofPattern(if (layout.compact) "EEE" else "EEEE")),
+                color = indigo, size = 14, bold = true)
+            WidgetText(date.format(DateTimeFormatter.ofPattern("MMM yyyy")), color = muted, size = 12)
         }
     }
-    if (showNext || showRenewal) {
-        Gap(8)
-        if (!layout.compact && showNext && showRenewal) {
-            Row(GlanceModifier.fillMaxWidth().height(80.dp)) {
-                AgendaTile(context, next!!, GlanceModifier.defaultWeight().fillMaxHeight(), minimal = true)
-                Spacer(GlanceModifier.width(8.dp))
-                Renewal(context, data, GlanceModifier.defaultWeight().fillMaxHeight())
+    val next = data.items.firstOrNull()
+    val budget = data.today.budget
+    val renewal = data.renewal
+    Column(GlanceModifier.fillMaxWidth().defaultWeight(),
+        verticalAlignment = Alignment.CenterVertically) {
+        if (next != null) {
+            // Keep the existing priority selection; only its visual prominence changes.
+            Column(GlanceModifier.fillMaxWidth()
+                .clickable(dashboardAction(context, "schedule", next.target)).padding(vertical = 4.dp)) {
+                WidgetText(next.detail, color = indigo, size = 12,
+                    lines = if (layout.short) 1 else 2)
+                WidgetText(next.title, size = if (layout.short) 16 else 22, bold = true,
+                    lines = if (layout.short) 1 else 2)
             }
+        } else if (renewal != null) {
+            Renewal(context, data, GlanceModifier.fillMaxWidth(), hero = !layout.short)
         } else {
-            if (showNext) AgendaTile(context, next!!,
-                GlanceModifier.fillMaxWidth().height(80.dp), minimal = true)
-            if (showRenewal) {
-                if (showNext) Gap(8)
-                Renewal(context, data, GlanceModifier.fillMaxWidth().height(80.dp))
+            WidgetText("Your day is clear", size = if (layout.short) 16 else 22, bold = true,
+                lines = if (layout.short) 1 else 2)
+            if (layout.showSecondary) {
+                Gap(6)
+                WidgetText("No events or reminders due", color = muted, size = 14, lines = 2)
             }
+        }
+    }
+    if (layout.showSecondary) {
+        if (next != null && renewal != null && (!layout.compact || layout.spacious)) {
+            Renewal(context, data, GlanceModifier.fillMaxWidth())
+            Gap(8)
+        }
+        if (budget != null) {
+            Column(GlanceModifier.fillMaxWidth()
+                .clickable(dashboardAction(context, "money-budgets")).padding(vertical = 6.dp)) {
+                WidgetText(budget.budget.name, color = muted, size = 12)
+                val over = budget.remainingMinor < 0
+                WidgetText("${formatMoney(BigInteger.valueOf(budget.remainingMinor).abs(), budget.budget.currencyCode)} " +
+                    if (over) "over budget" else "left", color = if (over) error else positive,
+                    size = 14, bold = true)
+            }
+        } else if (next != null && renewal != null && layout.compact && !layout.spacious) {
+            Renewal(context, data, GlanceModifier.fillMaxWidth())
         }
     }
 }
@@ -310,12 +310,11 @@ private fun Renewal(
     val renewal = requireNotNull(data.renewal)
     val subscription = renewal.subscription
     val due = LocalDate.ofEpochDay(renewal.day)
-    Panel(modifier, dashboardAction(
-        context, "subscriptions", RecordTarget("SUBSCRIPTION", subscription.id)),
-        padding = if (hero) 16 else 10,
-    ) {
+    Column(modifier.clickable(dashboardAction(
+        context, "subscriptions", RecordTarget("SUBSCRIPTION", subscription.id)))
+        .padding(vertical = 6.dp)) {
         WidgetText("Renewal · ${dashboardDate(due, data.today.date)}",
-            color = indigo, size = 11)
+            color = positive, size = 12)
         WidgetText(subscription.name, bold = true, size = if (hero) 24 else 14,
             lines = if (hero) 2 else 1)
         WidgetText(renewalAmount(renewal), size = if (hero) 20 else 13, bold = true)
@@ -326,85 +325,78 @@ private fun Renewal(
 private fun ColumnScope.ScheduleContent(context: Context, data: DashboardData, layout: DashboardLayout) {
     if (!layout.short) WidgetHeader("Upcoming")
     if (data.items.isEmpty()) {
-        Panel(GlanceModifier.fillMaxWidth().defaultWeight()) {
+        Column(GlanceModifier.fillMaxWidth().defaultWeight(),
+            verticalAlignment = Alignment.CenterVertically) {
             WidgetText("Nothing coming up", size = if (layout.short) 18 else 24,
                 bold = true, lines = 2)
-            Gap(8)
-            WidgetText("No events or renewals in the next 30 days, or open reminders.",
-                color = muted, size = 12, lines = 3)
+            if (!layout.short) {
+                Gap(8)
+                WidgetText("No events or renewals in the next 30 days, or open reminders.",
+                    color = muted, size = 14, lines = 3)
+            }
         }
     } else {
         val items = data.items.take(layout.scheduleCount)
         items.forEachIndexed { index, item ->
-            if (index > 0) Gap(8)
-            AgendaTile(context, item, GlanceModifier.fillMaxWidth().defaultWeight(),
-                wide = !layout.compact, hero = items.size == 1, minimal = layout.short)
+            if (index > 0) {
+                Box(GlanceModifier.fillMaxWidth().height(1.dp).background(track)) {}
+            }
+            AgendaRow(context, item, GlanceModifier.fillMaxWidth().defaultWeight(),
+                compact = layout.compact, minimal = layout.short)
         }
     }
 }
 
 @Composable
-private fun AgendaTile(
+private fun AgendaRow(
     context: Context,
     item: DashboardItem,
     modifier: GlanceModifier,
-    wide: Boolean = false,
-    hero: Boolean = false,
-    minimal: Boolean = false,
+    compact: Boolean,
+    minimal: Boolean,
 ) {
     val subscription = item.target.domain == "SUBSCRIPTION"
-    val destination = if (subscription) "subscriptions" else "schedule"
-    Panel(modifier, dashboardAction(context, destination, item.target),
-        padding = if (minimal) 8 else 12,
-    ) {
-        val kind = when (item.target.domain) {
-            "EVENT" -> "Event"
-            "SUBSCRIPTION" -> "Subscription"
-            else -> "Reminder"
+    val accent = when (item.target.domain) {
+        "EVENT" -> indigo
+        "SUBSCRIPTION" -> positive
+        else -> warning
+    }
+    // Use the existing viewing-zone/date-only/overdue display metadata unchanged.
+    val timing = item.detail.substringAfter(" · ").split(" · ")
+    val date = timing.dropLast(1).joinToString(" · ").ifEmpty { timing.last() }
+    val time = if (timing.size > 1) timing.last() else ""
+    val kind = when (item.target.domain) {
+        "EVENT" -> "Event"
+        "SUBSCRIPTION" -> "Renewal · Forecast"
+        else -> "Reminder"
+    }
+    Row(modifier.clickable(dashboardAction(context,
+        if (subscription) "subscriptions" else "schedule", item.target)).padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically) {
+        Column(GlanceModifier.width(if (compact) 58.dp else 92.dp)) {
+            WidgetText(date, color = text, size = if (compact) 14 else 16,
+                bold = true, lines = if (minimal) 1 else 3)
+            if (time.isNotEmpty()) WidgetText(time, color = accent, size = 12, bold = true,
+                lines = if (minimal) 1 else 2)
         }
-        if (wide) {
-            // The existing display metadata already carries all-day, overdue and viewing-zone time.
-            val timing = item.detail.substringAfter(" · ").split(" · ")
-            Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Column(GlanceModifier.width(70.dp)) {
-                    WidgetText(timing.dropLast(1).joinToString(" · "), color = muted,
-                        size = 11, lines = 2)
-                    WidgetText(timing.last(), color = indigo, size = if (hero) 18 else 15,
-                        bold = true, lines = 2)
-                }
-                Spacer(GlanceModifier.width(12.dp))
-                Box(GlanceModifier.width(1.dp).height(if (hero) 64.dp else 40.dp)
-                    .background(track)) {}
-                Spacer(GlanceModifier.width(12.dp))
-                Column(GlanceModifier.defaultWeight()) {
-                    WidgetText(kind, color = indigo, size = 11)
-                    Gap(4)
-                    WidgetText(item.title, size = if (hero) 24 else 18,
-                        bold = true, lines = if (subscription && !hero) 1 else 2)
-                    item.amount?.let { WidgetText(it, size = 12, bold = true) }
-                }
-            }
-        } else {
-            WidgetText(item.detail, color = indigo, size = 11, lines = if (minimal) 1 else 2)
-            Gap(if (minimal) 2 else 6)
-            WidgetText(item.title, size = when {
-                minimal -> 16
-                hero -> 24
-                else -> 18
-            }, bold = true, lines = if (subscription && !hero) 1 else 2)
-            item.amount?.let { WidgetText(it, size = 12, bold = true) }
+        Spacer(GlanceModifier.width(8.dp))
+        Box(GlanceModifier.width(2.dp).height(if (minimal) 32.dp else 48.dp).background(accent)) {}
+        Spacer(GlanceModifier.width(10.dp))
+        Column(GlanceModifier.defaultWeight()) {
+            WidgetText(item.title, size = if (compact) 16 else 18, bold = true,
+                lines = if (minimal) 1 else 2)
+            if (!minimal) WidgetText(kind, color = accent, size = 12,
+                lines = if (compact) 2 else 1)
+            item.amount?.let { WidgetText(it, color = accent, size = 12, bold = true,
+                lines = if (minimal) 1 else 2) }
         }
     }
 }
 
 @Composable
 private fun WidgetHeader(detail: String) {
-    Row(GlanceModifier.fillMaxWidth().height(32.dp).padding(horizontal = 8.dp),
-        verticalAlignment = Alignment.CenterVertically) {
-        WidgetText("Poros", modifier = GlanceModifier.defaultWeight(), bold = true, size = 14)
-        WidgetText(detail, color = muted, size = 11)
-    }
-    Gap(4)
+    WidgetText(detail, color = indigo, bold = true, size = 14)
+    Gap(8)
 }
 
 @Composable

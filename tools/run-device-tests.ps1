@@ -14,7 +14,7 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 $testArguments = @('shell', 'am', 'instrument', '--user', $androidUser, '-w', '-e', 'capturePrefix', $CapturePrefix)
 if ($TestClass) { $testArguments += @('-e', 'class', $TestClass) }
-$testArguments += 'com.jevon.personalos.debug.test/androidx.test.runner.AndroidJUnitRunner'
+$testArguments += 'com.jevon.personalos.dev.test/androidx.test.runner.AndroidJUnitRunner'
 $result = (& $adb @testArguments 2>&1 | Out-String)
 Write-Output $result
 $reportDirectory = Join-Path $root 'app\build\reports'
@@ -22,7 +22,7 @@ New-Item -ItemType Directory -Force -Path $reportDirectory | Out-Null
 Set-Content -LiteralPath (Join-Path $reportDirectory "device-test-$CapturePrefix.txt") -Value $result
 $passed = $result -match 'OK \(\d+ tests?\)'
 New-Item -ItemType Directory -Force -Path (Join-Path $root 'docs\screenshots') | Out-Null
-& $adb pull '/sdcard/Android/data/com.jevon.personalos.debug/files/review' (Join-Path $root '.tools')
+& $adb pull '/sdcard/Android/data/com.jevon.personalos.dev/files/review' (Join-Path $root '.tools')
 if (Test-Path -LiteralPath (Join-Path $root '.tools\review')) {
     Get-ChildItem -LiteralPath (Join-Path $root '.tools\review') -Filter '*.png' | Copy-Item -Destination (Join-Path $root 'docs\screenshots')
 }

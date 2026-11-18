@@ -1,8 +1,47 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
     id("org.jetbrains.kotlin.kapt")
+}
+
+val releaseProperties = Properties().apply {
+    val propertiesFile = rootProject.file("keystore.properties")
+    if (propertiesFile.isFile) propertiesFile.inputStream().use { load(it) }
+}
+fun signingValue(environment: String, property: String): String? =
+    providers.environmentVariable(environment).orNull?.takeIf { it.isNotBlank() }
+        ?: releaseProperties.getProperty(property)?.takeIf { it.isNotBlank() }
+
+val releaseStoreFile = signingValue("POROS_KEYSTORE_FILE", "storeFile")
+val releaseStorePassword = signingValue("POROS_STORE_PASSWORD", "storePassword")
+val releaseKeyAlias = signingValue("POROS_KEY_ALIAS", "keyAlias")
+val releaseKeyPassword = signingValue("POROS_KEY_PASSWORD", "keyPassword")
+
+val validateReleaseSigning = tasks.register("validateReleaseSigning") {
+    group = "verification"
+    description = "Checks local Poros release signing configuration without exposing credentials."
+    doLast {
+        val missing = listOf(
+            "POROS_KEYSTORE_FILE / storeFile" to releaseStoreFile,
+            "POROS_STORE_PASSWORD / storePassword" to releaseStorePassword,
+            "POROS_KEY_ALIAS / keyAlias" to releaseKeyAlias,
+            "POROS_KEY_PASSWORD / keyPassword" to releaseKeyPassword,
+        ).filter { it.second == null }.map { it.first }
+        check(missing.isEmpty()) {
+            "Poros release signing is incomplete. Configure ${missing.joinToString()} " +
+                "through environment variables or ignored keystore.properties. See docs/release-signing.md."
+        }
+        check(rootProject.file(requireNotNull(releaseStoreFile)).isFile) {
+            "Poros release keystore was not found. Check POROS_KEYSTORE_FILE / storeFile."
+        }
+    }
+}
+
+tasks.configureEach {
+    if (name == "preReleaseBuild") dependsOn(validateReleaseSigning)
 }
 
 android {
@@ -12,13 +51,29 @@ android {
         applicationId = "com.jevon.personalos"
         minSdk = 26
         targetSdk = 36
+        // Increase versionCode for every distributed release, keeping it identical on both PCs.
         versionCode = 1
         versionName = "0.1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
+    signingConfigs {
+        create("release") {
+            storeFile = releaseStoreFile?.let { rootProject.file(it) }
+            storePassword = releaseStorePassword
+            keyAlias = releaseKeyAlias
+            keyPassword = releaseKeyPassword
+        }
+    }
     buildTypes {
-        debug { applicationIdSuffix = ".debug"; versionNameSuffix = "-foundation" }
-        release { isMinifyEnabled = false }
+        debug {
+            applicationIdSuffix = ".dev"
+            versionNameSuffix = "-dev"
+        }
+        release {
+            isDebuggable = false
+            isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
+        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

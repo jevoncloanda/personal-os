@@ -10,4 +10,6 @@
     <color name="widget_action_surface">#473C92</color>
     <color name="widget_on_action">#E4DFFF</color>
     <color name="widget_feedback_surface">#1E1F28</color>
+    <color name="dashboard_positive">#66DBB3</color>
+    <color name="dashboard_warning">#F0CC84</color>
 </resources>
