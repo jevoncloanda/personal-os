@@ -1,5 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="budget_widget_title">Poros Budget Tracker</string>
+    <string name="today_widget_title">Poros Today Overview</string>
+    <string name="schedule_widget_title">Poros Upcoming Schedule</string>
+    <string name="budget_widget_description">Current budget, spending and remaining amount.</string>
+    <string name="today_widget_description">Your day, selected budget and upcoming priorities.</string>
+    <string name="schedule_widget_description">Upcoming events and open reminders.</string>
+    <string name="dashboard_widget_loading">Loading…</string>
+    <color name="widget_error">#BA1A1A</color>
+    <color name="widget_progress_track">#8B859D</color>
     <string name="quick_expense_title">Poros Quick Expense</string>
     <string name="quick_expense_description">Your expense presets, one-tap recording and Undo.</string>
     <string name="quick_expense_loading">Loading your expense presets…</string>

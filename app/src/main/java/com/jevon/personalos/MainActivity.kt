@@ -18,17 +18,34 @@ import com.jevon.personalos.alerts.recordTarget
 
 class MainActivity : ComponentActivity() {
     private var record by mutableStateOf<RecordTarget?>(null)
+    private var widgetDestination by mutableStateOf<String?>(null)
+    private fun readWidgetDestination(intent: Intent?): String? =
+        intent?.getStringExtra("widgetDestination")?.takeIf {
+            it in setOf("today", "money-budgets", "schedule", "subscriptions")
+        }
     private fun readTarget(intent:Intent?)=intent?.recordTarget()
-    override fun onNewIntent(intent:Intent){super.onNewIntent(intent);setIntent(intent);record=readTarget(intent)}
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        record = readTarget(intent)
+        widgetDestination = readWidgetDestination(intent)
+    }
     override fun onResume(){super.onResume();lifecycleScope.launch{(application as PersonalOsApplication).alerts.reconcile()}}
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         record=readTarget(intent)
+        widgetDestination = readWidgetDestination(intent)
         setContent {
             val model: TodayViewModel = viewModel()
             val settings = model.settings.collectAsStateWithLifecycle().value
-            PersonalOsTheme(settings) { PersonalOsApp(model, settings,record){record=null} }
+            PersonalOsTheme(settings) {
+                PersonalOsApp(model, settings, record, widgetDestination) {
+                    record = null
+                    widgetDestination = null
+                    intent?.removeExtra("widgetDestination")
+                }
+            }
         }
     }
 }

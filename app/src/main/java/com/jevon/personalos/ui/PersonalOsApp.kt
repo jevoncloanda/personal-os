@@ -47,7 +47,13 @@ private enum class Destination(val route: String, val label: String, val icon: I
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PersonalOsApp(model: TodayViewModel, settings: Settings, externalTarget:RecordTarget?=null, externalHandled:()->Unit={}) {
+fun PersonalOsApp(
+    model: TodayViewModel,
+    settings: Settings,
+    externalTarget: RecordTarget? = null,
+    externalDestination: String? = null,
+    externalHandled: () -> Unit = {},
+) {
     SystemBarAppearance()
     val money: MoneyViewModel = viewModel()
     val application = LocalContext.current.applicationContext as PersonalOsApplication
@@ -100,7 +106,23 @@ fun PersonalOsApp(model: TodayViewModel, settings: Settings, externalTarget:Reco
     }
     // A cold notification launch can compose before NavHost installs its graph.
     // Retain the target until the initial back-stack entry proves navigation is ready.
-    LaunchedEffect(externalTarget,backStack){if(backStack!=null)externalTarget?.let{target->if(target.domain=="SUBSCRIPTION"){requestedSubscription=target.id;navigate("subscriptions")}else{requestSchedule(target);navigate("schedule")};externalHandled()}}
+    LaunchedEffect(externalTarget, externalDestination, backStack) {
+        if (backStack != null) {
+            if (externalTarget != null) {
+                if (externalTarget.domain == "SUBSCRIPTION") {
+                    requestedSubscription = externalTarget.id
+                    navigate("subscriptions")
+                } else {
+                    requestSchedule(externalTarget)
+                    navigate("schedule")
+                }
+                externalHandled()
+            } else if (externalDestination != null) {
+                navigate(externalDestination)
+                externalHandled()
+            }
+        }
+    }
     LaunchedEffect(settingsError) { if (settingsError) snackbars.showSnackbar("Settings couldn’t be saved. Please try again.") }
 
     PorosBackground { BoxWithConstraints(Modifier.fillMaxSize()) {

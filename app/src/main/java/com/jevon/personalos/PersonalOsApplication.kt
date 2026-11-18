@@ -22,6 +22,7 @@ class PersonalOsApplication : Application() {
         super.onCreate()
         alerts.createChannels()
         alertScope.launchAlerts()
+        com.jevon.personalos.widget.DashboardRefresh.observe(this, alertScope)
         alertScope.launch {
             database.invalidationTracker.createFlow("accounts", "categories", "entries")
                 .debounce(200)

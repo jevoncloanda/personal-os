@@ -11,6 +11,38 @@
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher"
         android:theme="@style/Theme.PersonalOS">
+        <receiver android:name=".widget.BudgetTrackerReceiver" android:exported="true"
+            android:label="@string/budget_widget_title">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider"
+                android:resource="@xml/budget_tracker_widget" />
+        </receiver>
+        <receiver android:name=".widget.TodayOverviewReceiver" android:exported="true"
+            android:label="@string/today_widget_title">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider"
+                android:resource="@xml/today_overview_widget" />
+        </receiver>
+        <receiver android:name=".widget.UpcomingScheduleReceiver" android:exported="true"
+            android:label="@string/schedule_widget_title">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider"
+                android:resource="@xml/upcoming_schedule_widget" />
+        </receiver>
+        <receiver android:name=".widget.DashboardTimeReceiver" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
         <receiver android:name=".widget.QuickExpenseReceiver" android:exported="true"
             android:label="@string/quick_expense_title">
             <intent-filter>

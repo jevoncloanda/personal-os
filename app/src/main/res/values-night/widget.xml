@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <color name="widget_error">#FFB4AB</color>
+    <color name="widget_progress_track">#6F6A80</color>
     <color name="widget_surface">#12131B</color>
     <color name="widget_panel">#1E1F28</color>
     <color name="widget_text">#E3E1ED</color>
