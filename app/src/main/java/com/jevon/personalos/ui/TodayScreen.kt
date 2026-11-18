@@ -1,5 +1,7 @@
 package com.jevon.personalos.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
@@ -61,136 +63,427 @@ internal fun TodayBudgetPicker(content: TodayContent, select: (String?) -> Unit,
 }
 
 @Composable
-private fun TodayBody(content: TodayContent, open: (String) -> Unit,complete:((com.jevon.personalos.schedule.ReminderOccurrence)->Unit)?, choose: (() -> Unit)?) {
+private fun TodayBody(
+    content: TodayContent,
+    open: (String) -> Unit,
+    complete: ((com.jevon.personalos.schedule.ReminderOccurrence) -> Unit)?,
+    choose: (() -> Unit)?,
+) {
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val expanded = maxWidth >= 720.dp
         Column(
-            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)
-                .padding(top = 8.dp, bottom = 28.dp),
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp).padding(top = 8.dp, bottom = 88.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Text(content.date.format(DateTimeFormatter.ofPattern("EEEE, d MMMM")),
-                Modifier.padding(bottom = 4.dp), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(when (content.now.hour) { in 5..11 -> "Good morning."; in 12..16 -> "Good afternoon."; else -> "Good evening." },
-                style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(bottom = 12.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    content.date.format(DateTimeFormatter.ofPattern("EEEE, d MMM yyyy")),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    when (content.now.hour) {
+                        in 5..11 -> "Good morning."
+                        in 12..16 -> "Good afternoon."
+                        else -> "Good evening."
+                    },
+                    style = MaterialTheme.typography.headlineLarge,
+                    modifier = Modifier.semantics { heading() },
+                )
+            }
             if (expanded) {
-                Row(horizontalArrangement = Arrangement.spacedBy(40.dp)) {
-                    Column(Modifier.weight(1f)) { Agenda(content, open,complete) }
-                    Column(Modifier.weight(1f)) { MoneyAndLibrary(content, open,complete,choose) }
+                Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        TodayAgenda(content, open, complete)
+                    }
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        TodayMoneyAndLibrary(content, open, complete, choose)
+                    }
                 }
-            } else { Agenda(content, open,complete); MoneyAndLibrary(content, open,complete,choose) }
+            } else {
+                TodayAgenda(content, open, complete)
+                TodayMoneyAndLibrary(content, open, complete, choose)
+            }
         }
     }
 }
 
 @Composable
-private fun Agenda(content: TodayContent, open: (String) -> Unit,complete:((com.jevon.personalos.schedule.ReminderOccurrence)->Unit)?) {
-    val imminent = content.events.filter { it.startsAtMillis <= content.now.plusHours(1).toInstant().toEpochMilli() }
-    val dueSoon = content.reminders.filter { it.dueAtMillis != null }
-    if (imminent.isEmpty() && dueSoon.isEmpty()) {
-        Column {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                IconBadge(AppIcons.CheckCircle, positive = true)
-                Column(Modifier.weight(1f)) {
-                    Text("Priorities", style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
-                    Text("Nothing urgent", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                TextButton(onClick = { open("schedule") }) { Text("Schedule") }
-            }
+private fun TodayPanel(content: @Composable ColumnScope.() -> Unit) {
+    Surface(
+        color = LocalAtmosphere.current.panel,
+        shape = RoundedCornerShape(12.dp),
+    ) {
+        Column(
+            Modifier.fillMaxWidth().padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            content = content,
+        )
+    }
+}
+
+@Composable
+private fun TodayHeading(icon: ImageVector, title: String, action: String, open: () -> Unit) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
+        Text(
+            title,
+            Modifier.weight(1f).padding(start = 8.dp).semantics { heading() },
+            style = MaterialTheme.typography.titleMedium,
+        )
+        TextButton(onClick = open, contentPadding = PaddingValues(horizontal = 8.dp)) {
+            Text(action, style = MaterialTheme.typography.labelMedium)
         }
-        Spacer(Modifier.height(16.dp))
+    }
+}
+
+@Composable
+private fun TodayAgenda(
+    content: TodayContent,
+    open: (String) -> Unit,
+    complete: ((com.jevon.personalos.schedule.ReminderOccurrence) -> Unit)?,
+) {
+    val imminent = content.events.filter {
+        it.startsAtMillis <= content.now.plusHours(1).toInstant().toEpochMilli()
+    }
+    val dated = content.reminders.filter { it.dueAtMillis != null }
+    if (imminent.isEmpty() && dated.isEmpty()) {
+        Column {
+            TodayHeading(AppIcons.CheckCircle, "Priorities", "Schedule", { open("schedule") })
+            Text(
+                "Nothing urgent today",
+                Modifier.padding(start = 28.dp),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         return
     }
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-    SectionHeading("Priorities", "Schedule", { open("schedule") })
-    if(content.scheduleReminders.isNotEmpty()&&complete!=null)content.scheduleReminders.filter{it.due!=null}.forEach{item->ReminderRow(item,content.now,false,{complete(item)},{open("reminder/${android.net.Uri.encode(item.reminder.id)}?day=${item.day}")})}
-    else dueSoon.forEach { reminder ->
-        val due = Instant.ofEpochMilli(requireNotNull(reminder.dueAtMillis)).atZone(content.now.zone)
-        val overdue = due.isBefore(content.now)
-        ContentRow(AppIcons.RadioButtonUnchecked, reminder.title,
-            if (overdue) "Overdue · ${due.format(DateTimeFormatter.ofPattern("d MMM, HH:mm"))}" else "Today · ${due.format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT))}",
-            supportingColor = if (overdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
+    imminent.forEach { TodayEvent(it, content, open, urgent = true) }
+    if (dated.isNotEmpty()) TodayPanel {
+        TodayHeading(AppIcons.CheckCircle, "Action priorities", "Schedule", { open("schedule") })
+        TodayReminders(content, dated, complete, open)
     }
-    EventRows(imminent, content,open)
-    }
-    Spacer(Modifier.height(16.dp))
 }
 
 @Composable
-private fun EventRows(events: List<EventEntity>, content: TodayContent,open:(String)->Unit) {
-    events.forEachIndexed { index, event ->
-        val start = Instant.ofEpochMilli(event.startsAtMillis).atZone(content.now.zone)
-        val ongoing = event.startsAtMillis <= content.now.toInstant().toEpochMilli()
-        val nominal=content.scheduleEvents.firstOrNull{it.event.id==event.id&&it.start==event.startsAtMillis}?.day
-        Row(Modifier.fillMaxWidth().clickable{open("event/${android.net.Uri.encode(event.id)}${nominal?.let{"?day=$it"}.orEmpty()}")}.heightIn(min=48.dp).padding(vertical = 12.dp).semantics(mergeDescendants = true) {}, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            Column(Modifier.widthIn(min = 58.dp)) {
-                Text(if (event.allDay) "All day" else start.format(DateTimeFormatter.ofPattern(if(start.toLocalDate()==content.date)"HH:mm" else "d MMM\nHH:mm")),
-                    style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-                if (ongoing) Text("Now", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-            }
-            Column(Modifier.weight(1f)) {
+private fun TodayEvent(
+    event: EventEntity,
+    content: TodayContent,
+    open: (String) -> Unit,
+    urgent: Boolean,
+) {
+    val start = Instant.ofEpochMilli(event.startsAtMillis).atZone(content.now.zone)
+    val ongoing = event.startsAtMillis <= content.now.toInstant().toEpochMilli()
+    val nominal = content.scheduleEvents.firstOrNull {
+        it.event.id == event.id && it.start == event.startsAtMillis
+    }?.day
+    val route = "event/${android.net.Uri.encode(event.id)}${nominal?.let { "?day=$it" }.orEmpty()}"
+    Surface(
+        onClick = { open(route) },
+        shape = RoundedCornerShape(12.dp),
+        color = LocalAtmosphere.current.panel,
+    ) {
+        Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+            if (urgent) Box(
+                Modifier.width(5.dp).fillMaxHeight().background(MaterialTheme.colorScheme.primary),
+            )
+            Column(
+                Modifier.weight(1f).padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                FlowRow(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Surface(
+                        color = if (urgent) MaterialTheme.colorScheme.errorContainer
+                            else MaterialTheme.colorScheme.surfaceContainerHigh,
+                        shape = RoundedCornerShape(20.dp),
+                    ) {
+                        Text(
+                            when {
+                                ongoing -> "Happening now"
+                                urgent -> "Starting soon"
+                                start.toLocalDate() == content.date -> "Today"
+                                else -> start.format(DateTimeFormatter.ofPattern("EEE, d MMM"))
+                            },
+                            Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (urgent) MaterialTheme.colorScheme.error
+                                else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Text(
+                        if (event.allDay) "All day" else start.format(DateTimeFormatter.ofPattern("HH:mm")),
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
                 Text(event.title, style = MaterialTheme.typography.titleMedium)
-                if (event.location.isNotBlank()) Text(event.location, Modifier.padding(top = 4.dp), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (event.location.isNotBlank()) Text(
+                    event.location,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("View event", style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary)
+                    Icon(AppIcons.ChevronRight, null, Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.primary)
+                }
             }
         }
-        if (index < events.lastIndex) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
     }
 }
 
 @Composable
-private fun MoneyAndLibrary(content: TodayContent, open: (String) -> Unit,complete:((com.jevon.personalos.schedule.ReminderOccurrence)->Unit)?, choose: (() -> Unit)?) {
-    val summary = content.budget
-    PorosCard(contentPadding = 16.dp, verticalSpacing = 4.dp) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("This month", Modifier.weight(1f).semantics { heading() }, style = MaterialTheme.typography.titleMedium)
-            if (choose != null) IconButton(onClick = choose) { Icon(AppIcons.ExpandMore, "Choose Today budget") }
-            TextButton(onClick = { open("money") }) { Text("Money") }
+private fun TodayReminders(
+    content: TodayContent,
+    reminders: List<ReminderEntity>,
+    complete: ((com.jevon.personalos.schedule.ReminderOccurrence) -> Unit)?,
+    open: (String) -> Unit,
+) {
+    reminders.forEach { reminder ->
+        val occurrence = content.scheduleReminders.firstOrNull {
+            it.reminder.id == reminder.id && it.due == reminder.dueAtMillis
         }
-        if (summary == null) {
-            Text("No ${content.preferredCurrency} budget this month", style = MaterialTheme.typography.titleSmall)
-            Text("Choose or create an overall monthly budget.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        } else {
-            Text("${summary.budget.name} · ${summary.budget.currencyCode}", style = MaterialTheme.typography.titleSmall)
-            val remaining = summary.remainingMinor
-            Text("${formatMoney(kotlin.math.abs(remaining), summary.budget.currencyCode)} ${if (remaining >= 0) "left" else "over budget"}",
-                Modifier.padding(top = 2.dp, bottom = 4.dp), style = MaterialTheme.typography.headlineMedium,
-                color = if (remaining < 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface)
-            FinancialProgress(summary.fraction, remaining < 0, "${formatMoney(summary.spentMinor, summary.budget.currencyCode)} spent of ${formatMoney(summary.budget.limitMinor, summary.budget.currencyCode)}")
+        val due = reminder.dueAtMillis?.let { Instant.ofEpochMilli(it).atZone(content.now.zone) }
+        val overdue = due != null && if (reminder.dateOnly) due.toLocalDate() < content.date
+            else due.isBefore(content.now)
+        val detail = when {
+            due == null -> "No due date"
+            overdue -> "Overdue · ${due.format(DateTimeFormatter.ofPattern("d MMM"))}"
+            reminder.dateOnly -> "Due today"
+            else -> "Today · ${due.format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT))}"
         }
-        if (summary == null) TextButton(onClick = { open("money-budgets") }) { Text("Manage budgets") }
-    }
-    Spacer(Modifier.height(16.dp))
-    val later = content.events.filter { it.startsAtMillis > content.now.plusHours(1).toInstant().toEpochMilli() }
-    if (later.isNotEmpty()) {
-        SectionHeading("Coming up", "Schedule", { open("schedule") })
-        EventRows(later, content,open)
-        Spacer(Modifier.height(16.dp))
-    }
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-    SectionHeading("Upcoming payments", "Subscriptions", { open("subscriptions") })
-    if (content.subscriptions.isEmpty()) Text("No payments on the horizon", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    content.subscriptions.forEach { item ->
-        val due = LocalDate.ofEpochDay(item.nextDueEpochDay)
-        val whenDue = when { due < content.date -> "Overdue · ${due.format(DateTimeFormatter.ofPattern("d MMM"))}"; due == content.date -> "Due today"; due == content.date.plusDays(1) -> "Due tomorrow"; else -> "Due ${due.format(DateTimeFormatter.ofPattern("EEE, d MMM"))}" }
-        TextButton(onClick = { open("subscription/${item.id}") }, modifier = Modifier.fillMaxWidth()) {
-            ContentRow(AppIcons.Autorenew, item.name, "$whenDue · ${formatMoney(item.amountMinor, item.currencyCode)} unpaid forecast",
-                supportingColor = if (due < content.date) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceContainerLow,
+            shape = RoundedCornerShape(8.dp),
+        ) {
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (occurrence != null && complete != null) Checkbox(
+                    checked = occurrence.completed,
+                    onCheckedChange = { complete(occurrence) },
+                    modifier = Modifier.semantics {
+                        contentDescription = "${if (occurrence.completed) "Reopen" else "Complete"} ${reminder.title} ${occurrence.day?.let { LocalDate.ofEpochDay(it) } ?: "undated"}"
+                    },
+                ) else Icon(
+                    AppIcons.RadioButtonUnchecked, null,
+                    Modifier.padding(12.dp).size(20.dp),
+                    tint = if (overdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                )
+                Row(
+                    Modifier.weight(1f).clickable {
+                        val day = occurrence?.day?.let { "?day=$it" }.orEmpty()
+                        open("reminder/${android.net.Uri.encode(reminder.id)}$day")
+                    }.heightIn(min = 48.dp).padding(horizontal = 8.dp, vertical = 6.dp)
+                        .semantics(mergeDescendants = true) {},
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(reminder.title, style = MaterialTheme.typography.titleSmall)
+                        Text(detail, style = MaterialTheme.typography.bodySmall,
+                            color = if (overdue) MaterialTheme.colorScheme.error
+                                else MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Icon(AppIcons.ChevronRight, null, Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
         }
     }
+}
+
+@Composable
+private fun TodayMoneyAndLibrary(
+    content: TodayContent,
+    open: (String) -> Unit,
+    complete: ((com.jevon.personalos.schedule.ReminderOccurrence) -> Unit)?,
+    choose: (() -> Unit)?,
+) {
+    TodayFinances(content, open, choose)
+    val later = content.events.filter {
+        it.startsAtMillis > content.now.plusHours(1).toInstant().toEpochMilli()
     }
-    Spacer(Modifier.height(16.dp))
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-    SectionHeading("Currently enjoying", "Library", { open("library") })
-    if (content.library.isEmpty()) Text("A little space for downtime", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    content.library.forEach { item ->
-        LibraryRow(item) { open("library/${android.net.Uri.encode(item.id)}") }
+    if (later.isNotEmpty()) Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        TodayHeading(AppIcons.CalendarMonth, "Coming up", "Schedule", { open("schedule") })
+        later.forEach { TodayEvent(it, content, open, urgent = false) }
     }
+    if (content.subscriptions.isEmpty()) {
+        Column {
+            TodayHeading(AppIcons.Autorenew, "Upcoming payments", "Subscriptions", { open("subscriptions") })
+            Text("No renewals in the next 7 days", Modifier.padding(start = 28.dp),
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    } else TodayPanel {
+        TodayHeading(AppIcons.Autorenew, "Upcoming payments", "Subscriptions", { open("subscriptions") })
+        content.subscriptions.forEach {
+            TodayPayment(it, content.date) { open("subscription/${it.id}") }
+        }
+    }
+    if (content.library.isEmpty()) {
+        Column {
+            TodayHeading(AppIcons.Movie, "Currently enjoying", "Library", { open("library") })
+            Text("Your active titles will appear here", Modifier.padding(start = 28.dp),
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    } else TodayPanel {
+        TodayHeading(AppIcons.Movie, "Currently enjoying", "Library", { open("library") })
+        content.library.forEach { item ->
+            Surface(
+                onClick = { open("library/${android.net.Uri.encode(item.id)}") },
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                shape = RoundedCornerShape(8.dp),
+            ) {
+                Row(
+                    Modifier.fillMaxWidth().padding(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    LibraryCover(item, Modifier.size(48.dp))
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(item.title, style = MaterialTheme.typography.titleMedium)
+                        if (item.subtitle.isNotBlank()) Text(
+                            item.subtitle, style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        LibraryProgress(item, compact = true)
+                    }
+                }
+            }
+        }
     }
     val undated = content.reminders.filter { it.dueAtMillis == null }
-    if (undated.isNotEmpty()) {
-        Spacer(Modifier.height(16.dp))
-        SectionHeading("When you have a moment", "Reminders", { open("schedule") })
-        if(complete!=null&&content.scheduleReminders.isNotEmpty())content.scheduleReminders.filter{it.due==null}.forEach{item->ReminderRow(item,content.now,false,{complete(item)},{open("reminder/${android.net.Uri.encode(item.reminder.id)}")})}
-        else undated.forEach { ContentRow(AppIcons.RadioButtonUnchecked, it.title, "No due date") }
+    if (undated.isNotEmpty()) TodayPanel {
+        TodayHeading(AppIcons.CheckCircle, "When you have a moment", "Reminders", { open("schedule") })
+        TodayReminders(content, undated, complete, open)
+    }
+}
+
+@Composable
+private fun TodayFinances(content: TodayContent, open: (String) -> Unit, choose: (() -> Unit)?) {
+    val summary = content.budget
+    TodayPanel {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Icon(AppIcons.AccountBalanceWallet, null, Modifier.size(20.dp),
+                tint = LocalAtmosphere.current.positive)
+            Text("Monthly finances",
+                Modifier.weight(1f).padding(start = 8.dp).semantics { heading() },
+                style = MaterialTheme.typography.titleMedium)
+            if (choose != null) IconButton(onClick = choose) {
+                Icon(AppIcons.ExpandMore, "Choose Today budget", Modifier.size(20.dp))
+            }
+            TextButton(onClick = { open("money") }, contentPadding = PaddingValues(horizontal = 8.dp)) {
+                Text("Money", style = MaterialTheme.typography.labelMedium)
+            }
+        }
+        if (summary == null) {
+            Text("No ${content.preferredCurrency} budget this month",
+                style = MaterialTheme.typography.titleSmall)
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text("Choose an overall monthly budget.", Modifier.weight(1f),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                TextButton(onClick = { open("money-budgets") },
+                    contentPadding = PaddingValues(horizontal = 8.dp)) {
+                    Text("Manage budgets", style = MaterialTheme.typography.labelMedium)
+                }
+            }
+        } else {
+            Text("${summary.budget.name} · ${summary.budget.currencyCode}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            FlowRow(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Column {
+                    Text("Spent this month", style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(formatMoney(summary.spentMinor, summary.budget.currencyCode),
+                        style = MaterialTheme.typography.headlineLarge)
+                }
+                Column(Modifier.align(Alignment.Bottom).padding(bottom = 4.dp)) {
+                    Text("Budget", style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(formatMoney(summary.budget.limitMinor, summary.budget.currencyCode),
+                        style = MaterialTheme.typography.bodySmall)
+                }
+            }
+            val remaining = summary.remainingMinor
+            LinearProgressIndicator(
+                progress = { summary.fraction },
+                modifier = Modifier.fillMaxWidth().height(8.dp),
+                color = if (remaining < 0) MaterialTheme.colorScheme.error
+                    else MaterialTheme.colorScheme.primary,
+                trackColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                drawStopIndicator = {},
+            )
+            FlowRow(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(
+                    "${formatMoney(java.math.BigInteger.valueOf(remaining).abs(), summary.budget.currencyCode)} ${if (remaining < 0) "over budget" else "remaining"}",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (remaining < 0) MaterialTheme.colorScheme.error
+                        else LocalAtmosphere.current.positive,
+                )
+                val daysLeft = java.time.temporal.ChronoUnit.DAYS.between(
+                    content.date, content.date.withDayOfMonth(content.date.lengthOfMonth()),
+                )
+                Text("$daysLeft days left", style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    }
+}
+
+@Composable
+private fun TodayPayment(item: SubscriptionEntity, date: LocalDate, open: () -> Unit) {
+    val due = LocalDate.ofEpochDay(item.nextDueEpochDay)
+    val whenDue = when {
+        due < date -> "Overdue · ${due.format(DateTimeFormatter.ofPattern("d MMM"))}"
+        due == date -> "Due today"
+        due == date.plusDays(1) -> "Tomorrow, ${due.format(DateTimeFormatter.ofPattern("d MMM"))}"
+        else -> due.format(DateTimeFormatter.ofPattern("EEE, d MMM"))
+    }
+    Surface(
+        onClick = open,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = RoundedCornerShape(8.dp),
+    ) {
+        Column(
+            Modifier.fillMaxWidth().padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically) {
+                IconBadge(AppIcons.Autorenew)
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(item.name, style = MaterialTheme.typography.titleMedium)
+                    Text(whenDue, style = MaterialTheme.typography.bodySmall,
+                        color = if (due <= date.plusDays(1)) MaterialTheme.colorScheme.error
+                            else MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("Unpaid forecast · ${item.currencyCode}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(formatMoney(item.amountMinor, item.currencyCode),
+                    style = MaterialTheme.typography.titleMedium)
+            }
+        }
     }
 }
 
@@ -207,17 +500,6 @@ internal fun EmptyMessage(title: String, description: String) {
     Column(Modifier.fillMaxWidth().padding(vertical = 8.dp).semantics(mergeDescendants = true) {}) {
         Text(title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
         Text(description, Modifier.padding(top = 4.dp), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-}
-
-@Composable
-private fun ContentRow(icon: ImageVector, title: String, supporting: String, supportingColor: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurfaceVariant) {
-    Row(Modifier.fillMaxWidth().padding(vertical = 8.dp).semantics(mergeDescendants = true) {}, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        IconBadge(icon)
-        Column(Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
-            Text(supporting, Modifier.padding(top = 4.dp), style = MaterialTheme.typography.bodyMedium, color = supportingColor)
-        }
     }
 }
 

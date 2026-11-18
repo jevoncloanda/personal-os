@@ -37,7 +37,7 @@ class VisualReviewTest {
         compose.onNodeWithText(theme).performClick()
         // Advance Compose frames while awaiting asynchronous preference/UI updates.
         compose.waitUntil(timeoutMillis = 5_000) { runBlocking { store.settings.first().theme == expectedTheme } }
-        val toggle = compose.onNodeWithContentDescription("Wallpaper colors")
+        val toggle = compose.onNode(hasText("Wallpaper colors") and isToggleable())
         val savedDynamic = runBlocking { store.settings.first().dynamicColor }
         compose.waitUntil(timeoutMillis = 5_000) {
             val rendered = toggle.fetchSemanticsNode().config[androidx.compose.ui.semantics.SemanticsProperties.ToggleableState]
@@ -66,7 +66,7 @@ class VisualReviewTest {
         appearance("Dark")
         capture("$prefix-dark")
         preview("Empty")
-        compose.onNodeWithText("Nothing urgent").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Nothing urgent today").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Good", substring = true).performScrollTo()
         capture("$prefix-empty")
         preview("Personal")

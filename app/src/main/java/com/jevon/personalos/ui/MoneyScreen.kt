@@ -1,10 +1,11 @@
 package com.jevon.personalos.ui
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
@@ -41,6 +42,8 @@ fun MoneyScreen(model: MoneyViewModel, requested: String?, handled: () -> Unit, 
     var showTestReview by rememberSaveable { mutableStateOf(false) }
     var expandedCandidate by rememberSaveable { mutableStateOf<String?>(null) }
     var overviewCurrency by rememberSaveable(preferredCurrency) { mutableStateOf(preferredCurrency) }
+    val moneyListState = rememberLazyListState()
+    LaunchedEffect(section) { moneyListState.scrollToItem(0) }
     fun edit(type: String, id: String? = null) { model.clearError(); editId = id; editor = if (type == "entry" && id != null) "detail" else type }
     LaunchedEffect(requested) { requested?.let { if (it == "BUDGETS") { section = "Budgets"; model.setFilter(filter.copy(month = java.time.YearMonth.now(), page = 0)) } else { newKind = it; edit("entry") }; handled() } }
     when (val s = state) {
@@ -53,22 +56,60 @@ fun MoneyScreen(model: MoneyViewModel, requested: String?, handled: () -> Unit, 
             val data = s.snapshot
             val currencyBalances = activeCurrencyBalances(data.accounts)
             val displayCurrency = overviewCurrency.takeIf { code -> currencyBalances.any { it.code == code } } ?: currencyBalances.firstOrNull()?.code ?: preferredCurrency
-            LazyColumn(Modifier.fillMaxSize().testTag("MoneyList"), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 0.dp, bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                if (section == "Overview") item { BalanceHeader(data, displayCurrency, { overviewCurrency = it }, { edit("account") }) }
+            LazyColumn(
+                modifier = Modifier.fillMaxSize().testTag("MoneyList"),
+                state = moneyListState,
+                contentPadding = PaddingValues(
+                    start = 16.dp,
+                    end = 16.dp,
+                    top = 0.dp,
+                    bottom = if (section == "Overview") 88.dp else 28.dp,
+                ),
+                verticalArrangement = Arrangement.spacedBy(
+                    if (section == "Overview") 16.dp else 10.dp,
+                ),
+            ) {
                 item {
                     val sections = listOf("Overview", "History", "Accounts", "Budgets", "Categories")
-                    FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    FlowRow(
+                        Modifier.fillMaxWidth().selectableGroup(),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
                         sections.forEach { label ->
-                            TextButton(onClick = { section = label }, shape = MaterialTheme.shapes.small,
-                                modifier = Modifier.heightIn(min = 48.dp).semantics { selected = section == label; role = androidx.compose.ui.semantics.Role.Tab },
-                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                            TextButton(
+                                onClick = { section = label },
+                                modifier = Modifier.heightIn(min = 48.dp).semantics {
+                                    selected = section == label
+                                    role = androidx.compose.ui.semantics.Role.Tab
+                                },
+                                shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
                                 colors = ButtonDefaults.textButtonColors(
-                                    containerColor = if (section == label) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else androidx.compose.ui.graphics.Color.Transparent,
-                                    contentColor = if (section == label) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)) {
-                                Text(label, style = MaterialTheme.typography.labelLarge)
+                                    containerColor = if (section == label)
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                    else androidx.compose.ui.graphics.Color.Transparent,
+                                    contentColor = if (section == label)
+                                        MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                                ),
+                            ) {
+                                Text(label, style = MaterialTheme.typography.labelMedium)
                             }
                         }
                     }
+                }
+                if (section == "Overview") item {
+                    BalanceHeader(
+                        data,
+                        displayCurrency,
+                        { overviewCurrency = it },
+                        { edit("account") },
+                        { kind ->
+                            newKind = kind
+                            edit("entry")
+                        },
+                    )
                 }
                 if (section in listOf("Accounts", "History", "Budgets", "Categories")) item {
                     TextButton(onClick = { showTestReview = true }) { Text("Review possible test records") }
@@ -78,20 +119,51 @@ fun MoneyScreen(model: MoneyViewModel, requested: String?, handled: () -> Unit, 
                 if (error != null && editor == null) item { Text(error!!, color = MaterialTheme.colorScheme.error) }
                 when (section) {
                     "Overview" -> moneyOverview(data, displayCurrency, filter.month, { type, id -> edit(type, id) },
-                        { kind -> newKind = kind; edit("entry") }, { section = it }, { model.setFilter(filter.copy(month = it, page = 0)) }, subscriptions)
+                        { section = it }, { model.setFilter(filter.copy(month = it, page = 0)) }, subscriptions)
                     "Accounts" -> {
-                        item { SectionHeading("Accounts", "Create account", { edit("account") }); Text("Balances include all dates, including future entries. Archived accounts retain history and can be restored.") }
-                        items(data.accounts, key = { it.account.id }) { AccountRow(it) { edit("account", it.account.id) } }
+                        item {
+                            SectionHeading("Accounts", "Create account", { edit("account") })
+                            Text("Balances include all dates. Archived accounts retain history and can be restored.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        if (data.accounts.isEmpty()) item {
+                            FinancialEmptyState("No accounts yet", "Create an account to record your opening balance and transactions.")
+                        }
+                        items(data.accounts, key = { it.account.id }) { balance ->
+                            PorosCard(contentPadding = 12.dp, verticalSpacing = 0.dp) {
+                                AccountManagementRow(balance) { edit("account", balance.account.id) }
+                            }
+                        }
                     }
                     "Categories" -> {
-                        item { SectionHeading("Categories", "Add category", { edit("category") }); Text("Rename or archive without removing past transactions. Archived categories remain visible in history.") }
+                        item {
+                            SectionHeading("Categories", "Add category", { edit("category") })
+                            Text("Rename or archive without removing past transactions.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        if (data.categories.isEmpty()) item {
+                            FinancialEmptyState("No categories yet", "Add an expense or income category to organize your records.")
+                        }
                         items(data.categories, key = { it.id }) { category ->
-                            LedgerRow(AppIcons.Label, category.name, "${category.kind?.lowercase()?.replaceFirstChar(Char::uppercase) ?: "Expense / income"}${if (category.archived) " · Archived" else ""}", "Edit", onClick = { edit("category", category.id) })
+                            PorosCard(contentPadding = 12.dp, verticalSpacing = 0.dp) {
+                                MoneyLedgerRow(
+                                    AppIcons.Label, category.name,
+                                    "${category.kind?.lowercase()?.replaceFirstChar(Char::uppercase) ?: "Expense / income"}${if (category.archived) " · Archived" else ""}",
+                                    "Edit", category.kind == "INCOME",
+                                ) { edit("category", category.id) }
+                            }
                         }
                     }
                     "Budgets" -> {
-                        item { SectionHeading("Monthly budgets", "Create budget", { edit("budget") }); Text("The overall budget includes all expenses. Category budgets are separate limits within it; they are never added to the overall limit.") }
-                        if (data.budgets.isEmpty()) item { Text("No budget for ${filter.month}. Create an overall plan or a category limit.") }
+                        item {
+                            SectionHeading("Monthly budgets", "Create budget", { edit("budget") })
+                            Text("Overall includes all expenses. Category limits sit within it and are never added together.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        if (data.budgets.isEmpty()) item { FinancialEmptyState("No budgets this month", "Create an overall plan or a category limit for ${filter.month}.") }
                         val overall = data.budgets.filter { it.budget.categoryId == null }
                         val categories = data.budgets.filter { it.budget.categoryId != null }
                         items(overall, key = { it.budget.id }) { BudgetBlock(it, data.categories) { edit("budget", it.budget.id) } }
@@ -102,8 +174,8 @@ fun MoneyScreen(model: MoneyViewModel, requested: String?, handled: () -> Unit, 
                         item {
                             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 SectionHeading("History · ${data.count} this month", "Filters", { showFilters = true })
-                                OutlinedTextField(filter.search, { model.setFilter(filter.copy(search = it, page = 0)) }, label = { Text("Search notes, account, category") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
-                                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                SearchField("Search notes, account, category", filter.search) { model.setFilter(filter.copy(search = it, page = 0)) }
+                                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                     (listOf("" to "All") + EntryKind.entries.map { it.name to it.name.lowercase().replaceFirstChar(Char::uppercase) }).forEach { (kind, label) ->
                                         FilterChip(selected = filter.kind == kind, onClick = { model.setFilter(filter.copy(kind = kind, page = 0)) }, label = { Text(label) })
                                     }
@@ -114,10 +186,24 @@ fun MoneyScreen(model: MoneyViewModel, requested: String?, handled: () -> Unit, 
                                 if (selected.isNotEmpty()) Text("Filtered by ${selected.joinToString(" · ")}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
-                        if (data.entries.isEmpty()) item { Text("No transactions match this month and these filters.") }
+                        if (data.entries.isEmpty()) item { FinancialEmptyState("No matching transactions", "Try another month, search or filter.") }
                         data.entries.take(50).groupBy { it.occurredOnEpochDay }.forEach { (date, entries) ->
-                            item(key = "date-$date") { Text(LocalDate.ofEpochDay(date).format(DateTimeFormatter.ofPattern("EEEE, d MMMM")), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 12.dp)) }
-                            items(entries, key = { it.id }) { EntryRow(it, data) { edit("entry", it.id) } }
+                            item(key = "date-$date") {
+                                Text(
+                                    LocalDate.ofEpochDay(date).format(DateTimeFormatter.ofPattern("EEEE, d MMMM")),
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(top = 12.dp).semantics { heading() },
+                                )
+                            }
+                            item(key = "ledger-$date") {
+                                PorosCard(contentPadding = 12.dp, verticalSpacing = 0.dp) {
+                                    entries.forEachIndexed { index, entry ->
+                                        if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                                        EntryRow(entry, data, overview = true) { edit("entry", entry.id) }
+                                    }
+                                }
+                            }
                         }
                         item { Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             TextButton(enabled = filter.page > 0, onClick = { model.setFilter(filter.copy(page = filter.page - 1)) }) { Text("Previous page") }
@@ -206,22 +292,95 @@ fun MoneyScreen(model: MoneyViewModel, requested: String?, handled: () -> Unit, 
     LedgerRow(when (balance.account.type) { "CASH" -> AppIcons.Payments; "BANK" -> AppIcons.AccountBalance; "INVESTMENT" -> AppIcons.TrendingUp; else -> AppIcons.AccountBalanceWallet },
         balance.account.name, "${balance.account.type.lowercase().replace('_', ' ')} · ${balance.account.currencyCode}${if (balance.account.archived) " · Archived" else ""}", formatMoney(balance.balance, balance.account.currencyCode), onClick = edit)
 }
-@Composable internal fun EntryRow(entry: EntryEntity, data: MoneySnapshot, edit: () -> Unit) {
-    val accounts = listOfNotNull(entry.fromAccountId, entry.toAccountId).map { id -> data.accounts.firstOrNull { it.account.id == id }?.account?.name ?: "Account" }
+@Composable
+internal fun EntryRow(
+    entry: EntryEntity,
+    data: MoneySnapshot,
+    overview: Boolean = false,
+    edit: () -> Unit,
+) {
+    val accounts = listOfNotNull(entry.fromAccountId, entry.toAccountId).map { id ->
+        data.accounts.firstOrNull { it.account.id == id }?.account?.name ?: "Account"
+    }
     val category = data.categories.firstOrNull { it.id == entry.categoryId }?.name
-    LedgerRow(when (entry.kind) { EntryKind.EXPENSE -> AppIcons.NorthEast; EntryKind.INCOME -> AppIcons.SouthWest; EntryKind.TRANSFER -> AppIcons.SwapHoriz },
-        entry.note.ifBlank { category ?: entry.kind.name.lowercase().replaceFirstChar(Char::uppercase) },
-        "${entry.kind.name.lowercase().replaceFirstChar(Char::uppercase)} · ${entry.currencyCode} · ${accounts.joinToString(" → ")}${category?.let { " · $it" } ?: ""}\n${LocalDate.ofEpochDay(entry.occurredOnEpochDay)} %02d:%02d".format(entry.minuteOfDay / 60, entry.minuteOfDay % 60),
-        "${if (entry.kind == EntryKind.EXPENSE) "−" else if (entry.kind == EntryKind.INCOME) "+" else ""}${formatMoney(entry.amountMinor, entry.currencyCode)}", positive = entry.kind == EntryKind.INCOME, dense = true, onClick = edit)
+    val kind = entry.kind.name.lowercase().replaceFirstChar(Char::uppercase)
+    val icon = when (entry.kind) {
+        EntryKind.EXPENSE -> AppIcons.NorthEast
+        EntryKind.INCOME -> AppIcons.SouthWest
+        EntryKind.TRANSFER -> AppIcons.SwapHoriz
+    }
+    val title = entry.note.ifBlank { category ?: kind }
+    val context = "$kind · ${entry.currencyCode} · ${accounts.joinToString(" → ")}${category?.let { " · $it" } ?: ""}"
+    val time = "%02d:%02d".format(entry.minuteOfDay / 60, entry.minuteOfDay % 60)
+    val sign = when (entry.kind) {
+        EntryKind.EXPENSE -> "−"
+        EntryKind.INCOME -> "+"
+        EntryKind.TRANSFER -> ""
+    }
+    val amount = sign + formatMoney(entry.amountMinor, entry.currencyCode)
+    if (overview) {
+        MoneyLedgerRow(icon, title, "$context · $time", amount, entry.kind == EntryKind.INCOME, edit)
+    } else {
+        LedgerRow(
+            icon, title,
+            "$context\n${LocalDate.ofEpochDay(entry.occurredOnEpochDay)} $time",
+            amount,
+            positive = entry.kind == EntryKind.INCOME,
+            dense = true,
+            onClick = edit,
+        )
+    }
 }
 @Composable internal fun BudgetBlock(value: BudgetProjection, categories: List<CategoryEntity>, edit: () -> Unit) {
     val summary = value.summary()
-    PorosCard(Modifier.clickable(onClick = edit)) {
-            Text("${value.budget.name} · ${value.budget.currencyCode}", style = MaterialTheme.typography.titleMedium)
-            Text(value.budget.categoryId?.let { id -> categories.firstOrNull { it.id == id }?.name ?: "Category" } ?: "Overall monthly budget", style = MaterialTheme.typography.bodyMedium)
-            Text("${formatMoney(kotlin.math.abs(summary.remainingMinor), value.budget.currencyCode)} ${if (summary.remainingMinor < 0) "over budget" else "remaining"}", style = MaterialTheme.typography.headlineSmall,
-                color = if (summary.remainingMinor < 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface)
-            FinancialProgress(summary.fraction, summary.remainingMinor < 0, "${formatMoney(value.spent, value.budget.currencyCode)} spent of ${formatMoney(value.budget.limitMinor, value.budget.currencyCode)}")
+    val currency = value.budget.currencyCode
+    val over = summary.remainingMinor < 0
+    PorosCard(Modifier.clickable(onClick = edit), contentPadding = 16.dp, verticalSpacing = 10.dp) {
+        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+            IconBadge(if (value.budget.categoryId == null) AppIcons.AccountBalanceWallet else AppIcons.Label)
+            Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
+                Text(value.budget.name, style = MaterialTheme.typography.titleSmall)
+                Text(
+                    value.budget.categoryId?.let { id -> categories.firstOrNull { it.id == id }?.name ?: "Category" }
+                        ?: "Overall monthly budget",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Text("Edit", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+        }
+        Text("${formatMoney(value.spent, currency)} spent", style = MaterialTheme.typography.titleLarge)
+        FinancialProgress(summary.fraction, over, "Limit · ${formatMoney(value.budget.limitMinor, currency)} · $currency")
+        Text(
+            "${formatMoney(java.math.BigInteger.valueOf(summary.remainingMinor).abs(), currency)} ${if (over) "over budget" else "remaining"}",
+            style = MaterialTheme.typography.labelLarge,
+            color = if (over) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+        )
+    }
+}
+
+@Composable
+private fun AccountManagementRow(balance: AccountBalance, edit: () -> Unit) {
+    val account = balance.account
+    MoneyLedgerRow(
+        when (account.type) {
+            "CASH" -> AppIcons.Payments
+            "BANK" -> AppIcons.AccountBalance
+            "INVESTMENT" -> AppIcons.TrendingUp
+            else -> AppIcons.AccountBalanceWallet
+        },
+        account.name,
+        "${account.type.lowercase().replace('_', ' ')} · ${account.currencyCode}${if (account.archived) " · Archived" else ""} · Edit",
+        formatMoney(balance.balance, account.currencyCode), false, edit,
+    )
+}
+
+@Composable
+internal fun FinancialEmptyState(title: String, detail: String) {
+    PorosCard(contentPadding = 16.dp) {
+        Text(title, style = MaterialTheme.typography.titleSmall)
+        Text(detail, style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

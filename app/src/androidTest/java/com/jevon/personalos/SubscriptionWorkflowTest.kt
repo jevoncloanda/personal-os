@@ -22,22 +22,152 @@ import java.util.UUID
 class SubscriptionWorkflowTest {
     @get:Rule val compose = createEmptyComposeRule()
     private fun tap(text: String) {
+        val picker = text.substringBefore(":").takeIf {
+            it in listOf("Default payment account", "Default expense category", "Billing frequency")
+        }
+        if (picker != null) {
+            val target = hasContentDescription("Choose ${picker.lowercase()}")
+            if (compose.onAllNodes(target).fetchSemanticsNodes().isEmpty()) {
+                compose.onNodeWithText("More options").performScrollTo().performClick()
+            }
+            compose.onNode(target).performScrollTo().performClick()
+            return
+        }
         if (compose.onAllNodesWithText(text).fetchSemanticsNodes().isEmpty() && compose.onAllNodesWithTag("SubscriptionList").fetchSemanticsNodes().isNotEmpty()) {
             compose.onNodeWithTag("SubscriptionList").performScrollToNode(hasText(text))
         }
-        val node = compose.onNodeWithText(text)
+        val node = compose.onAllNodesWithText(text).onLast()
         try { node.performScrollTo() } catch (_: AssertionError) { /* Host actions have no scrolling ancestor. */ }
         node.performClick()
     }
-    private fun field(label: String, text: String) = compose.onNodeWithText(label).performScrollTo().performTextReplacement(text)
+    private fun field(label: String, text: String) {
+        if (label.endsWith(" (YYYY-MM-DD)")) {
+            val name = label.removeSuffix(" (YYYY-MM-DD)")
+            compose.onNodeWithContentDescription("Choose ${name.lowercase()}").performScrollTo().performClick()
+            compose.onNodeWithText("Type date").performClick()
+            compose.onNodeWithText("Date (YYYY-MM-DD)").performTextReplacement(text)
+            compose.onNodeWithText("Use date").performClick()
+            return
+        }
+        val target = when {
+            label == "Subscription name" -> hasContentDescription(label)
+            label == "Price" -> hasContentDescription("Price in", substring = true) and hasSetTextAction()
+            label.startsWith("Actual paid amount") -> hasContentDescription("Actual paid amount in", substring = true) and hasSetTextAction()
+            else -> hasText(label)
+        }
+        if (label == "Description (optional)" && compose.onAllNodes(target).fetchSemanticsNodes().isEmpty()) {
+            compose.onNodeWithText("More options").performScrollTo().performClick()
+        }
+        compose.onNode(target).performScrollTo().performTextReplacement(text)
+    }
+    private fun save() {
+        compose.onAllNodes(hasClickAction() and
+            (hasText("Save", substring = true) or hasText("Record payment"))).onLast().performClick()
+        compose.waitUntil(10000) {
+            compose.onAllNodesWithContentDescription("Cancel editing").fetchSemanticsNodes().isEmpty()
+        }
+    }
     private fun capture(name: String) {
         compose.waitForIdle()
         val instrument = InstrumentationRegistry.getInstrumentation()
         instrument.uiAutomation.waitForIdle(500, 3000)
         android.os.SystemClock.sleep(1500)
         val bitmap = requireNotNull(instrument.uiAutomation.takeScreenshot())
-        val folder = File(instrument.targetContext.getExternalFilesDir(null), "review/phase-2").apply { mkdirs() }
+        val folder = File(instrument.targetContext.getExternalFilesDir(null), "review/${InstrumentationRegistry.getArguments().getString("captureFolder") ?: "phase-2"}").apply { mkdirs() }
         File(folder, "$name.png").outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG,100,it) }; bitmap.recycle()
+    }
+    @Test fun moneyEntryEditingAndManagementUseDisposableStorage() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val reviewId = UUID.randomUUID().toString()
+        val scenario = ActivityScenario.launch<SubscriptionReviewActivity>(
+            Intent(context, SubscriptionReviewActivity::class.java).putExtra("reviewId", reviewId)
+        )
+        var db: PersonalDatabase? = null
+        scenario.onActivity { db = it.databaseForTest() }
+        val dao = requireNotNull(db).personalDao()
+        fun section(label: String) {
+            compose.onNodeWithTag("MoneyList").performScrollToIndex(0)
+            compose.onAllNodes(hasText(label) and hasClickAction()).onLast().performScrollTo().performClick()
+        }
+        fun moneyTap(label: String) {
+            val target = hasText(label) and hasClickAction()
+            if (compose.onAllNodes(target).fetchSemanticsNodes().isEmpty()) {
+                compose.onNodeWithTag("MoneyList").performScrollToNode(target)
+            }
+            compose.onAllNodes(target).onLast().performScrollTo().performClick()
+        }
+        fun account(label: String, name: String) {
+            compose.onNodeWithContentDescription("Choose $label").performScrollTo().performClick()
+            tap("$name · IDR")
+        }
+        fun amount(value: String) {
+            compose.onNodeWithContentDescription("Amount in IDR").performTextReplacement(value)
+            compose.onNodeWithContentDescription("Amount in IDR").performImeAction()
+        }
+        try {
+            runBlocking {
+                dao.saveAccount(AccountEntity("review-cash", "Review cash", "IDR"), true)
+                val month = java.time.YearMonth.now()
+                dao.saveBudget(BudgetEntity("review-category-budget", "Services limit", "IDR", 2_000_000,
+                    month.atDay(1).toEpochDay(), month.plusMonths(1).atDay(1).toEpochDay(), "review-category"), true)
+            }
+            tap("Review dark")
+            tap("Money")
+            compose.waitUntil(10000) { compose.onAllNodesWithTag("MoneyList").fetchSemanticsNodes().isNotEmpty() }
+            moneyTap("Add Expense")
+            account("paid from account", "Review bank")
+            amount("12500")
+            compose.onNodeWithText("All categories").performScrollTo().performClick()
+            tap("Services")
+            capture("money-expense-populated-dark")
+            compose.onNodeWithText("More options").performScrollTo().performClick()
+            field("Description / notes (optional)", "Verification expense")
+            compose.onNodeWithText("More options").performScrollTo().performClick()
+            save()
+            section("History")
+            moneyTap("Verification expense")
+            capture("money-transaction-detail-dark")
+            tap("Edit details")
+            amount("13000")
+            save()
+            val expense = runBlocking { dao.observeEntries().first().single() }
+            assertEquals(1_300_000L, expense.amountMinor)
+            assertEquals("review-category", expense.categoryId)
+            assertEquals("Verification expense", expense.note)
+            section("Overview")
+            tap("Review light")
+            moneyTap("Income")
+            account("receiving account", "Review bank")
+            amount("500000")
+            capture("money-income-populated-light")
+            save()
+            tap("Review dark")
+            section("Overview")
+            moneyTap("Transfer")
+            account("from account", "Review bank")
+            account("to account", "Review cash")
+            amount("25000")
+            capture("money-transfer-populated-dark")
+            save()
+            val entries = runBlocking { dao.observeEntries().first() }
+            assertEquals(3, entries.size)
+            assertEquals(1, entries.count { it.kind == EntryKind.TRANSFER })
+            assertEquals(146_200_000L, runBlocking { dao.balances().single { it.account.id == "review-idr" }.balance })
+            assertEquals(2_500_000L, runBlocking { dao.balances().single { it.account.id == "review-cash" }.balance })
+            section("Overview"); capture("money-populated-dark")
+            section("History"); capture("money-history-populated-dark")
+            section("Budgets"); capture("money-budgets-populated-dark")
+            val budgets = runBlocking { dao.budgetProjections(LocalDate.now().toEpochDay()) }
+            assertEquals(2, budgets.size)
+            assertTrue(budgets.all { it.spent == 1_300_000L })
+            section("Accounts"); capture("money-accounts-populated-dark")
+            section("Categories"); capture("money-categories-populated-dark")
+            tap("Review light")
+            section("Overview"); capture("money-populated-light")
+        } finally {
+            scenario.close()
+            context.deleteDatabase("phase2-review-$reviewId.db")
+        }
     }
     @Test fun importedPaidCursorIsSkippedAndCalendarHandlesTypedDatesOutsidePickerRange() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
@@ -57,15 +187,16 @@ class SubscriptionWorkflowTest {
             }
             compose.waitUntil(10000) { compose.onAllNodesWithText("Legacy paid plan", substring = true).fetchSemanticsNodes().isNotEmpty() }
             compose.onNodeWithText("Legacy paid plan", substring = true).performClick()
-            compose.onNodeWithText("Next unpaid: ${day.plusMonths(1)}").assertExists()
+            compose.onAllNodesWithText(day.plusMonths(1).toString()).onFirst().assertExists()
             tap("Record payment")
-            compose.onNodeWithText("Renewal occurrence (YYYY-MM-DD)").assertExists()
-            compose.onNodeWithText(day.plusMonths(1).toString()).assertExists()
+            compose.onNodeWithContentDescription("Choose renewal occurrence").assertExists()
             field("Renewal occurrence (YYYY-MM-DD)", "2500-01-31")
             compose.onNodeWithContentDescription("Choose renewal occurrence").performScrollTo().performClick()
             compose.onNodeWithText("Use date").assertExists()
             compose.onNodeWithText("Cancel").performClick()
-            compose.onNodeWithText("2500-01-31").assertExists()
+            compose.onNodeWithText(LocalDate.of(2500, 1, 31).format(
+                java.time.format.DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.MEDIUM)
+            )).assertExists()
         } finally { scenario.close(); context.deleteDatabase("phase2-review-$reviewId.db") }
     }
     @Test fun managePayCorrectCancelAndReopenDisposableSubscriptions() {
@@ -75,7 +206,15 @@ class SubscriptionWorkflowTest {
         var scenario = ActivityScenario.launch<SubscriptionReviewActivity>(intent)
         var db: PersonalDatabase? = null
         fun database(): PersonalDatabase { scenario.onActivity { db = it.databaseForTest() }; return requireNotNull(db) }
-        fun waitFor(text: String) { compose.waitUntil(10000) { compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty() } }
+        fun waitFor(text: String) {
+            if (compose.onAllNodesWithText(text).fetchSemanticsNodes().isEmpty() &&
+                compose.onAllNodesWithTag("SubscriptionList").fetchSemanticsNodes().isNotEmpty()) {
+                compose.onNodeWithTag("SubscriptionList").performScrollToNode(hasText(text))
+            }
+            compose.waitUntil(10000) {
+                compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
+            }
+        }
         try {
             waitFor("New subscription"); capture("subscriptions-empty")
             tap("New subscription"); field("Subscription name", "Review streaming")
@@ -85,25 +224,25 @@ class SubscriptionWorkflowTest {
             tap("Default payment account: Choose when paying"); tap("Review bank")
             tap("Default expense category: Uncategorized"); tap("Services")
             androidx.test.espresso.Espresso.closeSoftKeyboard()
-            compose.onNodeWithText("Subscription name").performScrollTo()
+            compose.onNodeWithContentDescription("Subscription name").performScrollTo()
             capture("subscription-editor")
-            compose.onNodeWithText("Save").performClick(); waitFor("Record payment")
+            save(); waitFor("Record payment")
             val subscriptionId = runBlocking { database().personalDao().subscriptions().single().id }
             capture("subscription-detail-light")
             tap("All subscriptions"); tap("New subscription")
             field("Subscription name", "Review annual")
             field("Currency code", "USD"); field("Price", "120")
             tap("Billing frequency: Monthly"); tap("Yearly")
-            compose.onNodeWithText("Save").performClick(); waitFor("Record payment")
+            save(); waitFor("Record payment")
             tap("All subscriptions"); capture("subscriptions-light")
             tap("Review dark"); capture("subscriptions-dark"); tap("Review light")
-            compose.onNodeWithText("Review streaming", substring = true).performScrollTo().performClick()
+            tap("Review streaming")
             tap("Edit subscription"); field("Price", "50000")
             field("Next renewal date (YYYY-MM-DD)", LocalDate.now().toString())
-            compose.onNodeWithText("Save").performClick(); waitFor("Record payment")
+            save(); waitFor("Record payment")
             tap("Record payment"); field("Actual paid amount (IDR)", "48000")
             capture("record-payment")
-            compose.onNodeWithText("Save").performClick(); waitFor("Record payment")
+            save(); waitFor("Record payment")
             val dao = database().personalDao()
             val link = runBlocking { dao.paymentsFor(subscriptionId).single() }
             val expense = runBlocking { dao.findEntry(link.entryId)!! }
@@ -115,13 +254,13 @@ class SubscriptionWorkflowTest {
             assertTrue(duplicateFailed)
             compose.onNodeWithTag("SubscriptionList").performScrollToNode(hasText("Paid · ${LocalDate.now()}", substring = true))
             compose.onNodeWithText("Paid · ${LocalDate.now()}", substring = true).performClick()
-            field("Actual paid amount (IDR)", "47000"); compose.onNodeWithText("Save").performClick(); waitFor("Record payment")
+            field("Actual paid amount (IDR)", "47000"); save(); waitFor("Record payment")
             assertEquals(4_700_000L, runBlocking { dao.findEntry(link.entryId)!!.amountMinor })
             tap("Money"); compose.waitUntil(10000) { compose.onAllNodesWithTag("MoneyList").fetchSemanticsNodes().isNotEmpty() }; capture("linked-money")
             tap("Today"); capture("today-after-payment")
             assertTrue(runBlocking { database().observeToday(java.time.ZonedDateTime.now()).first().subscriptions.none { it.id == subscriptionId } })
             compose.onAllNodesWithText("Subscriptions").onFirst().performClick()
-            compose.onNodeWithText("Review streaming", substring = true).performScrollTo().performClick()
+            tap("Review streaming")
             tap("Cancel subscription"); tap("Mark inactive")
             compose.onNodeWithText("Reactivate subscription").performScrollTo().assertExists(); capture("subscription-inactive-history")
             compose.onNodeWithTag("SubscriptionList").performScrollToNode(hasText("Paid · ${LocalDate.now()}", substring = true)); capture("subscription-payment-history")
@@ -130,8 +269,8 @@ class SubscriptionWorkflowTest {
             assertEquals(before, runBlocking { BackupStore(database()).snapshot() })
             scenario.close()
             scenario = ActivityScenario.launch(intent)
-            waitFor("New subscription"); tap("Show: Active"); tap("Inactive")
-            compose.onNodeWithText("Review streaming", substring = true).performScrollTo().assertExists()
+            waitFor("New subscription"); tap("Inactive")
+            compose.onAllNodesWithText("Review streaming", substring = true).onLast().performScrollTo().assertExists()
             assertEquals(1, runBlocking { database().personalDao().paymentsFor(subscriptionId).size })
             capture("subscriptions-reopened")
         } finally { scenario.close(); context.deleteDatabase("phase2-review-$reviewId.db") }

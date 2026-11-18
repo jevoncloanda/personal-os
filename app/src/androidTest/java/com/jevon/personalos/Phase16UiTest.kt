@@ -42,13 +42,13 @@ class Phase16UiTest {
             click("Money")
             compose.waitUntil(10000) { compose.onAllNodesWithTag("MoneyList").fetchSemanticsNodes().isNotEmpty() }
             section("Overview"); capture("money-overview-light")
-            compose.onNodeWithTag("MoneyList").performScrollToNode(hasText("Where it went"))
+            compose.onNodeWithTag("MoneyList").performScrollToNode(hasText("Recent activity"))
             compose.onNodeWithTag("MoneyList").performTouchInput { swipeUp() }
             capture("money-overview-scrolled")
             section("History"); capture("history-light")
             section("Accounts"); capture("accounts-light")
             compose.onNodeWithContentDescription("Quick add").performClick(); capture("quick-add-light")
-            click("Add expense"); capture("expense-editor")
+            click("Expense"); capture("expense-editor")
             compose.onNodeWithContentDescription("Cancel editing").performClick()
             compose.onNodeWithContentDescription("Quick add").performClick(); click("Transfer"); capture("transfer-editor")
             compose.onNodeWithContentDescription("Cancel editing").performClick()

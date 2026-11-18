@@ -17,6 +17,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.*
@@ -119,14 +120,24 @@ fun PersonalOsApp(model: TodayViewModel, settings: Settings, externalTarget:Reco
                 containerColor = Color.Transparent,
                 topBar = {
                     val nested = route in listOf("subscriptions", "backup", "alerts")
+                    val today = route == "today"
                     val title = when (route) { "alerts" -> "Notifications"; "backup" -> "Backup & restore"; "subscriptions" -> "Subscriptions"; else -> current.label }
                     TopAppBar(title = {
                         if (nested) Text(title, style = MaterialTheme.typography.titleLarge)
-                        else Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        else Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(if (today) 8.dp else 12.dp)) {
                             PorosMark()
                             Column {
-                                Text("Poros", style = MaterialTheme.typography.titleLarge)
-                                Text(title, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(
+                                    "Poros",
+                                    style = if (today) MaterialTheme.typography.titleLarge.copy(fontSize = 18.sp)
+                                        else MaterialTheme.typography.titleLarge,
+                                )
+                                Text(
+                                    if (today) "TODAY" else title,
+                                    style = if (today) MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.sp)
+                                        else MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
                             }
                         }
                     }, colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),

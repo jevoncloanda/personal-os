@@ -17,8 +17,8 @@ class LibraryNavigationTest {
         try {
             for ((label, heading) in listOf("Movie" to "Add movie", "TV series" to "Add tv series", "Game" to "Add game", "Book" to "Add book")) {
                 compose.onNodeWithContentDescription("Quick add").performClick()
-                compose.onAllNodesWithText("Add to Library").onLast().performClick()
-                compose.onNodeWithText(label).performClick()
+                compose.onAllNodesWithText("Library").onLast().performClick()
+                compose.onAllNodesWithText(label).filter(hasClickAction()).onLast().performClick()
                 compose.onNodeWithText(heading).assertIsDisplayed()
                 compose.onNodeWithContentDescription("Cancel editing").performClick()
                 compose.onNodeWithText("Your Library").assertExists()

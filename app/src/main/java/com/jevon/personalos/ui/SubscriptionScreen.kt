@@ -49,19 +49,27 @@ fun SubscriptionScreen(model: SubscriptionViewModel, requested: String?, handled
     val paid = payments.map { it.dueEpochDay }.toSet()
     val nextDue = value?.let { nextUnpaid(it, paid) }
     val paidBySubscription = snapshot.payments.groupBy { it.subscriptionId }.mapValues { (_, rows) -> rows.map { it.dueEpochDay }.toSet() }
-    LazyColumn(Modifier.fillMaxSize().testTag("SubscriptionList"), contentPadding = PaddingValues(20.dp, 0.dp, 20.dp, 28.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    LazyColumn(Modifier.fillMaxSize().testTag("SubscriptionList"), contentPadding = PaddingValues(16.dp, 0.dp, 16.dp, 28.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         if (selected == null) {
             item {
                 SectionHeading("Your recurring plans", "New subscription", { model.clearError(); editor = "subscription" })
                 Text("Forecasts help you plan. Only recorded payments affect Money.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            item { PorosCard {
-                Text("Recurring cost equivalents", style = MaterialTheme.typography.titleMedium)
+            item { PorosCard(contentPadding = 16.dp, verticalSpacing = 12.dp) {
+                Text("RECURRING COMMITMENT", style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
                 val costs = recurringCosts(snapshot.subscriptions)
                 if (costs.isEmpty()) Text("No active recurring plans yet.")
                 costs.forEach { cost ->
-                    Text("${cost.currency} · ${formatMoney(cost.monthlyMinor, cost.currency)} / month", style = MaterialTheme.typography.headlineSmall)
-                    Text("${formatMoney(cost.annualMinor, cost.currency)} / year", style = MaterialTheme.typography.bodyMedium)
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(cost.currency, style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary)
+                        Text("${formatMoney(cost.monthlyMinor, cost.currency)} / month",
+                            style = MaterialTheme.typography.headlineSmall)
+                        Text("${formatMoney(cost.annualMinor, cost.currency)} / year · Estimated",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
                 Text("Estimates, not recorded spending. Rounded once per currency; daily/weekly plans use an average calendar year.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             } }
@@ -71,35 +79,47 @@ fun SubscriptionScreen(model: SubscriptionViewModel, requested: String?, handled
             if (upcoming.isNotEmpty()) {
                 item { SectionTitle("Due soon & overdue") }
                 items(upcoming, key = { "upcoming/${it.first.id}" }) { (plan, due) ->
-                    LedgerRow(AppIcons.Autorenew, plan.name,
+                    SubscriptionPlanRow(plan,
                         "${if (due < today.toEpochDay()) "Overdue" else if (due == today.toEpochDay()) "Due today" else "Due ${LocalDate.ofEpochDay(due)}"} · Unpaid forecast",
-                        formatMoney(plan.amountMinor, plan.currencyCode), onClick = { selected = plan.id; model.clearError() })
+                        overdue = due < today.toEpochDay(), open = { selected = plan.id; model.clearError() })
                 }
             }
             item {
                 SectionTitle("All plans")
-                Field("Search subscriptions", search, true) { search = it }
-                Choice("Show", filter, listOf("Active", "Inactive", "All").map { it to it }) { filter = it }
+                SearchField("Search subscriptions", search) { search = it }
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf("Active", "Inactive", "All").forEach { label ->
+                        FilterChip(selected = filter == label, onClick = { filter = label },
+                            label = { Text(label) })
+                    }
+                }
             }
             val rows = snapshot.subscriptions.filter { (filter == "All" || it.active == (filter == "Active")) && (it.name.contains(search, true) || it.description.contains(search, true)) }
-            if (rows.isEmpty()) item { Text(if (snapshot.subscriptions.isEmpty()) "Add a subscription to track its renewal and record payments." else "No subscriptions match. Try another search or filter.") }
+            if (rows.isEmpty()) item {
+                FinancialEmptyState(if (snapshot.subscriptions.isEmpty()) "No subscriptions yet" else "No matching plans",
+                    if (snapshot.subscriptions.isEmpty()) "Add a subscription to track its renewal and record payments." else "Try another search or filter.")
+            }
             items(rows, key = { it.id }) { s ->
                 val next = nextUnpaid(s, paidBySubscription[s.id].orEmpty())
                 val status = if (!s.active) "Inactive · history retained" else next?.let { "Active · Unpaid ${LocalDate.ofEpochDay(it)}" } ?: "Active · No unpaid renewals"
-                LedgerRow(AppIcons.Autorenew, s.name, "$status\n${billingLabel(s)}", formatMoney(s.amountMinor, s.currencyCode), onClick = { selected = s.id; model.clearError() })
+                SubscriptionPlanRow(s, status, open = { selected = s.id; model.clearError() })
             }
         } else if (value == null) {
             item { Text("This subscription is no longer available."); TextButton(onClick = { selected = null }) { Text("All subscriptions") } }
         } else {
             item { TextButton(onClick = { selected = null; model.clearError() }) { Text("All subscriptions") } }
             item { Text(value.name, style = MaterialTheme.typography.headlineMedium); if (value.description.isNotBlank()) Text(value.description) }
-            item { PorosCard {
-                Text(formatMoney(value.amountMinor, value.currencyCode), style = MaterialTheme.typography.headlineLarge)
-                Text("${billingLabel(value)} · ${if (value.active) "Active" else "Inactive"}")
-                Text("Next unpaid: ${nextDue?.let(LocalDate::ofEpochDay) ?: "None"}${if (!value.active) " (forecast stopped)" else ""}")
-                Text("Account: ${snapshot.accounts.firstOrNull { it.account.id == value.accountId }?.account?.let { it.name + if (it.archived) " (archived)" else "" } ?: "Choose when paying"}")
-                Text("Category: ${snapshot.categories.firstOrNull { it.id == value.categoryId }?.name ?: "Uncategorized"}")
-                if (value.notes.isNotBlank()) Text(value.notes, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            item { PorosCard(contentPadding = 16.dp, verticalSpacing = 4.dp) {
+                Text("${value.currencyCode} · ${if (value.active) "ACTIVE" else "INACTIVE"}",
+                    style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                Text(formatMoney(value.amountMinor, value.currencyCode), style = MaterialTheme.typography.displaySmall)
+                Text(billingLabel(value), style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                HorizontalDivider(Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                DetailValue("Next unpaid forecast", "${nextDue?.let(LocalDate::ofEpochDay) ?: "None"}${if (!value.active) " (forecast stopped)" else ""}")
+                DetailValue("Payment account", snapshot.accounts.firstOrNull { it.account.id == value.accountId }?.account?.let { it.name + if (it.archived) " · Archived" else "" } ?: "Choose when paying")
+                DetailValue("Expense category", snapshot.categories.firstOrNull { it.id == value.categoryId }?.name ?: "Uncategorized")
+                if (value.notes.isNotBlank()) DetailValue("Notes", value.notes)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(enabled = !busy && value.active && nextDue != null, onClick = { model.clearError(); correction = null; editor = "payment" }) { Text("Record payment") }
                     OutlinedButton(enabled = !busy, onClick = { model.clearError(); editor = "subscription" }) { Text("Edit subscription") }
@@ -111,13 +131,29 @@ fun SubscriptionScreen(model: SubscriptionViewModel, requested: String?, handled
                 Text("Unpaid forecasts only. Missed cycles remain unpaid; edit the next date to explicitly reschedule them.", style = MaterialTheme.typography.bodySmall) }
             val dates = upcomingRenewals(value, paid, today.toEpochDay(), today.plusYears(1).toEpochDay(), 12)
             if (value.active && nextDue != null && nextDue < today.toEpochDay()) item { Text("Overdue · ${LocalDate.ofEpochDay(nextDue)} remains unpaid", color = MaterialTheme.colorScheme.error) }
-            if (dates.isEmpty()) item { Text(if (value.active) "No future unpaid renewals in the next year." else "Inactive subscriptions produce no forecasts.") }
-            items(dates) { date -> Text("${LocalDate.ofEpochDay(date)} · ${formatMoney(value.amountMinor, value.currencyCode)} forecast") }
+            if (dates.isEmpty()) item { FinancialEmptyState("No upcoming renewals", if (value.active) "No future unpaid renewals in the next year." else "Inactive subscriptions produce no forecasts.") }
+            if (dates.isNotEmpty()) item {
+                PorosCard(contentPadding = 16.dp, verticalSpacing = 12.dp) {
+                    dates.forEachIndexed { index, date ->
+                        if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(LocalDate.ofEpochDay(date).toString(), style = MaterialTheme.typography.titleSmall)
+                            Text("${formatMoney(value.amountMinor, value.currencyCode)} · ${value.currencyCode} forecast",
+                                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+            }
             item { Text("Payment history", style = MaterialTheme.typography.titleLarge); Text("Paid expenses are already included in Money. Tap to correct the same expense.", style = MaterialTheme.typography.bodySmall) }
-            if (payments.isEmpty()) item { Text("No recorded payments.") }
+            if (payments.isEmpty()) item { FinancialEmptyState("No recorded payments", "Record a payment when you pay this subscription.") }
             items(payments, key = { it.id }) { payment ->
                 val expense = snapshot.expenses.firstOrNull { it.id == payment.entryId }
-                if (expense != null) LedgerRow(AppIcons.CheckCircle, "Paid · ${LocalDate.ofEpochDay(payment.dueEpochDay)}", "Payment date ${LocalDate.ofEpochDay(expense.occurredOnEpochDay)}\n${snapshot.accounts.firstOrNull { it.account.id == expense.fromAccountId }?.account?.name ?: "Account"}", formatMoney(expense.amountMinor, expense.currencyCode), onClick = { model.clearError(); correction = payment.id; editor = "payment" })
+                if (expense != null) PorosCard(contentPadding = 12.dp, verticalSpacing = 0.dp) {
+                    MoneyLedgerRow(AppIcons.CheckCircle, "Paid · ${LocalDate.ofEpochDay(payment.dueEpochDay)}",
+                        "Payment date ${LocalDate.ofEpochDay(expense.occurredOnEpochDay)} · ${expense.currencyCode} · ${snapshot.accounts.firstOrNull { it.account.id == expense.fromAccountId }?.account?.name ?: "Account"}",
+                        formatMoney(expense.amountMinor, expense.currencyCode), false,
+                    ) { model.clearError(); correction = payment.id; editor = "payment" }
+                }
             }
         }
         if (error != null && editor == null) item { Text(error!!, color = MaterialTheme.colorScheme.error) }
@@ -131,6 +167,24 @@ fun SubscriptionScreen(model: SubscriptionViewModel, requested: String?, handled
             if (link == null) model.pay(value.id, due, expense) { editor = null }
             else model.correct(link.id, expense) { editor = null }
         }
+    }
+}
+
+@Composable
+private fun SubscriptionPlanRow(
+    plan: SubscriptionEntity,
+    status: String,
+    overdue: Boolean = false,
+    open: () -> Unit,
+) {
+    PorosCard(contentPadding = 12.dp, verticalSpacing = 4.dp) {
+        MoneyLedgerRow(AppIcons.Autorenew, plan.name,
+            "${billingLabel(plan)} · ${plan.currencyCode}",
+            formatMoney(plan.amountMinor, plan.currencyCode), false, open)
+        Text(status, Modifier.padding(start = 46.dp, bottom = 4.dp),
+            style = MaterialTheme.typography.labelSmall,
+            color = if (overdue) MaterialTheme.colorScheme.error
+                else MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -156,19 +210,54 @@ private fun SubscriptionEditor(old: SubscriptionEntity?, data: SubscriptionSnaps
         val unchanged = old != null && due == old.nextDueEpochDay && freq == old.recurrence.frequency && count == old.recurrence.interval
         val recurrence = if (unchanged) old!!.recurrence else Recurrence(freq, count, due)
         save(SubscriptionEntity(id, name.trim(), parseMoney(amount, code), code, due, old?.active ?: true, recurrence, description.trim(), notes.trim(), account.ifBlank { null }, category.ifBlank { null }), old == null)
-    }) {
-        Field("Subscription name", name, !busy) { name = it }
-        Field("Description (optional)", description, !busy, single = false) { description = it }
+    }, compactLayout = true, saveLabel = "Save subscription") {
+        Field("Subscription name", name, !busy, prominent = true) { name = it }
         Field("Currency code", currency, !busy && !history) { currency = it; account = "" }
-        Field("Price", amount, !busy, KeyboardType.Decimal) { amount = it }
+        AmountField("Price", amount, !busy, currency = currency) { amount = it }
         Text("Use a decimal point without grouping; IDR supports two decimal places. Price changes affect forecasts only.", style = MaterialTheme.typography.bodySmall)
-        Choice("Billing frequency", frequency, Frequency.entries.map { it.name to when (it) { Frequency.DAILY -> "Daily"; Frequency.WEEKLY -> "Weekly"; Frequency.MONTHLY -> "Monthly"; Frequency.YEARLY -> "Yearly" } }, !busy) { frequency = it }
+        FinancialChoice(
+            "Billing frequency", frequency,
+            Frequency.entries.map {
+                it.name to when (it) {
+                    Frequency.DAILY -> "Daily"
+                    Frequency.WEEKLY -> "Weekly"
+                    Frequency.MONTHLY -> "Monthly"
+                    Frequency.YEARLY -> "Yearly"
+                }
+            },
+            !busy,
+        ) { frequency = it }
         Field("Interval", interval, !busy, KeyboardType.Number) { interval = it }
-        BillingDateField("Next renewal date", date, !busy) { date = it }
+        BillingDateField("Next renewal date", date, !busy, compact = true) { date = it }
         Text("Changing the date or frequency starts a new schedule at that date. Earlier unpaid cycles are omitted from future forecasts, without creating expenses. Month-end renewals return to the original day when possible.", style = MaterialTheme.typography.bodySmall)
-        Choice("Default payment account", account, listOf("" to "Choose when paying") + data.accounts.filter { (!it.account.archived || it.account.id == old?.accountId) && it.account.currencyCode == currency.trim().uppercase(Locale.ROOT) }.map { it.account.id to it.account.name }, !busy) { account = it }
-        Choice("Default expense category", category, listOf("" to "Uncategorized") + data.categories.filter { it.kind != "INCOME" && (!it.archived || it.id == old?.categoryId) }.map { it.id to it.name }, !busy) { category = it }
-        Field("Notes (optional)", notes, !busy, single = false) { notes = it }
+        MoreOptions(
+            listOfNotNull(
+                if (account.isNotBlank()) "Payment account set" else null,
+                if (category.isNotBlank()) "Category set" else null,
+                if (description.isNotBlank() || notes.isNotBlank()) "Details added" else null,
+            ).joinToString(" · ").ifBlank { "Payment defaults & notes" },
+            enabled = !busy,
+        ) {
+            FinancialChoice(
+                "Default payment account", account,
+                listOf("" to "Choose when paying") + data.accounts.filter {
+                    (!it.account.archived || it.account.id == old?.accountId) &&
+                        it.account.currencyCode == currency.trim().uppercase(Locale.ROOT)
+                }.map {
+                    it.account.id to "${it.account.name}${if (it.account.archived) " · Archived" else ""}"
+                },
+                !busy,
+            ) { account = it }
+            FinancialChoice(
+                "Default expense category", category,
+                listOf("" to "Uncategorized") + data.categories.filter {
+                    it.kind != "INCOME" && (!it.archived || it.id == old?.categoryId)
+                }.map { it.id to "${it.name}${if (it.archived) " · Archived" else ""}" },
+                !busy,
+            ) { category = it }
+            Field("Description (optional)", description, !busy, single = false) { description = it }
+            Field("Notes (optional)", notes, !busy, single = false) { notes = it }
+        }
         if (history) Text("Currency is fixed because payment history exists. Existing payments keep their original amounts and dates.", style = MaterialTheme.typography.bodySmall)
     }
 }
@@ -186,15 +275,32 @@ private fun PaymentEditor(value: SubscriptionEntity, link: SubscriptionPaymentEn
     var confirmUndo by rememberSaveable { mutableStateOf(false) }
     EditorFrame(if (link == null) "Record payment" else "Correct payment", busy, error, close, {
         save(LocalDate.parse(due).toEpochDay(), EntryEntity(id, EntryKind.EXPENSE, parseMoney(amount, value.currencyCode), value.currencyCode, LocalDate.parse(date).toEpochDay(), fromAccountId = account.ifBlank { null } ?: throw IllegalArgumentException("Choose a payment account"), categoryId = category.ifBlank { null }, note = note.trim(), minuteOfDay = old?.minuteOfDay ?: 0))
-    }) {
+    }, compactLayout = true, saveLabel = if (link == null) "Record payment" else "Save correction") {
         Text(value.name, style = MaterialTheme.typography.headlineSmall)
-        BillingDateField("Renewal occurrence", due, !busy && link == null) { due = it }
+        BillingDateField("Renewal occurrence", due, !busy && link == null, compact = true) { due = it }
         Text(if (link == null) "Choose the billed renewal date. Early or late payment does not move the billing anchor; missed earlier renewals remain unpaid." else "Correction keeps this paid occurrence and updates its existing Money expense.", style = MaterialTheme.typography.bodySmall)
-        BillingDateField("Payment date", date, !busy) { date = it }
-        Field("Actual paid amount (${value.currencyCode})", amount, !busy, KeyboardType.Decimal) { amount = it }
-        Choice("Payment account", account, data.accounts.filter { it.account.currencyCode == value.currencyCode && (!it.account.archived || it.account.id == old?.fromAccountId) }.map { it.account.id to "${it.account.name}${if (it.account.archived) " (archived)" else ""}" }, !busy) { account = it }
-        Choice("Expense category", category, listOf("" to "Uncategorized") + data.categories.filter { it.kind != "INCOME" && (!it.archived || it.id == old?.categoryId) }.map { it.id to it.name }, !busy) { category = it }
-        Field("Payment note", note, !busy, single = false) { note = it }
+        BillingDateField("Payment date", date, !busy, compact = true) { date = it }
+        AmountField("Actual paid amount", amount, !busy, currency = value.currencyCode) { amount = it }
+        FinancialChoice(
+            "Payment account", account,
+            data.accounts.filter {
+                it.account.currencyCode == value.currencyCode &&
+                    (!it.account.archived || it.account.id == old?.fromAccountId)
+            }.map {
+                it.account.id to "${it.account.name} · ${it.account.currencyCode}${if (it.account.archived) " · Archived" else ""}"
+            },
+            !busy,
+        ) { account = it }
+        FinancialChoice(
+            "Expense category", category,
+            listOf("" to "Uncategorized") + data.categories.filter {
+                it.kind != "INCOME" && (!it.archived || it.id == old?.categoryId)
+            }.map { it.id to "${it.name}${if (it.archived) " · Archived" else ""}" },
+            !busy,
+        ) { category = it }
+        MoreOptions(if (note.isNotBlank()) "Payment note added" else "Payment note", enabled = !busy) {
+            Field("Payment note", note, !busy, single = false) { note = it }
+        }
         Text("Saving records one real expense in Money. Forecasts never count as spending. Manage accounts and categories in Money.", style = MaterialTheme.typography.bodySmall)
         if (link != null) TextButton(enabled = !busy, onClick = { confirmUndo = true }) { Text("Undo recorded payment", color = MaterialTheme.colorScheme.error) }
     }

@@ -46,6 +46,25 @@ internal object AppIcons {
         "M5 12h14",
         "M12 5v14",
     ) }
+    val Close by lazy { outline("Close", false,
+        "M18 6 6 18",
+        "m6 6 12 12",
+    ) }
+    val Notifications by lazy { outline("Notifications", false,
+        "M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9",
+        "M10.268 21a2 2 0 0 0 3.464 0",
+    ) }
+    val HardDrive by lazy { outline("HardDrive", false,
+        "M22 12H2",
+        "M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z",
+        "M6 16h.01",
+        "M10 16h.01",
+    ) }
+    val Info by lazy { outline("Info", false,
+        "M2 12A10 10 0 1 0 22 12A10 10 0 1 0 2 12Z",
+        "M12 16v-4",
+        "M12 8h.01",
+    ) }
     val ArrowBack by lazy { outline("ArrowBack", true,
         "m12 19-7-7 7-7",
         "M19 12H5",

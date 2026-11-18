@@ -1,6 +1,10 @@
 package com.jevon.personalos.ui
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.error as fieldError
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -16,13 +20,69 @@ import java.time.*
 import java.util.UUID
 
 @Composable
-private fun RepeatFields(frequency: String, interval: String, until: String, enabled: Boolean,
-    setFrequency: (String) -> Unit, setInterval: (String) -> Unit, setUntil: (String) -> Unit) {
-    Choice("Repeat", frequency, listOf("NONE" to "Does not repeat", "DAILY" to "Daily", "WEEKLY" to "Weekly",
-        "MONTHLY" to "Monthly", "YEARLY" to "Yearly"), enabled, choose = setFrequency)
+private fun RepeatFields(
+    frequency: String,
+    interval: String,
+    until: String,
+    enabled: Boolean,
+    setFrequency: (String) -> Unit,
+    setInterval: (String) -> Unit,
+    setUntil: (String) -> Unit,
+) {
+    val dirty = LocalMarkDraftDirty.current
+    Text("REPEAT", style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant)
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        listOf(
+            "NONE" to "Never",
+            "DAILY" to "Daily",
+            "WEEKLY" to "Weekly",
+            "MONTHLY" to "Monthly",
+            "YEARLY" to "Yearly",
+        ).forEach { (value, label) ->
+            FilterChip(
+                selected = frequency == value,
+                enabled = enabled,
+                onClick = {
+                    if (frequency != value) {
+                        dirty()
+                        setFrequency(value)
+                    }
+                },
+                label = { Text(label, style = MaterialTheme.typography.labelMedium) },
+                leadingIcon = if (frequency == value) {
+                    { Icon(AppIcons.CheckCircle, null, Modifier.size(16.dp)) }
+                } else null,
+                modifier = Modifier.heightIn(min = 48.dp),
+                colors = FilterChipDefaults.filterChipColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                    selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary,
+                ),
+            )
+        }
+    }
     if (frequency != "NONE") {
         Field("Repeat interval", interval, enabled, KeyboardType.Number, change = setInterval)
-        BillingDateField("Repeat through (optional)", until, enabled, change = setUntil)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Box(Modifier.weight(1f)) {
+                BillingDateField("Repeat through (optional)", until, enabled, compact = true,
+                    change = setUntil)
+            }
+            if (until.isNotBlank()) IconButton(enabled = enabled, onClick = {
+                dirty()
+                setUntil("")
+            }) {
+                Icon(AppIcons.Add, "Remove repeat end date", Modifier.rotate(45f))
+            }
+        }
     }
 }
 
@@ -37,40 +97,153 @@ private fun TimeZoneOption(zone: String, enabled: Boolean, change: (String) -> U
     var override by rememberSaveable { mutableStateOf(false) }
     val dirty = LocalMarkDraftDirty.current
     if (override || zone != device) {
-        Field("Time zone", zone, enabled,
-            error = if (runCatching { ZoneId.of(zone) }.isFailure) "Use a valid time zone, such as Asia/Jakarta." else null,
-            change = change)
-        TextButton(enabled = enabled, onClick = { dirty(); change(device); override = false }) { Text("Use device time zone") }
-    } else TextButton(enabled = enabled, onClick = { override = true }) { Text("Time zone · $device") }
+        Field("Time zone", zone, enabled, change = change)
+        TextButton(enabled = enabled, onClick = {
+            dirty()
+            change(device)
+            override = false
+        }) { Text("Use device time zone") }
+    } else TextButton(enabled = enabled, onClick = { override = true }) {
+        Text("Time zone · $device")
+    }
 }
 
-private fun optionsSummary(frequency: String, interval: String, until: String, notes: String, zone: String,
-    alerts: List<AlertPreferenceEntity>, location: String = ""): String {
-    val repeat = runCatching { recurrence(frequency, interval, until, LocalDate.ofEpochDay(0)) }.getOrNull()
+private fun alertSummary(alerts: List<AlertPreferenceEntity>): String {
+    val leads = alerts.map { it.leadMinutes }.distinct().sorted()
+    val timing = leads.take(2).joinToString(" · ") {
+        if (it == 0) "At start / due time" else "$it min before"
+    }
+    return timing + if (leads.size > 2) " · +${leads.size - 2} more" else ""
+}
+
+private fun optionsSummary(
+    frequency: String,
+    interval: String,
+    until: String,
+    notes: String,
+    zone: String,
+    alerts: List<AlertPreferenceEntity>,
+    location: String = "",
+): String {
+    val repeat = runCatching { recurrence(frequency, interval, until, LocalDate.ofEpochDay(0)) }
+        .getOrNull()
     return buildList {
         if (frequency != "NONE") add(repeat?.let(::repeatLabel) ?: "Repeat needs attention")
+        if (alerts.isNotEmpty()) add("Alerts · ${alertSummary(alerts)}")
         if (notes.isNotBlank()) add("Notes added")
         if (location.isNotBlank()) add("Location added")
         if (zone != ZoneId.systemDefault().id) add(zone)
-        if (alerts.isNotEmpty()) add("${alerts.size} alerts")
-    }.joinToString(" · ").ifBlank { "Repeat, notes and time zone" }
+    }.joinToString(" · ").ifBlank { "Repeat, alerts, notes and time zone" }
 }
 
 @Composable
-private fun NotificationSummary(alerts: List<AlertPreferenceEntity>, open: (() -> Unit)?) {
-    Text(if (alerts.isEmpty()) "Notifications off" else "${alerts.size} notification${if (alerts.size == 1) "" else "s"} configured",
-        style = MaterialTheme.typography.titleSmall)
-    if (open == null) Text("Set notification timing after saving.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    else {
-        TextButton(enabled = !LocalEditorDirty.current, onClick = open) { Text("Notification timing") }
-        if (LocalEditorDirty.current) Text("Save changes before editing notification timing.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+private fun NotificationSummary(
+    alerts: List<AlertPreferenceEntity>,
+    open: (() -> Unit)?,
+    enabled: Boolean,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Icon(AppIcons.Clock, null, Modifier.size(20.dp),
+                tint = MaterialTheme.colorScheme.primary)
+            Text("Notifications", Modifier.weight(1f).padding(start = 8.dp),
+                style = MaterialTheme.typography.titleSmall)
+            if (open != null) TextButton(
+                enabled = enabled && !LocalEditorDirty.current,
+                onClick = open,
+            ) { Text("Configure", style = MaterialTheme.typography.labelMedium) }
+        }
+        Text(
+            if (alerts.isEmpty()) "Notifications off" else alertSummary(alerts),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (open == null) Text(
+            "Set notification timing after saving.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        ) else if (LocalEditorDirty.current) Text(
+            "Save changes before editing notification timing.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
 @Composable
-private fun DateTimePair(content: @Composable RowScope.() -> Unit, largeContent: @Composable ColumnScope.() -> Unit) {
-    if (LocalDensity.current.fontScale > 1.15f) Column(verticalArrangement = Arrangement.spacedBy(8.dp), content = largeContent)
-    else Row(horizontalArrangement = Arrangement.spacedBy(8.dp), content = content)
+private fun DateTimePair(
+    content: @Composable RowScope.() -> Unit,
+    largeContent: @Composable ColumnScope.() -> Unit,
+) {
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        if (maxWidth < 340.dp || LocalDensity.current.fontScale > 1.15f) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp), content = largeContent)
+        } else Row(horizontalArrangement = Arrangement.spacedBy(8.dp), content = content)
+    }
+}
+
+private fun repeatIssue(frequency: String, interval: String, until: String, date: String): String? {
+    if (frequency == "NONE") return null
+    val count = interval.toIntOrNull()
+    if (count == null || count !in 1..1000) return "Use a repeat interval from 1 to 1000"
+    if (until.isBlank()) return null
+    val last = runCatching { LocalDate.parse(until) }.getOrNull()
+        ?: return "Choose a valid repeat end date"
+    val first = runCatching { LocalDate.parse(date) }.getOrNull()
+    return if (first != null && last < first) "Repeat end must not precede the first date" else null
+}
+
+private fun eventTimingIssue(
+    date: String,
+    lastDate: String,
+    startTime: String,
+    endTime: String,
+    zone: String,
+    allDay: Boolean,
+): String? = runCatching {
+    val z = ZoneId.of(zone)
+    val startDate = LocalDate.parse(date)
+    val finalDate = LocalDate.parse(lastDate)
+    val a = if (allDay) startDate.atStartOfDay(z)
+        else startDate.atTime(LocalTime.parse(startTime)).atZone(z)
+    val b = if (allDay) finalDate.plusDays(1).atStartOfDay(z)
+        else finalDate.atTime(LocalTime.parse(endTime)).atZone(z)
+    when {
+        startDate.year !in 1..9999 -> "Choose a start date from year 1 to 9999"
+        b.toInstant() <= a.toInstant() -> "End must follow start"
+        Duration.between(a.toInstant(), b.toInstant()).toDays() > 3660 ->
+            "Events can span up to ten years"
+        else -> null
+    }
+}.getOrElse { "Choose valid event dates and times" }
+
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+private fun ScheduleErrorGroup(
+    message: String?,
+    firstError: String?,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    val requester = remember { BringIntoViewRequester() }
+    val showError = LocalValidateFields.current && message != null
+    Column(
+        Modifier.fillMaxWidth().bringIntoViewRequester(requester),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        content()
+        if (showError) Text(
+            requireNotNull(message),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.error,
+            modifier = Modifier.semantics { fieldError(requireNotNull(message)) },
+        )
+    }
+    LaunchedEffect(showError, message, firstError) {
+        if (showError && message == firstError) {
+            withFrameNanos { }
+            requester.bringIntoView()
+        }
+    }
 }
 
 @Composable
@@ -93,6 +266,23 @@ internal fun EventEditor(old: EventEntity?, selected: LocalDate, busy: Boolean, 
     var interval by rememberSaveable { mutableStateOf((old?.recurrence?.interval ?: 1).toString()) }
     var until by rememberSaveable { mutableStateOf(old?.recurrence?.untilEpochDay?.let { LocalDate.ofEpochDay(it).toString() }.orEmpty()) }
 
+    val titleIssue = when {
+        title.isBlank() -> "Title is required"
+        title.trim().length > 8192 -> "Title must be 8192 characters or fewer"
+        else -> null
+    }
+    val zoneIssue = if (runCatching { ZoneId.of(zone) }.isFailure) "Choose a valid time zone" else null
+    val timingIssue = if (zoneIssue == null)
+        eventTimingIssue(date, lastDate, startTime, endTime, zone, allDay) else null
+    val recurrenceIssue = repeatIssue(frequency, interval, until, date)
+    val notesIssue = if (notes.trim().length > 8192) "Notes must be 8192 characters or fewer" else null
+    val locationIssue = if (location.trim().length > 8192)
+        "Location must be 8192 characters or fewer" else null
+    val advancedIssue = listOfNotNull(zoneIssue, recurrenceIssue, notesIssue, locationIssue).firstOrNull()
+    val firstError = listOfNotNull(
+        titleIssue, zoneIssue, timingIssue, recurrenceIssue, notesIssue, locationIssue,
+    ).firstOrNull()
+
     EditorFrame(if (old == null) "New event" else "Edit entire event series", busy, error, close, {
         require(title.isNotBlank()) { "Title is required" }
         val z = ZoneId.of(zone)
@@ -105,31 +295,77 @@ internal fun EventEditor(old: EventEntity?, selected: LocalDate, busy: Boolean, 
         val repeat = if (old != null && startDate == eventBaseDate(old) && old.recurrence.copy(anchorEpochDay = proposed.anchorEpochDay) == proposed) old.recurrence else proposed
         save(EventEntity(id, title.trim(), a.toInstant().toEpochMilli(), b.toInstant().toEpochMilli(), z.id,
             allDay, location.trim(), repeat, notes.trim(), old?.revision ?: 0), old == null)
-    }) {
-        Field("Event title", title, !busy, prominent = true, error = if (title.isBlank()) "Title is required" else null) { title = it }
+    },
+        compactLayout = true,
+        saveLabel = "Save event",
+        revealOptionsError = titleIssue == null && firstError != null,
+    ) {
+        Field(
+            "Event title", title, !busy,
+            prominent = true,
+            autoFocus = old == null,
+            error = titleIssue,
+        ) { title = it }
         FormToggle("All-day event", allDay, !busy) { allDay = it }
-        val changeDate: (String) -> Unit = { value -> if (lastDate == date) lastDate = value; date = value }
-        DateTimePair(content = {
-            Box(Modifier.weight(1f)) { BillingDateField("Start date", date, !busy, compact = true, change = changeDate) }
-            Box(Modifier.weight(1f)) { BillingDateField(if (allDay) "Last day (inclusive)" else "End date", lastDate, !busy, compact = true) { lastDate = it } }
-        }, largeContent = {
-            BillingDateField("Start date", date, !busy, compact = true, change = changeDate)
-            BillingDateField(if (allDay) "Last day (inclusive)" else "End date", lastDate, !busy, compact = true) { lastDate = it }
-        })
-        if (!allDay) DateTimePair(content = {
-            Box(Modifier.weight(1f)) { CalendarTimeField("Start time", startTime, !busy, compact = true) { startTime = it } }
-            Box(Modifier.weight(1f)) { CalendarTimeField("End time", endTime, !busy, compact = true) { endTime = it } }
-        }, largeContent = {
-            CalendarTimeField("Start time", startTime, !busy, compact = true) { startTime = it }
-            CalendarTimeField("End time", endTime, !busy, compact = true) { endTime = it }
-        })
-        MoreOptions(optionsSummary(frequency, interval, until, notes, zone, alerts, location)) {
-            RepeatFields(frequency, interval, until, !busy, { frequency = it }, { interval = it }, { until = it })
-            Field("Location (optional)", location, !busy) { location = it }
-            Field("Notes (optional)", notes, !busy, single = false) { notes = it }
-            TimeZoneOption(zone, !busy) { zone = it }
-            NotificationSummary(alerts, openAlerts)
-            if (old != null) Text("Changes apply to the entire series.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        val changeDate: (String) -> Unit = { value ->
+            if (lastDate == date) lastDate = value
+            date = value
+        }
+        ScheduleErrorGroup(timingIssue, firstError) {
+            DateTimePair(content = {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    BillingDateField("Start date", date, !busy, compact = true, change = changeDate)
+                    if (!allDay) CalendarTimeField("Start time", startTime, !busy, compact = true) {
+                        startTime = it
+                    }
+                }
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    BillingDateField(
+                        if (allDay) "Last day (inclusive)" else "End date",
+                        lastDate, !busy, compact = true,
+                    ) { lastDate = it }
+                    if (!allDay) CalendarTimeField("End time", endTime, !busy, compact = true) {
+                        endTime = it
+                    }
+                }
+            }, largeContent = {
+                BillingDateField("Start date", date, !busy, compact = true, change = changeDate)
+                if (!allDay) CalendarTimeField("Start time", startTime, !busy, compact = true) {
+                    startTime = it
+                }
+                BillingDateField(
+                    if (allDay) "Last day (inclusive)" else "End date",
+                    lastDate, !busy, compact = true,
+                ) { lastDate = it }
+                if (!allDay) CalendarTimeField("End time", endTime, !busy, compact = true) {
+                    endTime = it
+                }
+            })
+        }
+        MoreOptions(
+            optionsSummary(frequency, interval, until, notes, zone, alerts, location),
+            validationError = LocalValidateFields.current && advancedIssue != null,
+            enabled = !busy,
+        ) {
+            ScheduleErrorGroup(recurrenceIssue, firstError) {
+                RepeatFields(frequency, interval, until, !busy,
+                    { frequency = it }, { interval = it }, { until = it })
+            }
+            ScheduleErrorGroup(locationIssue, firstError) {
+                Field("Location (optional)", location, !busy) { location = it }
+            }
+            ScheduleErrorGroup(notesIssue, firstError) {
+                Field("Notes (optional)", notes, !busy, single = false) { notes = it }
+            }
+            ScheduleErrorGroup(zoneIssue, firstError) {
+                TimeZoneOption(zone, !busy) { zone = it }
+            }
+            NotificationSummary(alerts, openAlerts, !busy)
+            if (old != null) Text(
+                "Changes apply to the entire series.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
@@ -151,6 +387,24 @@ internal fun ReminderEditor(old: ReminderEntity?, selected: LocalDate, busy: Boo
     var interval by rememberSaveable { mutableStateOf((old?.recurrence?.interval ?: 1).toString()) }
     var until by rememberSaveable { mutableStateOf(old?.recurrence?.untilEpochDay?.let { LocalDate.ofEpochDay(it).toString() }.orEmpty()) }
 
+    val titleIssue = when {
+        title.isBlank() -> "Title is required"
+        title.trim().length > 8192 -> "Title must be 8192 characters or fewer"
+        else -> null
+    }
+    val zoneIssue = if (runCatching { ZoneId.of(zone) }.isFailure) "Choose a valid time zone" else null
+    val timingIssue = if (hasDate) runCatching {
+        require(LocalDate.parse(date).year in 1..9999)
+        if (timed) LocalTime.parse(time)
+        Unit
+    }.exceptionOrNull()?.let { "Choose a valid due date and optional time" } else null
+    val recurrenceIssue = if (hasDate) repeatIssue(frequency, interval, until, date) else null
+    val notesIssue = if (notes.trim().length > 8192) "Notes must be 8192 characters or fewer" else null
+    val advancedIssue = listOfNotNull(zoneIssue, recurrenceIssue, notesIssue).firstOrNull()
+    val firstError = listOfNotNull(
+        titleIssue, zoneIssue, timingIssue, recurrenceIssue, notesIssue,
+    ).firstOrNull()
+
     EditorFrame(if (old == null) "New reminder" else "Edit entire reminder series", busy, error, close, {
         require(title.isNotBlank()) { "Title is required" }
         val z = ZoneId.of(zone)
@@ -164,29 +418,91 @@ internal fun ReminderEditor(old: ReminderEntity?, selected: LocalDate, busy: Boo
         val sameDate = !hasDate && old?.dueAtMillis == null || day == old?.let(::reminderBaseDate)
         val repeat = if (old != null && sameDate && old.recurrence.copy(anchorEpochDay = proposed.anchorEpochDay) == proposed) old.recurrence else proposed
         save(ReminderEntity(id, title.trim(), due, old?.completedAtMillis, repeat, notes.trim(), z.id, !timed, old?.revision ?: 0), old == null)
-    }) {
-        Field("Reminder title", title, !busy, prominent = true, error = if (title.isBlank()) "Title is required" else null) { title = it }
+    },
+        compactLayout = true,
+        saveLabel = "Save reminder",
+        revealOptionsError = titleIssue == null && firstError != null,
+    ) {
+        Field(
+            "Reminder title", title, !busy,
+            prominent = true,
+            autoFocus = old == null,
+            error = titleIssue,
+        ) { title = it }
         val dirty = LocalMarkDraftDirty.current
-        if (hasDate) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                Box(Modifier.weight(1f)) { BillingDateField("Due date", date, !busy, compact = true) { date = it } }
-                IconButton(enabled = !busy, onClick = { dirty(); hasDate = false }) { Icon(AppIcons.Add, "Remove due date", Modifier.rotate(45f)) }
+        ScheduleErrorGroup(timingIssue, firstError) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Box(Modifier.weight(1f)) {
+                    BillingDateField(
+                        "Due date (optional)", if (hasDate) date else "",
+                        !busy, compact = true,
+                    ) {
+                        date = it
+                        hasDate = true
+                    }
+                }
+                if (hasDate) IconButton(enabled = !busy, onClick = {
+                    dirty()
+                    hasDate = false
+                }) { Icon(AppIcons.Add, "Remove due date", Modifier.rotate(45f)) }
             }
-            if (timed) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                Box(Modifier.weight(1f)) { CalendarTimeField("Due time", time, !busy, compact = true) { time = it } }
-                IconButton(enabled = !busy, onClick = { dirty(); timed = false }) { Icon(AppIcons.Add, "Remove due time", Modifier.rotate(45f)) }
-            } else TextButton(enabled = !busy, onClick = { dirty(); timed = true }) { Icon(AppIcons.Add, null, Modifier.size(18.dp)); Text("Add due time", Modifier.padding(start = 8.dp)) }
-        } else {
-            TextButton(enabled = !busy, onClick = { dirty(); hasDate = true }) { Icon(AppIcons.CalendarMonth, null, Modifier.size(18.dp)); Text("Add due date", Modifier.padding(start = 8.dp)) }
-            Text("No date · no repeats or alerts", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (hasDate) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Box(Modifier.weight(1f)) {
+                        // A date-only reminder stays untimed until the picker confirms a time.
+                        CalendarTimeField(
+                            "Time (optional)", if (timed) time else "",
+                            !busy, compact = true,
+                        ) {
+                            time = it
+                            timed = true
+                        }
+                    }
+                    if (timed) IconButton(enabled = !busy, onClick = {
+                        dirty()
+                        timed = false
+                    }) { Icon(AppIcons.Add, "Remove due time", Modifier.rotate(45f)) }
+                }
+            } else Text(
+                "No date · no repeats or alerts",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
-        MoreOptions(optionsSummary(if (hasDate) frequency else "NONE", interval, until, notes, zone, if (hasDate) alerts else emptyList())) {
-            if (hasDate) RepeatFields(frequency, interval, until, !busy, { frequency = it }, { interval = it }, { until = it })
-            else Text("Add a due date to repeat this reminder.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Field("Notes (optional)", notes, !busy, single = false) { notes = it }
-            TimeZoneOption(zone, !busy) { zone = it }
-            if (hasDate) NotificationSummary(alerts, openAlerts)
-            if (old != null) Text("Changes apply to the entire series. Completed occurrences stay in history.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        MoreOptions(
+            optionsSummary(
+                if (hasDate) frequency else "NONE", interval, until, notes, zone,
+                if (hasDate) alerts else emptyList(),
+            ),
+            validationError = LocalValidateFields.current && advancedIssue != null,
+            enabled = !busy,
+        ) {
+            if (hasDate) ScheduleErrorGroup(recurrenceIssue, firstError) {
+                RepeatFields(frequency, interval, until, !busy,
+                    { frequency = it }, { interval = it }, { until = it })
+            } else Text(
+                "Add a due date to repeat this reminder.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            ScheduleErrorGroup(notesIssue, firstError) {
+                Field("Notes (optional)", notes, !busy, single = false) { notes = it }
+            }
+            ScheduleErrorGroup(zoneIssue, firstError) {
+                TimeZoneOption(zone, !busy) { zone = it }
+            }
+            if (hasDate) NotificationSummary(alerts, openAlerts, !busy)
+            if (old != null) Text(
+                "Changes apply to the entire series. Completed occurrences stay in history.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

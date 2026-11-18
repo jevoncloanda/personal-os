@@ -1,5 +1,6 @@
 package com.jevon.personalos.ui
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -37,8 +38,11 @@ internal fun SectionTitle(title: String) {
 @Composable
 internal fun PorosMark() {
     Surface(shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.surfaceContainer) {
-        Icon(painterResource(R.drawable.ic_poros_mark), contentDescription = null,
-            modifier = Modifier.size(40.dp), tint = MaterialTheme.colorScheme.primary)
+        Image(
+            painter = painterResource(R.drawable.ic_poros_mark),
+            contentDescription = null,
+            modifier = Modifier.size(40.dp).padding(4.dp),
+        )
     }
 }
 

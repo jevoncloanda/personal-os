@@ -111,8 +111,10 @@ class Phase15UiTest {
         click("Money")
         compose.waitUntil(10000) { compose.onAllNodesWithTag("MoneyList").fetchSemanticsNodes().isNotEmpty() }
         capture("large-text-money")
-        compose.onNodeWithText("Quick add").performClick()
-        compose.onNodeWithText("Add expense").assertExists()
+        compose.onNodeWithContentDescription("Quick add").performClick()
+        compose.onNodeWithText("Expense").assertExists()
+        capture("large-text-quick-add")
+        compose.onNodeWithText("Subscription").performScrollTo().assertIsDisplayed()
         // Only this test composition uses 1.5x; no phone display/font/security setting changes.
     }
 }

@@ -2,48 +2,113 @@ package com.jevon.personalos.ui
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.*
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.jevon.personalos.data.*
 import com.jevon.personalos.money.*
 import com.jevon.personalos.today.formatMoney
+import java.math.BigInteger
+import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 
 @Composable
-internal fun BalanceHeader(data: MoneySnapshot, currency: String, choose: (String) -> Unit, create: () -> Unit) {
-    val balances = activeCurrencyBalances(data.accounts)
-    val selected = balances.firstOrNull { it.code == currency }
-    PorosCard {
-        if (selected == null) {
-            Text("A clearer view of your money.", style = MaterialTheme.typography.headlineLarge)
-            Text("Start with an account. Your balances and spending stay on this device.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Button(onClick = create) { Icon(AppIcons.Add, null); Text("Create account", Modifier.padding(start = 8.dp)) }
-        } else {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text("Total balance", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                CurrencyPicker(currency, balances.map { it.code }, choose)
-            }
-            Text(formatMoney(selected.minor, selected.code), style = MaterialTheme.typography.displaySmall, modifier = Modifier.semantics { contentDescription = "${selected.code} total balance ${formatMoney(selected.minor, selected.code)}" })
-            Text("${selected.count} active ${if (selected.count == 1) "account" else "accounts"} · all recorded dates", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
+private fun MoneyPanel(content: @Composable ColumnScope.() -> Unit) {
+    Surface(color = LocalAtmosphere.current.panel, shape = RoundedCornerShape(16.dp)) {
+        Column(
+            Modifier.fillMaxWidth().padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            content = content,
+        )
     }
 }
 
-@Composable private fun CurrencyPicker(code: String, currencies: List<String>, select: (String) -> Unit) {
+@Composable
+internal fun BalanceHeader(
+    data: MoneySnapshot,
+    currency: String,
+    choose: (String) -> Unit,
+    create: () -> Unit,
+    add: (String) -> Unit,
+) {
+    val balances = activeCurrencyBalances(data.accounts)
+    val selected = balances.firstOrNull { it.code == currency }
+    val balance = selected?.minor ?: BigInteger.ZERO
+    MoneyPanel {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            CurrencyPicker(currency, balances.map { it.code }, choose)
+            Spacer(Modifier.weight(1f))
+            if (selected == null) TextButton(onClick = create) {
+                Text("Create account", style = MaterialTheme.typography.labelMedium)
+            }
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text("TOTAL BALANCE · $currency",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                formatMoney(balance, currency),
+                style = MaterialTheme.typography.displaySmall,
+                color = if (balance.signum() < 0) MaterialTheme.colorScheme.error
+                    else MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.semantics {
+                    contentDescription = "$currency total balance ${formatMoney(balance, currency)}"
+                    heading()
+                },
+            )
+            val count = selected?.count ?: 0
+            Text(
+                "$count active ${if (count == 1) "account" else "accounts"} · all recorded dates",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        MoneyActions(add)
+    }
+}
+
+@Composable
+private fun CurrencyPicker(code: String, currencies: List<String>, select: (String) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     Box {
-        FilledTonalButton(onClick = { expanded = true }, contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp), colors = ButtonDefaults.filledTonalButtonColors(containerColor = LocalAtmosphere.current.panel)) {
-            Text(code); Icon(AppIcons.ExpandMore, null, Modifier.padding(start = 6.dp).size(18.dp))
+        FilledTonalButton(
+            onClick = { expanded = true },
+            enabled = currencies.isNotEmpty(),
+            shape = CircleShape,
+            contentPadding = PaddingValues(horizontal = 12.dp),
+            colors = ButtonDefaults.filledTonalButtonColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+                disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                disabledContentColor = MaterialTheme.colorScheme.onSurface,
+            ),
+            modifier = Modifier.heightIn(min = 48.dp).semantics {
+                contentDescription = "Selected currency $code"
+            },
+        ) {
+            Text(code, style = MaterialTheme.typography.labelMedium)
+            Icon(AppIcons.ExpandMore, null, Modifier.padding(start = 6.dp).size(18.dp))
         }
         DropdownMenu(expanded, onDismissRequest = { expanded = false }) {
-            currencies.forEach { currency -> DropdownMenuItem(text = { Text(currency) }, onClick = { expanded = false; select(currency) }) }
+            currencies.forEach { currency ->
+                DropdownMenuItem(
+                    text = { Text(currency) },
+                    onClick = {
+                        expanded = false
+                        select(currency)
+                    },
+                )
+            }
         }
     }
 }
@@ -56,81 +121,368 @@ internal fun BalanceHeader(data: MoneySnapshot, currency: String, choose: (Strin
     }
 }
 
-internal fun LazyListScope.moneyOverview(data: MoneySnapshot, currency: String, month: YearMonth, edit: (String, String?) -> Unit,
-    add: (String) -> Unit, section: (String) -> Unit, changeMonth: (YearMonth) -> Unit, subscriptions: () -> Unit) {
+internal fun LazyListScope.moneyOverview(
+    data: MoneySnapshot,
+    currency: String,
+    month: YearMonth,
+    edit: (String, String?) -> Unit,
+    section: (String) -> Unit,
+    changeMonth: (YearMonth) -> Unit,
+    subscriptions: () -> Unit,
+) {
     item {
-        MoneyActions(add)
-    }
-    item {
-        val spent = data.totals.firstOrNull { it.currencyCode == currency && it.kind == EntryKind.EXPENSE }?.amount ?: 0L
-        val income = data.totals.firstOrNull { it.currencyCode == currency && it.kind == EntryKind.INCOME }?.amount ?: 0L
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            MonthSelector(month, { changeMonth(month.minusMonths(1)) }, { changeMonth(month.plusMonths(1)) })
-            FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Column(Modifier.weight(1f).widthIn(min = 140.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("Monthly spending · $currency", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(formatMoney(spent, currency), style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.error)
-                }
-                Column(Modifier.weight(1f).widthIn(min = 110.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("Income · $currency", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(formatMoney(income, currency), style = MaterialTheme.typography.titleLarge, color = LocalAtmosphere.current.positive)
-                }
-            }
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            MonthSelector(month, { changeMonth(month.minusMonths(1)) }, {
+                changeMonth(month.plusMonths(1))
+            })
+            MoneyCashFlow(data, currency)
         }
     }
     val budgets = data.budgets.filter { it.budget.currencyCode == currency }
-    item { SectionHeading("Budgets", "Manage", { section("Budgets") }) }
-    if (budgets.isEmpty()) item {
-        Column {
-            Text("No $currency budget for this month", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            TextButton(onClick = { edit("budget", null) }) { Text("Create monthly budget") }
+    val overall = budgets.filter { it.budget.categoryId == null }.take(1)
+    val categories = budgets.filter { it.budget.categoryId != null }.take(3)
+    item {
+        MoneyPanel {
+            MoneySectionHeading(
+                "Monthly target",
+                if (budgets.isEmpty()) "Create budget" else "Manage",
+                {
+                    if (budgets.isEmpty()) edit("budget", null) else section("Budgets")
+                },
+            )
+            if (budgets.isEmpty()) {
+                Text("No $currency budget this month",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            } else {
+                Text(month.format(DateTimeFormatter.ofPattern("MMMM yyyy")) + " · " + currency,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            (overall + categories).forEach { value ->
+                MoneyBudgetGauge(value, data.categories) { edit("budget", value.budget.id) }
+            }
         }
     }
-    val preview = budgets.filter { it.budget.categoryId == null }.take(1) + budgets.filter { it.budget.categoryId != null }.take(1)
-    items(preview, key = { "overview-budget-${it.budget.id}" }) { BudgetBlock(it, data.categories) { edit("budget", it.budget.id) } }
-    item {
-        val slices = spendingSlices(data.categorySpending, data.categories, currency)
-        if (slices.isNotEmpty()) PorosCard {
-            Text("Where it went", style = MaterialTheme.typography.titleMedium)
-            Text("Share of ${month.format(DateTimeFormatter.ofPattern("MMMM"))} spending · $currency", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    val slices = spendingSlices(data.categorySpending, data.categories, currency)
+    if (slices.isNotEmpty()) item {
+        MoneyPanel {
+            Text("Where it went", style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.semantics { heading() })
+            Text("Share of ${month.format(DateTimeFormatter.ofPattern("MMMM"))} spending · $currency",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
             slices.forEach { slice ->
-                Column(Modifier.padding(top = 6.dp).semantics(mergeDescendants = true) {}, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Column(
+                    Modifier.semantics(mergeDescendants = true) {},
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(slice.label, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
-                        Text(formatMoney(slice.amount, currency), style = MaterialTheme.typography.titleSmall)
+                        Text(slice.label, Modifier.weight(1f),
+                            style = MaterialTheme.typography.bodyMedium)
+                        Text(formatMoney(slice.amount, currency),
+                            style = MaterialTheme.typography.titleSmall)
                     }
-                    LinearProgressIndicator(progress = { slice.fraction }, modifier = Modifier.fillMaxWidth().height(5.dp), trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f), drawStopIndicator = {})
+                    LinearProgressIndicator(
+                        progress = { slice.fraction },
+                        modifier = Modifier.fillMaxWidth().height(5.dp),
+                        trackColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                        drawStopIndicator = {},
+                    )
                 }
             }
         }
     }
-    item { LedgerRow(AppIcons.Autorenew, "Subscriptions", "Recurring plans & payment history", "Open", onClick = subscriptions) }
-    item { SectionHeading("Account balances", "All accounts", { section("Accounts") }) }
-    items(data.accounts.filter { !it.account.archived && it.account.currencyCode == currency }.take(3), key = { "overview-account-${it.account.id}" }) { AccountRow(it) { edit("account", it.account.id) } }
-    item { SectionHeading("Recent transactions", "View history", { section("History") }) }
-    items(data.recent, key = { "recent-${it.id}" }) { EntryRow(it, data) { edit("entry", it.id) } }
-    if (data.recent.isEmpty()) item { EmptyMessage("A fresh start", "Recorded transactions will appear here. Choose an account to add your first entry.") }
-}
-
-@Composable private fun MoneyActions(add: (String) -> Unit) {
-    val actions = listOf(Triple("EXPENSE", "Expense", AppIcons.NorthEast), Triple("INCOME", "Income", AppIcons.SouthWest), Triple("TRANSFER", "Transfer", AppIcons.SwapHoriz))
-    BoxWithConstraints {
-        if (maxWidth >= 300.dp && androidx.compose.ui.platform.LocalDensity.current.fontScale <= 1.15f) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                actions.forEach { (kind, label, icon) -> MoneyAction(kind, label, icon, Modifier.weight(1f), add) }
+    item {
+        Surface(
+            onClick = subscriptions,
+            color = MaterialTheme.colorScheme.surfaceContainerLow,
+            shape = RoundedCornerShape(16.dp),
+        ) {
+            Row(
+                Modifier.fillMaxWidth().padding(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconBadge(AppIcons.Autorenew)
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text("Manage subscriptions", style = MaterialTheme.typography.titleMedium)
+                    Text("Recurring plans & payment history",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Icon(AppIcons.ChevronRight, null, Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-        } else FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            actions.forEach { (kind, label, icon) -> MoneyAction(kind, label, icon, Modifier, add) }
+        }
+    }
+    item {
+        MoneyPanel {
+            MoneySectionHeading("Recent activity", "View all", { section("History") })
+            Surface(
+                onClick = { section("History") },
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                shape = RoundedCornerShape(10.dp),
+            ) {
+                Row(
+                    Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(horizontal = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text("Search & filter history", Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Icon(AppIcons.Settings, null, Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            if (data.recent.isEmpty()) Text(
+                "Recorded transactions will appear here.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(vertical = 8.dp),
+            )
+            val today = LocalDate.now()
+            data.recent.groupBy { it.occurredOnEpochDay }.forEach { (day, entries) ->
+                val date = LocalDate.ofEpochDay(day)
+                Text(
+                    when (date) {
+                        today -> "Today"
+                        today.minusDays(1) -> "Yesterday"
+                        else -> date.format(DateTimeFormatter.ofPattern("EEE, d MMM"))
+                    },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp).semantics { heading() },
+                )
+                entries.forEach { entry ->
+                    EntryRow(entry, data, overview = true) { edit("entry", entry.id) }
+                }
+            }
+        }
+    }
+    val accounts = data.accounts.filter {
+        !it.account.archived && it.account.currencyCode == currency
+    }.take(3)
+    if (accounts.isNotEmpty()) {
+        item { MoneySectionHeading("Account balances", "All accounts", { section("Accounts") }) }
+        accounts.forEach { account ->
+            item(key = "overview-account-${account.account.id}") {
+                AccountRow(account) { edit("account", account.account.id) }
+            }
         }
     }
 }
 
-@Composable private fun MoneyAction(kind: String, label: String, icon: ImageVector, modifier: Modifier, add: (String) -> Unit) {
-    FilledTonalButton(onClick = { add(kind) }, modifier = modifier.heightIn(min = 48.dp), contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
-        shape = MaterialTheme.shapes.medium,
+@Composable
+private fun MoneySectionHeading(title: String, action: String, open: () -> Unit) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(title, Modifier.weight(1f).semantics { heading() },
+            style = MaterialTheme.typography.titleMedium)
+        TextButton(onClick = open, contentPadding = PaddingValues(horizontal = 8.dp)) {
+            Text(action, style = MaterialTheme.typography.labelMedium)
+        }
+    }
+}
+
+@Composable
+private fun MoneyCashFlow(data: MoneySnapshot, currency: String) {
+    val spent = data.totals.firstOrNull {
+        it.currencyCode == currency && it.kind == EntryKind.EXPENSE
+    }?.amount ?: 0L
+    val income = data.totals.firstOrNull {
+        it.currencyCode == currency && it.kind == EntryKind.INCOME
+    }?.amount ?: 0L
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        if (maxWidth < 320.dp || LocalDensity.current.fontScale > 1.3f) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                CashFlowCard("Income", income, currency, positive = true)
+                CashFlowCard("Expenses", spent, currency, positive = false)
+            }
+        } else {
+            Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                CashFlowCard("Income", income, currency, true, Modifier.weight(1f).fillMaxHeight())
+                CashFlowCard("Expenses", spent, currency, false, Modifier.weight(1f).fillMaxHeight())
+            }
+        }
+    }
+}
+
+@Composable
+private fun CashFlowCard(
+    title: String,
+    amount: Long,
+    currency: String,
+    positive: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val color = if (positive) LocalAtmosphere.current.positive else MaterialTheme.colorScheme.error
+    Surface(modifier, color = LocalAtmosphere.current.panel, shape = RoundedCornerShape(16.dp)) {
+        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(title, Modifier.weight(1f), style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Surface(color = color.copy(alpha = 0.12f), shape = CircleShape) {
+                    Icon(if (positive) AppIcons.SouthWest else AppIcons.NorthEast, null,
+                        Modifier.padding(5.dp).size(16.dp), tint = color)
+                }
+            }
+            Text(formatMoney(amount, currency), style = MaterialTheme.typography.titleLarge, color = color)
+            Text("$currency · recorded", style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+private fun MoneyBudgetGauge(
+    value: BudgetProjection,
+    categories: List<CategoryEntity>,
+    edit: () -> Unit,
+) {
+    val budget = value.budget
+    val summary = value.summary()
+    val remaining = summary.remainingMinor
+    val overall = budget.categoryId == null
+    val color = when {
+        remaining < 0 -> MaterialTheme.colorScheme.error
+        summary.fraction >= 0.8f -> LocalAtmosphere.current.warning
+        overall -> MaterialTheme.colorScheme.primary
+        else -> LocalAtmosphere.current.positive
+    }
+    Surface(onClick = edit, color = Color.Transparent, shape = RoundedCornerShape(8.dp)) {
+        Column(
+            Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(budget.name, Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
+                Text(
+                    if (remaining < 0) "Over budget" else "${(summary.fraction * 100).toInt()}% used",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = color,
+                )
+            }
+            Text(
+                if (overall) "Overall monthly budget" else
+                    categories.firstOrNull { it.id == budget.categoryId }?.name ?: "Category limit",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            LinearProgressIndicator(
+                progress = { summary.fraction },
+                modifier = Modifier.fillMaxWidth().height(if (overall) 9.dp else 5.dp),
+                color = color,
+                trackColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                drawStopIndicator = {},
+            )
+            Text(
+                "${formatMoney(value.spent, budget.currencyCode)} of ${formatMoney(budget.limitMinor, budget.currencyCode)}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                "${formatMoney(BigInteger.valueOf(remaining).abs(), budget.currencyCode)} ${if (remaining < 0) "over budget" else "remaining"}",
+                style = MaterialTheme.typography.labelSmall,
+                color = if (remaining < 0) MaterialTheme.colorScheme.error
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+internal fun MoneyLedgerRow(
+    icon: ImageVector,
+    title: String,
+    detail: String,
+    amount: String,
+    positive: Boolean,
+    open: () -> Unit,
+) {
+    val largeText = LocalDensity.current.fontScale > 1.3f
+    Surface(
+        onClick = open,
+        color = Color.Transparent,
+        shape = RoundedCornerShape(8.dp),
+        modifier = Modifier.semantics(mergeDescendants = true) {},
+    ) {
+        Row(
+            Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconBadge(icon, positive)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                if (largeText) {
+                    Text(title, style = MaterialTheme.typography.titleSmall)
+                    Text(amount, style = MaterialTheme.typography.titleSmall,
+                        color = if (positive) LocalAtmosphere.current.positive
+                            else MaterialTheme.colorScheme.onSurface)
+                } else Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(title, Modifier.weight(1f), style = MaterialTheme.typography.titleSmall,
+                        maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Text(amount, Modifier.widthIn(max = 140.dp),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = if (positive) LocalAtmosphere.current.positive
+                            else MaterialTheme.colorScheme.onSurface)
+                }
+                Text(detail, style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = if (largeText) Int.MAX_VALUE else 2,
+                    overflow = TextOverflow.Ellipsis)
+            }
+        }
+    }
+}
+
+@Composable
+private fun MoneyActions(add: (String) -> Unit) {
+    val actions = listOf(
+        Triple("EXPENSE", "Add Expense", AppIcons.Add),
+        Triple("INCOME", "Income", AppIcons.SouthWest),
+        Triple("TRANSFER", "Transfer", AppIcons.SwapHoriz),
+    )
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        if (maxWidth >= 300.dp && LocalDensity.current.fontScale <= 1.15f) {
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                actions.forEach { (kind, label, icon) ->
+                    MoneyAction(kind, label, icon,
+                        Modifier.weight(if (kind == "EXPENSE") 1.4f else 1f), add)
+                }
+            }
+        } else FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            actions.forEach { (kind, label, icon) ->
+                MoneyAction(kind, label, icon, Modifier, add)
+            }
+        }
+    }
+}
+
+@Composable
+private fun MoneyAction(
+    kind: String,
+    label: String,
+    icon: ImageVector,
+    modifier: Modifier,
+    add: (String) -> Unit,
+) {
+    FilledTonalButton(
+        onClick = { add(kind) },
+        modifier = modifier.heightIn(min = 48.dp),
+        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
+        shape = RoundedCornerShape(10.dp),
         colors = ButtonDefaults.filledTonalButtonColors(
-            containerColor = if (kind == "EXPENSE") MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color.Transparent,
-            contentColor = if (kind == "EXPENSE") MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary)) {
-        Icon(icon, null, Modifier.size(18.dp)); Text(label, Modifier.padding(start = 4.dp), maxLines = 1)
+            containerColor = if (kind == "EXPENSE") MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.surfaceContainerLow,
+            contentColor = if (kind == "EXPENSE") MaterialTheme.colorScheme.onPrimary
+                else MaterialTheme.colorScheme.onSurface,
+        ),
+    ) {
+        Icon(icon, null, Modifier.size(16.dp))
+        Text(label, Modifier.padding(start = 4.dp), style = MaterialTheme.typography.labelMedium)
     }
 }

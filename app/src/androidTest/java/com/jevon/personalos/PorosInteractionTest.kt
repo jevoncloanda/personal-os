@@ -41,18 +41,18 @@ class PorosInteractionTest {
             EntryEditor(entry, entry.id, EntryKind.EXPENSE, data, false, null, {},
                 { value, create, _ -> assertFalse(create); saved = value }, { _, _ -> fail("Unexpected deletion") })
         } }
-        compose.onNodeWithText("Amount (USD)").performTextReplacement("12.345")
+        compose.onNodeWithContentDescription("Amount in USD").performTextReplacement("12.345")
         capture("expense-keyboard-dark")
-        compose.onNodeWithText("Save").performClick()
+        compose.onAllNodes(hasText("Save", substring = true) and hasClickAction()).onLast().performClick()
         compose.onAllNodesWithText("Amount is too large or has too many decimal places").onFirst().assertExists()
         assertNull(saved)
-        compose.onNodeWithText("Amount (USD)").performTextReplacement("24.50")
-        compose.onNodeWithText("Amount (USD)").performImeAction()
+        compose.onNodeWithContentDescription("Amount in USD").performTextReplacement("24.50")
+        compose.onNodeWithContentDescription("Amount in USD").performImeAction()
         compose.onNodeWithText("More options").performScrollTo().performClick()
         compose.onNodeWithText("Transaction kind: Expense").performScrollTo().performClick()
         compose.onNodeWithText("Expense", substring = false).performClick()
-        compose.onNodeWithText("Category: Food").performScrollTo().assertExists()
-        compose.onNodeWithText("Amount (USD)").performScrollTo()
+        compose.onNodeWithText("Food").performScrollTo().assertExists()
+        compose.onNodeWithContentDescription("Amount in USD").performScrollTo()
         capture("expense-dark")
         compose.runOnIdle { dark.value = false }
         if (android.os.Build.VERSION.SDK_INT >= 30) {
@@ -67,7 +67,7 @@ class PorosInteractionTest {
             }
         }
         capture("expense-light")
-        compose.onNodeWithText("Save").performClick()
+        compose.onAllNodes(hasText("Save", substring = true) and hasClickAction()).onLast().performClick()
         compose.runOnIdle {
             assertEquals(2450L, saved!!.amountMinor)
             assertEquals("USD", saved!!.currencyCode)
@@ -90,8 +90,8 @@ class PorosInteractionTest {
         assertFalse(deleted)
         compose.onNodeWithText("Cancel").performClick()
         compose.onNodeWithText("Edit details").performScrollTo().performClick()
-        compose.onNodeWithText("Edit transaction").assertExists()
-        compose.onNodeWithText("Amount (USD)").assertExists()
+        compose.onNodeWithText("Edit expense").assertExists()
+        compose.onNodeWithContentDescription("Amount in USD").assertExists()
         assertFalse(deleted)
     }
 
