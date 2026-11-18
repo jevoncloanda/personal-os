@@ -48,6 +48,8 @@ dependencies {
     implementation("androidx.room:room-ktx:2.8.1")
     kapt("androidx.room:room-compiler:2.8.1")
     implementation("androidx.datastore:datastore-preferences:1.1.7")
+    implementation("androidx.glance:glance-appwidget:1.1.1")
+    implementation("androidx.work:work-runtime-ktx:2.11.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
     // Strict streaming JSON parser only; backup field mapping/canonical serialization are explicit.
     implementation("com.google.code.gson:gson:2.13.2")

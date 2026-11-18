@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="quick_expense_title">Poros Quick Expense</string>
+    <string name="quick_expense_description">Your expense presets, one-tap recording and Undo.</string>
+    <string name="quick_expense_loading">Loading your expense presets…</string>
+    <string name="quick_expense_custom">Custom Amount</string>
+    <string name="widget_brand">Poros</string>
+    <string name="widget_edit">Edit</string>
+    <string name="widget_presets">Presets</string>
+    <string name="widget_setup">Set up</string>
+    <string name="widget_enter">Enter</string>
+    <color name="widget_surface">#FAF8FF</color>
+    <color name="widget_panel">#FFFFFF</color>
+    <color name="widget_text">#131B2E</color>
+    <color name="widget_accent">#4648D4</color>
+    <color name="widget_muted">#585466</color>
+    <color name="widget_action_surface">#4648D4</color>
+    <color name="widget_on_action">#FFFFFF</color>
+    <color name="widget_feedback_surface">#E4DFFF</color>
+</resources>

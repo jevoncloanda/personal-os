@@ -11,6 +11,21 @@
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher"
         android:theme="@style/Theme.PersonalOS">
+        <receiver android:name=".widget.QuickExpenseReceiver" android:exported="true"
+            android:label="@string/quick_expense_title">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider"
+                android:resource="@xml/quick_expense_widget" />
+        </receiver>
+        <activity android:name=".widget.QuickExpenseConfigureActivity" android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".widget.QuickExpenseEntryActivity" android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
         <receiver android:name=".alerts.AlertReceiver" android:exported="false" />
         <receiver android:name=".alerts.AlertRecoveryReceiver" android:exported="true">
             <intent-filter>

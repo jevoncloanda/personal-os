@@ -8,8 +8,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.catch
+import androidx.glance.appwidget.updateAll
 
 class PersonalOsApplication : Application() {
+    val quickExpenses by lazy { com.jevon.personalos.widget.QuickExpenseStore(this) }
+    val quickExpenseRecorder by lazy {
+        com.jevon.personalos.widget.QuickExpenseRecorder(database, quickExpenses)
+    }
     val alerts by lazy { com.jevon.personalos.alerts.LocalAlerts(this,database) }
     private val alertScope=kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob()+kotlinx.coroutines.Dispatchers.IO)
     @OptIn(kotlinx.coroutines.FlowPreview::class)
@@ -17,6 +22,19 @@ class PersonalOsApplication : Application() {
         super.onCreate()
         alerts.createChannels()
         alertScope.launchAlerts()
+        alertScope.launch {
+            database.invalidationTracker.createFlow("accounts", "categories", "entries")
+                .debounce(200)
+                .collect {
+                    try {
+                        com.jevon.personalos.widget.QuickExpenseWidget().updateAll(this@PersonalOsApplication)
+                    } catch (error: kotlinx.coroutines.CancellationException) {
+                        throw error
+                    } catch (_: Exception) {
+                        // Launcher updates can be retried by its refresh action or next database change.
+                    }
+                }
+        }
     }
     @OptIn(kotlinx.coroutines.FlowPreview::class)
     private fun kotlinx.coroutines.CoroutineScope.launchAlerts() = launch {

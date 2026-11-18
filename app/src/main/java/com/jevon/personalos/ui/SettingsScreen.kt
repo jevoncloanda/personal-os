@@ -128,6 +128,11 @@ internal fun SettingsScreen(
             }
         }
         SettingsSection("Money & budgets", AppIcons.Payments) {
+            SettingsRow(AppIcons.Payments, "Quick Expense presets", "Manage home-screen widget presets",
+                onClick = {
+                    context.startActivity(Intent(context,
+                        com.jevon.personalos.widget.QuickExpenseConfigureActivity::class.java))
+                })
             SettingsRow(AppIcons.Payments, "Preferred currency",
                 settings.preferredCurrency + currencyName?.let { " · $it" }.orEmpty(),
                 onClick = { choosingCurrency = true })

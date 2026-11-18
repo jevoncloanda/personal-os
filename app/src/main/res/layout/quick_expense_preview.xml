@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:background="@drawable/quick_expense_background">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="40dp"
+        android:gravity="center_vertical" android:orientation="horizontal">
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:text="@string/widget_brand"
+            android:textColor="@color/widget_text" android:textStyle="bold" android:textSize="14sp" />
+        <TextView android:layout_width="48dp" android:layout_height="match_parent"
+            android:gravity="center" android:text="@string/widget_edit"
+            android:textColor="@color/widget_accent" android:textSize="12sp" />
+    </LinearLayout>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="0dp"
+        android:layout_weight="1" android:orientation="horizontal">
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent"
+            android:layout_weight="1" android:layout_marginEnd="4dp" android:padding="12dp"
+            android:gravity="center_vertical" android:orientation="vertical"
+            android:background="@drawable/quick_expense_tile">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="@string/widget_presets" android:textColor="@color/widget_muted"
+                android:textSize="12sp" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="6dp" android:text="@string/widget_setup"
+                android:textColor="@color/widget_text" android:textStyle="bold" android:textSize="24sp" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent"
+            android:layout_weight="1" android:layout_marginStart="4dp" android:padding="12dp"
+            android:gravity="center_vertical" android:orientation="vertical"
+            android:background="@drawable/quick_expense_custom_tile">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="@string/quick_expense_custom" android:textColor="@color/widget_on_action"
+                android:textSize="12sp" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="6dp" android:text="@string/widget_enter"
+                android:textColor="@color/widget_on_action" android:textStyle="bold" android:textSize="24sp" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>
