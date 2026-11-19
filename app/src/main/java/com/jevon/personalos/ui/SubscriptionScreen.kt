@@ -117,7 +117,7 @@ fun SubscriptionScreen(model: SubscriptionViewModel, requested: String?, handled
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
                 HorizontalDivider(Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                 DetailValue("Next unpaid forecast", "${nextDue?.let(LocalDate::ofEpochDay) ?: "None"}${if (!value.active) " (forecast stopped)" else ""}")
-                DetailValue("Payment account", snapshot.accounts.firstOrNull { it.account.id == value.accountId }?.account?.let { it.name + if (it.archived) " · Archived" else "" } ?: "Choose when paying")
+                DetailValue("Payment account", snapshot.accounts.firstOrNull { it.account.id == value.accountId }?.account?.let { it.name + if (it.archived) " · Archived" else "" } ?: BUDGET_ONLY_LABEL)
                 DetailValue("Expense category", snapshot.categories.firstOrNull { it.id == value.categoryId }?.name ?: "Uncategorized")
                 if (value.notes.isNotBlank()) DetailValue("Notes", value.notes)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -150,7 +150,7 @@ fun SubscriptionScreen(model: SubscriptionViewModel, requested: String?, handled
                 val expense = snapshot.expenses.firstOrNull { it.id == payment.entryId }
                 if (expense != null) PorosCard(contentPadding = 12.dp, verticalSpacing = 0.dp) {
                     MoneyLedgerRow(AppIcons.CheckCircle, "Paid · ${LocalDate.ofEpochDay(payment.dueEpochDay)}",
-                        "Payment date ${LocalDate.ofEpochDay(expense.occurredOnEpochDay)} · ${expense.currencyCode} · ${snapshot.accounts.firstOrNull { it.account.id == expense.fromAccountId }?.account?.name ?: "Account"}",
+                        "Payment date ${LocalDate.ofEpochDay(expense.occurredOnEpochDay)} · ${expense.currencyCode} · ${snapshot.accounts.firstOrNull { it.account.id == expense.fromAccountId }?.account?.name ?: BUDGET_ONLY_LABEL}",
                         formatMoney(expense.amountMinor, expense.currencyCode), false,
                     ) { model.clearError(); correction = payment.id; editor = "payment" }
                 }
@@ -269,12 +269,23 @@ private fun PaymentEditor(value: SubscriptionEntity, link: SubscriptionPaymentEn
     var due by rememberSaveable { mutableStateOf(LocalDate.ofEpochDay(link?.dueEpochDay ?: value.nextDueEpochDay).toString()) }
     var date by rememberSaveable { mutableStateOf(old?.let { LocalDate.ofEpochDay(it.occurredOnEpochDay).toString() } ?: today.toString()) }
     var amount by rememberSaveable { mutableStateOf(moneyInput(old?.amountMinor ?: value.amountMinor, value.currencyCode)) }
-    var account by rememberSaveable { mutableStateOf(old?.fromAccountId ?: value.accountId ?: "") }
+    var account by rememberSaveable {
+        val id = if (old == null) value.accountId else old.fromAccountId
+        mutableStateOf(id?.takeUnless { isBudgetAccountId(it, value.currencyCode) }.orEmpty())
+    }
     var category by rememberSaveable { mutableStateOf(old?.categoryId ?: value.categoryId ?: "") }
     var note by rememberSaveable { mutableStateOf(old?.note ?: value.name) }
     var confirmUndo by rememberSaveable { mutableStateOf(false) }
     EditorFrame(if (link == null) "Record payment" else "Correct payment", busy, error, close, {
-        save(LocalDate.parse(due).toEpochDay(), EntryEntity(id, EntryKind.EXPENSE, parseMoney(amount, value.currencyCode), value.currencyCode, LocalDate.parse(date).toEpochDay(), fromAccountId = account.ifBlank { null } ?: throw IllegalArgumentException("Choose a payment account"), categoryId = category.ifBlank { null }, note = note.trim(), minuteOfDay = old?.minuteOfDay ?: 0))
+        save(
+            LocalDate.parse(due).toEpochDay(),
+            EntryEntity(
+                id, EntryKind.EXPENSE, parseMoney(amount, value.currencyCode), value.currencyCode,
+                LocalDate.parse(date).toEpochDay(),
+                fromAccountId = account.ifBlank { budgetAccountId(value.currencyCode) },
+                categoryId = category.ifBlank { null }, note = note.trim(), minuteOfDay = old?.minuteOfDay ?: 0,
+            ),
+        )
     }, compactLayout = true, saveLabel = if (link == null) "Record payment" else "Save correction") {
         Text(value.name, style = MaterialTheme.typography.headlineSmall)
         BillingDateField("Renewal occurrence", due, !busy && link == null, compact = true) { due = it }
@@ -282,8 +293,8 @@ private fun PaymentEditor(value: SubscriptionEntity, link: SubscriptionPaymentEn
         BillingDateField("Payment date", date, !busy, compact = true) { date = it }
         AmountField("Actual paid amount", amount, !busy, currency = value.currencyCode) { amount = it }
         FinancialChoice(
-            "Payment account", account,
-            data.accounts.filter {
+            "Record against", account,
+            listOf("" to BUDGET_ONLY_LABEL) + data.accounts.filter {
                 it.account.currencyCode == value.currencyCode &&
                     (!it.account.archived || it.account.id == old?.fromAccountId)
             }.map {

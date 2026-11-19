@@ -113,10 +113,12 @@ private fun CurrencyPicker(code: String, currencies: List<String>, select: (Stri
     }
 }
 
+internal fun monthLabel(month: YearMonth): String = month.format(DateTimeFormatter.ofPattern("LLLL uuuu"))
+
 @Composable internal fun MonthSelector(month: YearMonth, previous: () -> Unit, next: () -> Unit) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
         IconButton(onClick = previous) { Icon(AppIcons.ChevronLeft, "Previous month") }
-        Text(month.format(DateTimeFormatter.ofPattern("MMMM yyyy")), style = MaterialTheme.typography.titleMedium)
+        Text(monthLabel(month), style = MaterialTheme.typography.titleMedium)
         IconButton(onClick = next) { Icon(AppIcons.ChevronRight, "Next month") }
     }
 }
@@ -124,7 +126,10 @@ private fun CurrencyPicker(code: String, currencies: List<String>, select: (Stri
 internal fun LazyListScope.moneyOverview(
     data: MoneySnapshot,
     currency: String,
+    currencies: List<String>,
+    chooseCurrency: (String) -> Unit,
     month: YearMonth,
+    addExpense: () -> Unit,
     edit: (String, String?) -> Unit,
     section: (String) -> Unit,
     changeMonth: (YearMonth) -> Unit,
@@ -135,7 +140,14 @@ internal fun LazyListScope.moneyOverview(
             MonthSelector(month, { changeMonth(month.minusMonths(1)) }, {
                 changeMonth(month.plusMonths(1))
             })
-            MoneyCashFlow(data, currency)
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                CurrencyPicker(currency, currencies, chooseCurrency)
+                Button(onClick = addExpense) { Text("Add expense") }
+            }
         }
     }
     val budgets = data.budgets.filter { it.budget.currencyCode == currency }
@@ -144,7 +156,7 @@ internal fun LazyListScope.moneyOverview(
     item {
         MoneyPanel {
             MoneySectionHeading(
-                "Monthly target",
+                "Monthly budget",
                 if (budgets.isEmpty()) "Create budget" else "Manage",
                 {
                     if (budgets.isEmpty()) edit("budget", null) else section("Budgets")
@@ -218,7 +230,7 @@ internal fun LazyListScope.moneyOverview(
     }
     item {
         MoneyPanel {
-            MoneySectionHeading("Recent activity", "View all", { section("History") })
+            MoneySectionHeading("Recent expenses", "View all", { section("History") })
             Surface(
                 onClick = { section("History") },
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -237,7 +249,7 @@ internal fun LazyListScope.moneyOverview(
                 }
             }
             if (data.recent.isEmpty()) Text(
-                "Recorded transactions will appear here.",
+                "Recorded expenses will appear here.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(vertical = 8.dp),
@@ -261,17 +273,6 @@ internal fun LazyListScope.moneyOverview(
             }
         }
     }
-    val accounts = data.accounts.filter {
-        !it.account.archived && it.account.currencyCode == currency
-    }.take(3)
-    if (accounts.isNotEmpty()) {
-        item { MoneySectionHeading("Account balances", "All accounts", { section("Accounts") }) }
-        accounts.forEach { account ->
-            item(key = "overview-account-${account.account.id}") {
-                AccountRow(account) { edit("account", account.account.id) }
-            }
-        }
-    }
 }
 
 @Composable
@@ -286,7 +287,7 @@ private fun MoneySectionHeading(title: String, action: String, open: () -> Unit)
 }
 
 @Composable
-private fun MoneyCashFlow(data: MoneySnapshot, currency: String) {
+internal fun MoneyCashFlow(data: MoneySnapshot, currency: String) {
     val spent = data.totals.firstOrNull {
         it.currencyCode == currency && it.kind == EntryKind.EXPENSE
     }?.amount ?: 0L
@@ -377,13 +378,18 @@ private fun MoneyBudgetGauge(
                 drawStopIndicator = {},
             )
             Text(
-                "${formatMoney(value.spent, budget.currencyCode)} of ${formatMoney(budget.limitMinor, budget.currencyCode)}",
+                "Spent ${formatMoney(value.spent, budget.currencyCode)} of ${formatMoney(budget.limitMinor, budget.currencyCode)}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
-                "${formatMoney(BigInteger.valueOf(remaining).abs(), budget.currencyCode)} ${if (remaining < 0) "over budget" else "remaining"}",
-                style = MaterialTheme.typography.labelSmall,
+                "${formatMoney(BigInteger.valueOf(remaining).abs(), budget.currencyCode)} " +
+                    when {
+                        remaining < 0 -> "over budget"
+                        value.spent == 0L -> "unspent"
+                        else -> "remaining"
+                    },
+                style = if (overall) MaterialTheme.typography.titleLarge else MaterialTheme.typography.labelSmall,
                 color = if (remaining < 0) MaterialTheme.colorScheme.error
                     else MaterialTheme.colorScheme.onSurfaceVariant,
             )

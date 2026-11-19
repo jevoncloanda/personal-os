@@ -5,10 +5,17 @@
 | Release | `com.jevon.personalos` | Poros | Permanent private release key |
 | Debug | `com.jevon.personalos.dev` | Poros DEV | Existing Android debug key |
 
-DEV has a visible DEV badge in both normal and themed launcher icons, plus DEV widget-picker
-labels. Android isolates each package's Room database, DataStore, Glance state, widget instances,
-PendingIntents, notifications and WorkManager jobs. The shared Kotlin namespace and `personal-os.db`
-filename stay `com.jevon.personalos` and `personal-os.db` respectively.
+DEV has a badge in normal and themed launcher icons and on the Android 12+ splash screen. Its four
+widgets have DEV picker labels and warm-toned backgrounds in light and dark mode. Quick Expense also
+shows the variant name in its header when the widget has room for one.
+
+Android isolates each package's Room database, DataStore, local cover files, Glance state, widget
+instances, PendingIntents, notifications and WorkManager jobs. Widgets open explicit components in
+their own package. Android pairs Quick Expense's configuration class with the widget provider's
+installed package. The Kotlin namespace stays `com.jevon.personalos` and each package uses its own
+private `personal-os.db` database. The debug review provider is private and uses a variant-specific
+authority. Manual exports use Android's document picker and suggest `poros-*.json` or
+`poros-dev-*.json`. Either build can inspect a backup the user explicitly selects.
 
 Version `0.1.0` / code `1` remains the baseline in `app/build.gradle.kts`. Increase the checked-in
 integer code for every distributed production release and use a semantic version name. Build the
@@ -76,25 +83,37 @@ existing installations signed with it.
 
 ## Phase 5.4B data transition
 
-The former debug package is `com.jevon.personalos.debug`. DEV's new `.dev` package starts with
-independent storage and does not automatically acquire those records. A debug certificate and a
-release certificate cannot update the same installed package through an ordinary APK replacement.
-The old `.debug` package and the production package can coexist because their IDs differ. If an
-existing installation already uses the production ID with a debug certificate, preserve a verified
-portable export before any later uninstall decision.
+Earlier builds used `com.jevon.personalos.debug`. Also check for `com.jevon.personalos` and
+`com.jevon.personalos.dev` on Samsung with `adb shell pm list packages com.jevon.personalos`.
+Confirm which installation holds the personal records. Use `adb shell pm path <package>` to find
+its base APK, then pull that APK and use `apksigner verify --print-certs` to record its signer
+SHA-256 before planning an update. Independent packages can coexist. Ordinary in-place replacement
+requires the installed package's signing identity. A production-ID installation with a different
+certificate requires a separately approved transition that clears its private storage.
 
-In Phase 5.4B, export from the source app through Settings, copy the unencrypted JSON to trusted
-storage, inspect it in the target app, and compare the preview counts before confirming full
-replacement. Keep the source app and export until the target's records and balances are verified.
-Restore replaces target records transactionally. It does not merge two installations. The existing
-codec accepts formats 1–4, uses a fixed backup format identifier independent of application ID,
-validates schema versions and SHA-256 integrity, and enforces 8 MiB / 20,000-record limits.
+1. In the source app, use **Settings → Backup & restore → Export backup**. Keep a copy of the
+   unencrypted JSON in trusted storage outside the source package. Record the source totals and
+   counts you expect to see after restore. Record any local configuration and identify which
+   original cover images are available to reattach.
+2. Before any removal, inspect the export in the source app or a separately installed target. Check
+   the timestamp and record counts against the source and exit the preview. If removal is required,
+   obtain approval for the uncovered data and rehearse a restore in a separate installation before
+   touching the source. Stop if the export, rehearsal, or recovery plan fails.
+3. Inspect the verified export in the approved target, then confirm replacement. Compare record
+   counts, balances, and representative archived and scheduled items. Reattach available covers,
+   recreate settings and widgets, and check notification permissions. Keep the verified backup.
+   Where the IDs differ, keep the source installed until the target is verified for an easy fallback.
 
-Exports include domain records, reminder completions and alert preferences. They exclude local
-cover images, app settings/Today budget selection, Quick Expense presets and receipts, launcher
-widget placements/configuration and runtime alert state. Recreate these settings and widgets in
-the chosen target and review its notification permission. Keeping both apps' alerts enabled after
-copying records can produce duplicate notifications. These are planning considerations for 5.4B.
+Restore replaces target records transactionally. The existing codec accepts formats 1–4, uses a
+fixed backup format identifier across variants, validates schema versions and SHA-256 integrity,
+and enforces 8 MiB / 20,000-record limits.
 
-Phase 5.4A performs configuration and local build checks. Device installation and data transition
-are scheduled for Phase 5.4B.
+Exports include domain records, reminder completions and alert rules. They exclude local Library
+cover files and paths, app settings including appearance and Today budget selection, Quick Expense
+presets and receipts, launcher widget placement/configuration, notification permissions, and runtime
+alert state. Android automatic backup and device transfer are disabled by the app's backup
+configuration. Keeping both apps' alerts enabled after copying records can produce duplicate
+notifications.
+
+Phase 5.4A permits installation of the DEV APK alongside the source when Samsung is connected.
+The production install and any data transition require separate approval in Phase 5.4B.

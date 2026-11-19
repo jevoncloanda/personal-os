@@ -46,7 +46,7 @@ import java.time.LocalDate
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
-private val surface = ColorProvider(R.color.widget_panel)
+private val surface = ColorProvider(R.color.widget_surface)
 private val panel = ColorProvider(R.color.widget_panel)
 private val text = ColorProvider(R.color.widget_text)
 private val muted = ColorProvider(R.color.widget_muted)
@@ -96,7 +96,7 @@ abstract class DashboardWidget internal constructor(private val kind: DashboardK
             )
             val open = dashboardAction(context, kind.destination)
             Column(
-                GlanceModifier.fillMaxSize().background(surface).cornerRadius(24.dp)
+                GlanceModifier.fillMaxSize().background(surface).cornerRadius(widgetFrameRadius)
                     .clickable(open).semantics { contentDescription = kind.title }
                     .padding(if (layout.short) 10.dp else 16.dp),
             ) {
@@ -177,7 +177,7 @@ private fun ColumnScope.BudgetContent(data: DashboardData, layout: DashboardLayo
         }
         return
     }
-    WidgetText(summary.budget.name, color = muted, size = 12, bold = true)
+    WidgetTitle(summary.budget.name)
     if (layout.showSecondary) WidgetText(budgetPeriod(summary), color = muted, size = 12)
     Column(GlanceModifier.fillMaxWidth().defaultWeight(),
         verticalAlignment = Alignment.CenterVertically) {
@@ -250,8 +250,7 @@ private fun ColumnScope.TodayContent(context: Context, data: DashboardData, layo
         WidgetText(date.dayOfMonth.toString(), size = if (layout.short) 32 else 44, bold = true)
         Spacer(GlanceModifier.width(10.dp))
         Column(GlanceModifier.defaultWeight()) {
-            WidgetText(date.format(DateTimeFormatter.ofPattern(if (layout.compact) "EEE" else "EEEE")),
-                color = indigo, size = 14, bold = true)
+            WidgetTitle(date.format(DateTimeFormatter.ofPattern(if (layout.compact) "EEE" else "EEEE")))
             WidgetText(date.format(DateTimeFormatter.ofPattern("MMM yyyy")), color = muted, size = 12)
         }
     }
@@ -395,7 +394,7 @@ private fun AgendaRow(
 
 @Composable
 private fun WidgetHeader(detail: String) {
-    WidgetText(detail, color = indigo, bold = true, size = 14)
+    WidgetTitle(detail)
     Gap(8)
 }
 
@@ -406,7 +405,7 @@ private fun Panel(
     padding: Int = 12,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val container = modifier.background(panel).cornerRadius(12.dp)
+    val container = modifier.background(panel).cornerRadius(widgetPanelRadius)
     Column(
         (if (action == null) container else container.clickable(action)).padding(padding.dp),
         verticalAlignment = Alignment.CenterVertically,

@@ -12,11 +12,13 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.jevon.personalos.R
 import com.jevon.personalos.backup.BackupViewModel
 import java.time.Instant
 import java.time.ZoneOffset
@@ -25,6 +27,7 @@ import java.time.format.DateTimeFormatter
 @Composable
 internal fun BackupScreen(model: BackupViewModel) {
     val state by model.state.collectAsStateWithLifecycle()
+    val backupFilenamePrefix = stringResource(R.string.backup_filename_prefix)
     var confirm by rememberSaveable { mutableStateOf(false) }
     var acknowledged by rememberSaveable { mutableStateOf(false) }
     val create = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri -> if (uri == null) model.pickerCanceled() else model.export(uri) }
@@ -38,7 +41,10 @@ internal fun BackupScreen(model: BackupViewModel) {
             Text("Backups are unencrypted JSON. Anyone who can read the file can read your financial and personal information. Choose a trusted location.", style = MaterialTheme.typography.bodyMedium)
             Text("A checksum checks for damage; it does not verify who created a backup. No cloud account or storage permission is required.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Button(enabled = state.working == null, onClick = {
-                create.launch(DateTimeFormatter.ofPattern("'poros-'uuuuMMdd-HHmmss'.json'").withZone(ZoneOffset.UTC).format(Instant.now()))
+                val timestamp = DateTimeFormatter.ofPattern("uuuuMMdd-HHmmss")
+                    .withZone(ZoneOffset.UTC)
+                    .format(Instant.now())
+                create.launch("$backupFilenamePrefix-$timestamp.json")
             }, shape = MaterialTheme.shapes.medium, modifier = Modifier.heightIn(min = 48.dp)) { Text("Export backup") }
             OutlinedButton(enabled = state.working == null, onClick = { open.launch(arrayOf("application/json", "text/plain", "application/octet-stream")) }, shape = MaterialTheme.shapes.medium, modifier = Modifier.heightIn(min = 48.dp)) { Text("Restore backup") }
         }

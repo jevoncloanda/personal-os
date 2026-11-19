@@ -6,7 +6,6 @@ import java.math.BigDecimal
 import java.math.BigInteger
 import java.math.RoundingMode
 import java.time.LocalDate
-import java.time.YearMonth
 import java.util.Currency
 
 val accountTypes = listOf("CASH", "BANK", "E_WALLET", "INVESTMENT", "OTHER")
@@ -52,7 +51,13 @@ data class MoneySnapshot(
 
 @Dao
 abstract class MoneyDao {
-    @Query("SELECT a.*, COALESCE((SELECT SUM(amountMinor) FROM entries WHERE toAccountId=a.id),0) AS incoming, COALESCE((SELECT SUM(amountMinor) FROM entries WHERE fromAccountId=a.id),0) AS outgoing FROM accounts a ORDER BY archived, name COLLATE NOCASE, id")
+    @Query("""
+        SELECT a.*, COALESCE((SELECT SUM(amountMinor) FROM entries WHERE toAccountId=a.id),0) AS incoming,
+            COALESCE((SELECT SUM(amountMinor) FROM entries WHERE fromAccountId=a.id),0) AS outgoing
+        FROM accounts a
+        WHERE NOT (a.id = ('$BUDGET_ACCOUNT_PREFIX' || a.currencyCode) AND a.notes = '$BUDGET_ACCOUNT_MARKER')
+        ORDER BY archived, name COLLATE NOCASE, id
+    """)
     abstract suspend fun balances(): List<AccountBalance>
     @Query("SELECT * FROM accounts WHERE id=:id") protected abstract suspend fun findAccount(id: String): AccountEntity?
     @Query("SELECT * FROM categories ORDER BY archived, name COLLATE NOCASE, id") abstract suspend fun categories(): List<CategoryEntity>
@@ -65,8 +70,18 @@ abstract class MoneyDao {
     abstract suspend fun totals(start: Long, end: Long): List<CurrencyTotal>
     @Query("SELECT categoryId,currencyCode,SUM(amountMinor) AS amount FROM entries WHERE kind='EXPENSE' AND occurredOnEpochDay>=:start AND occurredOnEpochDay<:end GROUP BY categoryId,currencyCode ORDER BY currencyCode,amount DESC,categoryId")
     abstract suspend fun categorySpending(start: Long, end: Long): List<CategorySpending>
-    @Query("SELECT b.*, COALESCE((SELECT SUM(amountMinor) FROM entries e WHERE e.kind='EXPENSE' AND e.currencyCode=b.currencyCode AND e.occurredOnEpochDay>=b.startEpochDay AND e.occurredOnEpochDay<b.endExclusiveEpochDay AND (b.categoryId IS NULL OR b.categoryId=e.categoryId)),0) AS spent FROM budgets b WHERE b.startEpochDay<=:day AND b.endExclusiveEpochDay>:day ORDER BY b.currencyCode,b.categoryId,b.id")
-    abstract suspend fun budgetProjections(day: Long): List<BudgetProjection>
+    @Query("""
+        SELECT b.*, COALESCE((
+            SELECT SUM(e.amountMinor) FROM entries e
+            WHERE e.kind = 'EXPENSE' AND e.currencyCode = b.currencyCode
+                AND e.occurredOnEpochDay >= b.startEpochDay AND e.occurredOnEpochDay < b.endExclusiveEpochDay
+                AND (b.categoryId IS NULL OR b.categoryId = e.categoryId)
+        ), 0) AS spent
+        FROM budgets b
+        WHERE b.startEpochDay < :endExclusive AND b.endExclusiveEpochDay > :start
+        ORDER BY b.currencyCode, b.categoryId, b.id
+    """)
+    abstract suspend fun budgetProjections(start: Long, endExclusive: Long = start + 1): List<BudgetProjection>
     @Query("SELECT * FROM entries WHERE occurredOnEpochDay>=:start AND occurredOnEpochDay<:end AND (:kind='' OR kind=:kind) AND (:accountId='' OR fromAccountId=:accountId OR toAccountId=:accountId) AND (:categoryId='' OR categoryId=:categoryId) AND (:currency='' OR currencyCode=:currency) AND (instr(lower(note),lower(:search))>0 OR id IN (SELECT e.id FROM entries e LEFT JOIN accounts a ON a.id=e.fromAccountId LEFT JOIN accounts b ON b.id=e.toAccountId LEFT JOIN categories c ON c.id=e.categoryId WHERE instr(lower(COALESCE(a.name,'')||' '||COALESCE(b.name,'')||' '||COALESCE(c.name,'')),lower(:search))>0)) ORDER BY occurredOnEpochDay DESC,minuteOfDay DESC,id LIMIT :limit OFFSET :offset")
     abstract suspend fun history(start: Long, end: Long, kind: String, accountId: String, categoryId: String, currency: String, search: String, limit: Int, offset: Int): List<EntryEntity>
     @Query("SELECT COUNT(*) FROM entries WHERE occurredOnEpochDay>=:start AND occurredOnEpochDay<:end") abstract suspend fun entryCount(start: Long, end: Long): Int
@@ -86,6 +101,9 @@ abstract class MoneyDao {
 
     @Transaction
     open suspend fun saveAccount(value: AccountEntity, create: Boolean) {
+        require(!value.isBudgetOnly && !value.id.startsWith(BUDGET_ACCOUNT_PREFIX)) {
+            "Budget-only bookkeeping is managed by Poros"
+        }
         require(value.id.isNotBlank() && value.name.isNotBlank()) { "Account name is required" }
         currencyDigits(value.currencyCode)
         require(value.type in accountTypes) { "Choose an account type" }
@@ -125,6 +143,9 @@ abstract class MoneyDao {
         listOfNotNull(entry.fromAccountId, entry.toAccountId).forEach { id ->
             val account = requireNotNull(findAccount(id)) { "Account does not exist" }
             require(account.currencyCode == entry.currencyCode) { "Accounts must use the same currency; conversion is not supported" }
+            require(!account.isBudgetOnly || (entry.kind == EntryKind.EXPENSE && entry.fromAccountId == id)) {
+                "Budget-only bookkeeping can only record expenses"
+            }
             require(!account.archived || id == old?.fromAccountId || id == old?.toAccountId) { "Choose an active account" }
         }
         entry.categoryId?.let { id ->
@@ -141,6 +162,16 @@ abstract class MoneyDao {
     open suspend fun saveEntry(entry: EntryEntity, create: Boolean) {
         val old = if (create) null else requireNotNull(findEntry(entry.id)) { "Transaction no longer exists" }
         require(old == null || paymentUse(entry.id) == 0) { "Linked subscription payment. Open Subscriptions → payment history to correct it" }
+        if (entry.kind == EntryKind.EXPENSE && isBudgetAccountId(entry.fromAccountId, entry.currencyCode)) {
+            currencyDigits(entry.currencyCode)
+            val id = budgetAccountId(entry.currencyCode)
+            val account = findAccount(id)
+            if (account == null) {
+                insertAccount(AccountEntity(id, BUDGET_ONLY_LABEL, entry.currencyCode, notes = BUDGET_ACCOUNT_MARKER))
+            } else {
+                require(account.isBudgetOnly) { "Budget-only account conflicts with an existing account" }
+            }
+        }
         validateEntry(entry, old)
         if (create) insertEntry(entry) else check(updateEntry(entry) == 1)
         checkArithmetic()
@@ -163,11 +194,15 @@ abstract class MoneyDao {
     open suspend fun saveBudget(value: BudgetEntity, create: Boolean) {
         require(value.id.isNotBlank() && value.name.isNotBlank()) { "Budget name is required" }
         currencyDigits(value.currencyCode)
-        val month = YearMonth.from(LocalDate.ofEpochDay(value.startEpochDay))
-        require(value.startEpochDay == month.atDay(1).toEpochDay() && value.endExclusiveEpochDay == month.plusMonths(1).atDay(1).toEpochDay()) { "Choose a calendar month" }
+        val existing = if (create) null else findBudget(value.id)
+        val period = value.period
+        // Legacy intervals can be edited in place. New or moved budgets use a calendar month.
+        require(period == existing?.period || period == BudgetPeriod.forMonth(period.startMonth)) {
+            "Choose a calendar month"
+        }
         value.categoryId?.let {
             val c = requireNotNull(findCategory(it)) { "Category does not exist" }
-            require((!c.archived || findBudget(value.id)?.categoryId == it) && c.kind != "INCOME") { "Choose an active expense category" }
+            require((!c.archived || existing?.categoryId == it) && c.kind != "INCOME") { "Choose an active expense category" }
         }
         require(budgetConflicts(value.id, value.currencyCode, value.categoryId, value.startEpochDay, value.endExclusiveEpochDay) == 0) { "An overlapping budget already exists for this currency and category" }
         if (create) insertBudget(value) else check(updateBudget(value) == 1) { "Budget no longer exists" }

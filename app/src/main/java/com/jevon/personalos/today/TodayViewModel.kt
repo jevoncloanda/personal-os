@@ -24,7 +24,8 @@ sealed interface TodayState {
 @OptIn(ExperimentalCoroutinesApi::class)
 class TodayViewModel(application: Application, private val savedState: SavedStateHandle) : AndroidViewModel(application) {
     private val app = application as PersonalOsApplication
-    val mode = savedState.getStateFlow("data_mode", DataMode.PERSONAL)
+    val mode = if (DemoCatalog.available) savedState.getStateFlow("data_mode", DataMode.PERSONAL)
+        else MutableStateFlow(DataMode.PERSONAL)
     private val retryCount = MutableStateFlow(0)
     private val clock = flow { while (true) { emit(ZonedDateTime.now()); delay(30_000) } }
     val settingsError = MutableStateFlow(false)

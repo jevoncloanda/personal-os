@@ -9,5 +9,7 @@
     android:resizeMode="horizontal|vertical"
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/dashboard_widget_loading"
+    android:previewLayout="@layout/today_overview_preview"
+    android:previewImage="@drawable/today_overview_preview_image"
     android:description="@string/today_widget_description"
     android:widgetCategory="home_screen" />

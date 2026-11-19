@@ -18,9 +18,9 @@ internal fun quickExpenseLayout(width: Float, height: Float, fontScale: Float = 
         // Header + two rows of readable, >=48dp action targets.
         availableWidth >= 280 && availableHeight >= 184 ->
             QuickExpenseLayout(4, 2, showHeader = true, compact = false)
-        // A tall, narrow instance can fit the same actions in one column.
-        availableWidth >= 140 && availableHeight >= 320 ->
-            QuickExpenseLayout(4, 1, showHeader = availableWidth >= 180, compact = false)
+        // Tall instances can use the same two-column grid with a more compact tile width.
+        availableWidth >= 196 && availableHeight >= 320 ->
+            QuickExpenseLayout(4, 2, showHeader = true, compact = true)
         availableWidth >= 280 && availableHeight >= 80 ->
             QuickExpenseLayout(2, 2, showHeader = availableHeight >= 136, compact = true)
         availableHeight >= 144 ->

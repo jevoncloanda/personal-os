@@ -48,9 +48,8 @@ data class TodayContent(
 
 /** Exact calendar-month overall budgets only. Stable ID tie-break also handles legacy imports. */
 fun eligibleTodayBudgets(budgets: List<BudgetEntity>, date: LocalDate): List<BudgetEntity> {
-    val month = YearMonth.from(date)
-    return budgets.filter { it.categoryId == null && it.startEpochDay == month.atDay(1).toEpochDay() &&
-        it.endExclusiveEpochDay == month.plusMonths(1).atDay(1).toEpochDay() }.sortedBy { it.id }
+    val period = BudgetPeriod.forMonth(YearMonth.from(date))
+    return budgets.filter { it.categoryId == null && it.period == period }.sortedBy { it.id }
 }
 
 fun selectTodayBudget(eligible: List<BudgetEntity>, settings: Settings): BudgetEntity? =

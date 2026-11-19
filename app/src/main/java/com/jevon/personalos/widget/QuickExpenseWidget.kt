@@ -3,6 +3,9 @@ package com.jevon.personalos.widget
 import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.Intent
+import android.graphics.Typeface
+import android.text.TextPaint
+import android.util.TypedValue
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -10,6 +13,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
+import androidx.glance.Image
+import androidx.glance.ImageProvider
+import androidx.glance.LocalContext
 import androidx.glance.LocalSize
 import androidx.glance.semantics.contentDescription
 import androidx.glance.semantics.semantics
@@ -64,15 +70,20 @@ private val muted = ColorProvider(R.color.widget_muted)
 private val actionSurface = ColorProvider(R.color.widget_action_surface)
 private val onAction = ColorProvider(R.color.widget_on_action)
 private val feedbackSurface = ColorProvider(R.color.widget_feedback_surface)
+private val positive = ColorProvider(R.color.dashboard_positive)
 
 private data class WidgetTile(
     val title: String,
-    val primaryText: String,
+    val detail: String?,
     val action: Action,
-    val currency: String? = null,
+    val amount: Boolean = false,
     val emphasized: Boolean = false,
-    val description: String = listOfNotNull(title, primaryText, currency).joinToString(", "),
+    val description: String = listOfNotNull(title, detail).joinToString(", "),
 )
+
+private fun ExpenseFeedback.savedAmount(): String? =
+    entry?.takeIf { message.startsWith("Recorded ") }
+        ?.let { formatMoney(it.amountMinor, it.currencyCode) }
 
 class QuickExpenseWidget : GlanceAppWidget() {
     override val stateDefinition = PreferencesGlanceStateDefinition
@@ -136,8 +147,12 @@ class QuickExpenseWidget : GlanceAppWidget() {
         val configure = actionStartActivity(Intent(context, QuickExpenseConfigureActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
             .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId))
-        val custom = WidgetTile("Custom Amount", "Enter", entryAction(context, widgetId),
-            emphasized = true, description = "Custom Amount")
+        val custom = WidgetTile(
+            title = context.getString(R.string.quick_expense_custom),
+            detail = null,
+            action = entryAction(context, widgetId),
+            emphasized = true,
+        )
         val tiles = selected.take(layout.presetCapacity).map { (preset, available) ->
             val action = when {
                 preset == null || !available -> configure
@@ -150,20 +165,32 @@ class QuickExpenseWidget : GlanceAppWidget() {
             }
             WidgetTile(
                 title = preset?.name ?: "Removed preset",
-                primaryText = if (available && preset != null)
+                detail = if (available && preset != null)
                     formatMoney(preset.amountMinor, preset.currencyCode) else "Unavailable",
-                currency = preset?.currencyCode?.takeIf { available },
+                amount = available,
                 action = action,
             )
         }.toMutableList()
         if (layout.actionSlots > 1 && (tiles.isEmpty() ||
             (layout.actionSlots == 4 && tiles.size == 2))) {
-            tiles += WidgetTile("Presets", "Set up", configure, description = "Set up presets")
+            val setup = context.getString(R.string.quick_expense_set_up_presets)
+            tiles += WidgetTile(
+                title = if (tiles.isEmpty()) context.getString(R.string.quick_expense_no_presets)
+                    else context.getString(R.string.widget_presets),
+                detail = setup,
+                action = configure,
+                description = setup,
+            )
         }
         tiles += custom
 
-        Column(GlanceModifier.fillMaxSize().background(canvas).cornerRadius(16.dp)
-            .padding(if (layout.actionSlots == 1) 4.dp else 8.dp)) {
+        val columns = layout.columns
+        val outerPadding = if (layout.actionSlots == 1) 4 else 8
+        val tileWidth = (size.width.value - 2 * outerPadding) / columns
+        Column(
+            GlanceModifier.fillMaxSize().background(canvas).cornerRadius(widgetFrameRadius)
+                .padding(outerPadding.dp),
+        ) {
             if (!layout.showHeader && feedback != null) {
                 CompactFeedback(feedback, custom, configure,
                     horizontal = layout.actionSlots == 1 || layout.columns == 2)
@@ -172,37 +199,52 @@ class QuickExpenseWidget : GlanceAppWidget() {
             if (layout.showHeader) Row(
                 GlanceModifier.fillMaxWidth().height((48 * textScale).dp)
                     .background(if (feedback == null) canvas else feedbackSurface)
-                    .cornerRadius(10.dp).padding(start = 8.dp),
+                    .cornerRadius(widgetPanelRadius).padding(start = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(GlanceModifier.defaultWeight(),
                     verticalAlignment = Alignment.CenterVertically) {
-                    Label("Poros", if (feedback == null) foreground else muted,
-                        bold = true, fontSize = if (feedback == null) 14 else 11, maxLines = 1)
+                    WidgetTitle(
+                        context.getString(R.string.quick_expense_header),
+                        compact = feedback != null,
+                    )
                     feedback?.let {
-                        val entry = it.entry
-                        val message = if (entry != null && it.message.startsWith("Recorded "))
-                            "Saved ${formatMoney(entry.amountMinor, entry.currencyCode)}" else it.message
-                        Label(message, accent, fontSize = 13, maxLines = 2)
+                        val saved = it.savedAmount()
+                        Label(
+                            saved?.let { amount -> "Saved · $amount" } ?: it.message,
+                            if (saved != null) positive else foreground,
+                            bold = saved != null,
+                            fontSize = 12,
+                            maxLines = 2,
+                        )
                     }
                 }
                 feedback?.entry?.let { entry ->
                     ActionLabel("Undo", actionRunCallback<QuickExpenseAction>(actionParametersOf(
                         operationKey to "undo", targetKey to entry.id,
-                    )), "Undo", 56)
+                    )), "Undo", 56, filled = true)
                 }
                 ActionLabel("Edit", configure, "Configure", 48)
             }
-            if (layout.columns == 1) {
+            if (columns == 1) {
                 tiles.forEach { tile ->
-                    Tile(tile, layout.compact,
-                        GlanceModifier.fillMaxWidth().defaultWeight(),
-                        minimal = layout.actionSlots == 1 && size.height < 88.dp)
+                    Tile(
+                        tile,
+                        compact = layout.compact,
+                        modifier = GlanceModifier.fillMaxWidth().defaultWeight(),
+                        width = tileWidth,
+                        minimal = layout.actionSlots == 1 && size.height < 88.dp,
+                    )
                 }
-            } else tiles.chunked(layout.columns).forEach { row ->
+            } else tiles.chunked(columns).forEach { row ->
                 Row(GlanceModifier.fillMaxWidth().defaultWeight()) {
                     row.forEach { tile ->
-                        Tile(tile, layout.compact, GlanceModifier.defaultWeight().fillMaxHeight())
+                        Tile(
+                            tile,
+                            compact = layout.compact,
+                            modifier = GlanceModifier.defaultWeight().fillMaxHeight(),
+                            width = (size.width.value - 2 * outerPadding) / row.size,
+                        )
                     }
                 }
             }
@@ -215,40 +257,65 @@ private fun Tile(
     tile: WidgetTile,
     compact: Boolean,
     modifier: GlanceModifier,
+    width: Float,
     minimal: Boolean = false,
 ) {
-    // The outer container supplies a real gap in RemoteViews.
-    Box(modifier.padding(if (minimal) 2.dp else 4.dp)) {
+    val gap = if (minimal) 2 else 4
+    val padding = if (minimal || width < 100) 6 else 10
+    Box(modifier.padding(gap.dp)) {
         Column(
             GlanceModifier.fillMaxSize()
                 .background(if (tile.emphasized) actionSurface else panel)
-                .cornerRadius(12.dp).clickable(tile.action)
+                .cornerRadius(widgetPanelRadius).clickable(tile.action)
                 .semantics { contentDescription = tile.description }
-                .padding(horizontal = if (minimal) 6.dp else 10.dp,
-                    vertical = if (compact) 4.dp else 12.dp),
+                .padding(horizontal = padding.dp, vertical = if (compact) 3.dp else 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            val textColor = if (tile.emphasized) onAction else foreground
-            val secondary = if (tile.emphasized) onAction else muted
-            if (minimal) Label(tile.title, textColor, bold = true, fontSize = 14, maxLines = 2)
-            else {
-                Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Label(tile.title, secondary, GlanceModifier.defaultWeight(),
-                        fontSize = 12, maxLines = 1)
-                    tile.currency?.let { currency ->
-                        Label(currency, secondary, fontSize = 10, maxLines = 1)
+            if (tile.emphasized) {
+                Row(
+                    GlanceModifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (width >= 152) {
+                        Image(ImageProvider(R.drawable.ic_quick_expense_keypad), contentDescription = null)
+                        Spacer(GlanceModifier.width(6.dp))
+                    }
+                    Label(
+                        if (width < 80 && minimal) "Custom" else tile.title,
+                        onAction,
+                        GlanceModifier.defaultWeight(),
+                        bold = true,
+                        fontSize = if (width < 100) 12 else 15,
+                        maxLines = 2,
+                    )
+                }
+            } else {
+                Label(tile.title, muted, fontSize = 12, maxLines = 1)
+                Spacer(GlanceModifier.height(if (compact) 2.dp else 4.dp))
+                tile.detail?.let { detail ->
+                    if (tile.amount) {
+                        AmountLabel(detail, width - 2 * (gap + padding), compact)
+                    } else {
+                        Label(detail, accent, bold = true, fontSize = 13, maxLines = 2)
                     }
                 }
-                Spacer(GlanceModifier.height(if (compact) 2.dp else 6.dp))
-                Label(tile.primaryText, textColor, bold = true,
-                    fontSize = when {
-                        tile.primaryText.length > 10 -> 18
-                        compact -> 20
-                        else -> 24
-                    }, maxLines = 1)
             }
         }
     }
+}
+
+@Composable
+private fun AmountLabel(amount: String, width: Float, compact: Boolean) {
+    val metrics = LocalContext.current.resources.displayMetrics
+    val paint = TextPaint().apply { typeface = Typeface.DEFAULT_BOLD }
+    val preferredSize = if (compact) 20 else 24
+    val minimumSize = 12
+    val availablePixels = width * metrics.density
+    val size = (preferredSize downTo minimumSize).firstOrNull { sp ->
+        paint.textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, sp.toFloat(), metrics)
+        paint.measureText(amount) <= availablePixels
+    }
+    Label(amount, bold = true, fontSize = size ?: minimumSize, maxLines = if (size == null) 2 else 1)
 }
 
 @Composable
@@ -263,29 +330,46 @@ private fun CompactFeedback(
         actionRunCallback<QuickExpenseAction>(actionParametersOf(
             operationKey to "undo", targetKey to entry.id,
         ))
-    val message = if (entry != null && feedback.message.startsWith("Recorded "))
-        formatMoney(entry.amountMinor, entry.currencyCode) else feedback.message
+    val saved = feedback.savedAmount()
+    val message = saved?.let { "Saved · $it" } ?: feedback.message
+    val width = LocalSize.current.width.value - 16
 
     @Composable
     fun FeedbackTile(modifier: GlanceModifier) {
         Box(modifier.padding(2.dp)) {
-            Column(GlanceModifier.fillMaxSize().background(feedbackSurface).cornerRadius(12.dp)
+            Column(GlanceModifier.fillMaxSize().background(feedbackSurface).cornerRadius(widgetPanelRadius)
                 .clickable(action).semantics {
                     contentDescription = if (entry == null) feedback.message
                         else "Undo ${formatMoney(entry.amountMinor, entry.currencyCode)}"
                 }.padding(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                Label(message, foreground, fontSize = 11, maxLines = if (entry == null) 3 else 2)
+                Label(
+                    message,
+                    if (saved != null) positive else foreground,
+                    bold = saved != null,
+                    fontSize = 11,
+                    maxLines = if (entry == null) 3 else 2,
+                )
                 if (entry != null) Label("Undo", accent, bold = true, fontSize = 12, maxLines = 1)
             }
         }
     }
     if (horizontal) Row(GlanceModifier.fillMaxSize()) {
         FeedbackTile(GlanceModifier.defaultWeight().fillMaxHeight())
-        Tile(custom, compact = true, modifier = GlanceModifier.defaultWeight().fillMaxHeight(),
-            minimal = true)
+        Tile(
+            custom,
+            compact = true,
+            modifier = GlanceModifier.defaultWeight().fillMaxHeight(),
+            width = width / 2,
+            minimal = true,
+        )
     } else Column(GlanceModifier.fillMaxSize()) {
         FeedbackTile(GlanceModifier.fillMaxWidth().defaultWeight())
-        Tile(custom, compact = true, modifier = GlanceModifier.fillMaxWidth().defaultWeight())
+        Tile(
+            custom,
+            compact = true,
+            modifier = GlanceModifier.fillMaxWidth().defaultWeight(),
+            width = width,
+        )
     }
 }
 
@@ -296,11 +380,21 @@ private fun entryAction(context: Context, widgetId: Int, presetId: String? = nul
         .putExtra("preset", presetId))
 
 @Composable
-private fun ActionLabel(text: String, action: Action, description: String, width: Int) {
+private fun ActionLabel(
+    text: String,
+    action: Action,
+    description: String,
+    width: Int,
+    filled: Boolean = false,
+) {
     Box(GlanceModifier.width(width.dp).height(48.dp).clickable(action)
         .semantics { contentDescription = description },
         contentAlignment = Alignment.Center) {
-        Label(text, accent, bold = true, fontSize = 12, maxLines = 1)
+        val style = if (filled) {
+            GlanceModifier.background(panel).cornerRadius(widgetPanelRadius)
+                .padding(horizontal = 8.dp, vertical = 3.dp)
+        } else GlanceModifier
+        Label(text, accent, modifier = style, bold = true, fontSize = 12, maxLines = 1)
     }
 }
 

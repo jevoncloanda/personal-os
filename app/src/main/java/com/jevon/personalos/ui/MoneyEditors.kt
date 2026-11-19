@@ -40,8 +40,11 @@ import androidx.compose.ui.window.DialogProperties
 import com.jevon.personalos.data.*
 import java.time.LocalDate
 import java.time.LocalTime
+import java.time.Month
+import java.time.Year
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle as DateTextStyle
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -176,7 +179,11 @@ internal fun EntryDetail(entry: EntryEntity, data: MoneySnapshot, busy: Boolean,
                         Text("Details & allocation", style = MaterialTheme.typography.titleMedium)
                         DetailValue("Type", kind)
                         if (entry.kind != EntryKind.TRANSFER) DetailValue("Category", category)
-                        if (entry.fromAccountId != null) DetailValue("From account", account(entry.fromAccountId))
+                        if (isBudgetAccountId(entry.fromAccountId, entry.currencyCode)) {
+                            DetailValue("Recorded against", BUDGET_ONLY_LABEL)
+                        } else if (entry.fromAccountId != null) {
+                            DetailValue("From account", account(entry.fromAccountId))
+                        }
                         if (entry.toAccountId != null) DetailValue(if (entry.kind == EntryKind.INCOME) "Account" else "To account", account(entry.toAccountId))
                         DetailValue("Notes", entry.note.ifBlank { "No notes" })
                     }
@@ -371,6 +378,7 @@ internal fun EntryEditor(
     delete: (String, () -> Unit) -> Unit,
     initialAccount: String = "",
     initialCategory: String = "",
+    preferredCurrency: String = DEFAULT_CURRENCY,
 ) {
     val activeAccounts = data.accounts.map { it.account }.filter { !it.archived }
     val defaultAccount = if (initialKind == EntryKind.TRANSFER) "" else
@@ -384,8 +392,9 @@ internal fun EntryEditor(
     // Existing records retain their stored account IDs, including IDs that need correction.
     var source by rememberSaveable {
         mutableStateOf(
-            if (old != null) old.fromAccountId.orEmpty()
-            else if (initialKind != EntryKind.INCOME) defaultAccount else "",
+            if (old != null) {
+                old.fromAccountId.orEmpty().takeUnless { isBudgetAccountId(it, old.currencyCode) }.orEmpty()
+            } else if (initialKind == EntryKind.TRANSFER) defaultAccount else "",
         )
     }
     var target by rememberSaveable {
@@ -415,11 +424,14 @@ internal fun EntryEditor(
     var note by rememberSaveable { mutableStateOf(old?.note ?: "") }
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
     val selectedKind = EntryKind.valueOf(kind)
+    var budgetCurrency by rememberSaveable { mutableStateOf(old?.currencyCode ?: preferredCurrency) }
+    val budgetOnly = selectedKind == EntryKind.EXPENSE && source.isBlank()
     val accounts = data.accounts.map { it.account }.filter {
         !it.archived || it.id == old?.fromAccountId || it.id == old?.toAccountId
     }
     val primaryId = if (selectedKind == EntryKind.INCOME) target else source
     val primary = accounts.firstOrNull { it.id == primaryId }
+    val entryCurrency = if (budgetOnly) budgetCurrency else primary?.currencyCode
     val categories = data.categories.filter {
         (!it.archived || it.id == old?.categoryId) && (it.kind == null || it.kind == kind)
     }
@@ -438,7 +450,7 @@ internal fun EntryEditor(
         error = error,
         close = close,
         save = {
-            val currency = requireNotNull(primary) { "Choose an account" }.currencyCode
+            val currency = requireNotNull(entryCurrency) { "Choose an account" }
             if (selectedKind == EntryKind.TRANSFER) {
                 require(source != target) { "Choose two different accounts" }
                 require(accounts.firstOrNull { it.id == target }?.currencyCode == currency) {
@@ -455,7 +467,11 @@ internal fun EntryEditor(
                     parseMoney(amount, currency),
                     currency,
                     LocalDate.parse(date).toEpochDay(),
-                    if (selectedKind != EntryKind.INCOME) source.ifBlank { null } else null,
+                    when (selectedKind) {
+                        EntryKind.EXPENSE -> if (budgetOnly) budgetAccountId(currency) else source
+                        EntryKind.TRANSFER -> source
+                        EntryKind.INCOME -> null
+                    },
                     if (selectedKind != EntryKind.EXPENSE) target.ifBlank { null } else null,
                     if (selectedKind == EntryKind.TRANSFER) null else category.ifBlank { null },
                     note.trim(),
@@ -472,18 +488,18 @@ internal fun EntryEditor(
             label = "Amount",
             value = amount,
             enabled = !busy,
-            error = amountError(amount, primary?.currencyCode ?: old?.currencyCode ?: DEFAULT_CURRENCY),
-            currency = primary?.currencyCode ?: old?.currencyCode,
+            error = amountError(amount, entryCurrency ?: old?.currencyCode ?: DEFAULT_CURRENCY),
+            currency = entryCurrency ?: old?.currencyCode,
             positive = selectedKind == EntryKind.INCOME,
             autoFocus = old == null,
         ) { amount = it }
-        if (accounts.isEmpty()) Text(
+        if (accounts.isEmpty() && selectedKind != EntryKind.EXPENSE) Text(
             "Create an account in Money before recording a transaction.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.error,
         )
-        if (selectedKind != EntryKind.INCOME) EntryAccountChoice(
-            label = if (selectedKind == EntryKind.TRANSFER) "FROM ACCOUNT" else "PAID FROM ACCOUNT",
+        if (selectedKind == EntryKind.TRANSFER) EntryAccountChoice(
+            label = "FROM ACCOUNT",
             value = source,
             selected = accounts.firstOrNull { it.id == source },
             options = accounts,
@@ -539,10 +555,24 @@ internal fun EntryEditor(
             }.getOrDefault("Date needs attention"),
             if (timeError == null) time else "Time needs attention",
             if (note.isNotBlank()) "Description added" else null,
+            if (selectedKind == EntryKind.EXPENSE) primary?.name else null,
         ).joinToString(" · ")
         val validate = LocalValidateFields.current
         val revealOptions = validate && (dateError != null || timeError != null)
         MoreOptions(summary, validationError = revealOptions, enabled = !busy) {
+            if (selectedKind == EntryKind.EXPENSE && (accounts.isNotEmpty() || source.isNotBlank())) {
+                FinancialChoice(
+                    "Record against",
+                    source,
+                    listOf("" to BUDGET_ONLY_LABEL) + accounts.map { it.id to "${it.name} · ${it.currencyCode}" },
+                    !busy,
+                ) { source = it }
+            }
+            if (budgetOnly) {
+                Field("Currency (ISO code)", budgetCurrency, !busy, error = currencyError(budgetCurrency)) {
+                    budgetCurrency = it.trim().uppercase(Locale.ROOT)
+                }
+            }
             Field("Description / notes (optional)", note, !busy, single = false) { note = it }
             Column(
                 Modifier.fillMaxWidth().bringIntoViewRequester(dateRequest),
@@ -727,6 +757,7 @@ private fun EntrySelectionSheet(
     enabled: Boolean,
     dismiss: () -> Unit,
     choose: (String) -> Unit,
+    header: @Composable () -> Unit = {},
 ) {
     val dirty = LocalMarkDraftDirty.current
     ModalBottomSheet(
@@ -736,6 +767,7 @@ private fun EntrySelectionSheet(
         Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
             Text(title, Modifier.padding(bottom = 12.dp),
                 style = MaterialTheme.typography.titleLarge)
+            header()
             LazyColumn(
                 Modifier.fillMaxWidth().heightIn(max = 480.dp).selectableGroup(),
                 contentPadding = PaddingValues(bottom = 24.dp),
@@ -916,22 +948,50 @@ internal fun CategoryEditor(old: CategoryEntity?, id: String, busy: Boolean, err
 }
 
 @Composable
-internal fun BudgetEditor(old: BudgetEntity?, id: String, selectedMonth: YearMonth, categories: List<CategoryEntity>, currencies: List<String>, busy: Boolean, error: String?, close: () -> Unit,
-    save: (BudgetEntity, Boolean, () -> Unit) -> Unit, delete: (String, () -> Unit) -> Unit, preferredCurrency: String = DEFAULT_CURRENCY) {
+internal fun BudgetEditor(
+    old: BudgetEntity?,
+    id: String,
+    selectedMonth: YearMonth? = null,
+    categories: List<CategoryEntity>,
+    busy: Boolean,
+    error: String?,
+    close: () -> Unit,
+    save: (BudgetEntity, Boolean) -> Unit,
+    delete: (String, () -> Unit) -> Unit,
+    preferredCurrency: String = DEFAULT_CURRENCY,
+) {
+    val previous = old?.period
     var name by rememberSaveable { mutableStateOf(old?.name ?: "Monthly budget") }
-    var month by rememberSaveable { mutableStateOf(old?.let { YearMonth.from(LocalDate.ofEpochDay(it.startEpochDay)).toString() } ?: selectedMonth.toString()) }
+    var monthKey by rememberSaveable {
+        mutableStateOf(initialBudgetMonth(previous, selectedMonth).toString())
+    }
+    val month = YearMonth.parse(monthKey)
     var code by rememberSaveable { mutableStateOf(old?.currencyCode ?: preferredCurrency) }
     var limit by rememberSaveable { mutableStateOf(old?.let { moneyInput(it.limitMinor, it.currencyCode) } ?: "") }
     var category by rememberSaveable { mutableStateOf(old?.categoryId ?: "") }
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
     EditorFrame(if (old == null) "Create budget" else "Edit budget", busy, error, close, {
         require(name.isNotBlank()) { "Budget name is required" }
-        val period = YearMonth.parse(month)
+        val period = editedBudgetPeriod(month, previous)
         val currency = code.trim().uppercase(Locale.ROOT)
-        save(BudgetEntity(id, name.trim(), currency, parseMoney(limit, currency), period.atDay(1).toEpochDay(), period.plusMonths(1).atDay(1).toEpochDay(), category.ifBlank { null }), old == null, close)
+        save(
+            BudgetEntity(
+                id, name.trim(), currency, parseMoney(limit, currency),
+                period.startEpochDay, period.endExclusiveEpochDay, category.ifBlank { null },
+            ),
+            old == null,
+        )
     }, compactLayout = true, saveLabel = "Save budget") {
         Field("Budget name", name, !busy, prominent = true, error = if (name.isBlank()) "Budget name is required" else null) { name = it }
-        Field("Month (YYYY-MM)", month, !busy, error = if (runCatching { YearMonth.parse(month) }.isFailure) "Use a valid month, e.g. 2026-10" else null) { month = it }
+        BudgetMonthField(month, !busy) { monthKey = it.toString() }
+        if (previous != null && previous.startMonth != month) {
+            Text(
+                "Saving moves this budget from ${monthLabel(previous.startMonth)} to ${monthLabel(month)}.",
+                style = MaterialTheme.typography.bodySmall,
+            )
+        } else if (previous != null && previous != BudgetPeriod.forMonth(month)) {
+            Text("Saved period: ${budgetPeriodLabel(previous)}", style = MaterialTheme.typography.bodySmall)
+        }
         Field("Currency (ISO code)", code, !busy, error = currencyError(code)) { code = it.uppercase(Locale.ROOT) }
         AmountField("Budget limit", limit, !busy, error = amountError(limit, code), currency = code) { limit = it }
         FinancialChoice(
@@ -946,6 +1006,52 @@ internal fun BudgetEditor(old: BudgetEntity?, id: String, selectedMonth: YearMon
         if (old != null) TextButton(enabled = !busy, onClick = { confirmDelete = true }) { Text("Delete budget", color = MaterialTheme.colorScheme.error) }
     }
     if (confirmDelete) ConfirmDeletion("Delete budget?", "Transactions and account balances are kept.", { confirmDelete = false }) { confirmDelete = false; delete(id, close) }
+}
+
+@Composable
+private fun BudgetMonthField(month: YearMonth, enabled: Boolean, choose: (YearMonth) -> Unit) {
+    var choosing by rememberSaveable { mutableStateOf(false) }
+    val focus = LocalFocusManager.current
+    PickerTrigger(
+        label = "Budget month",
+        value = monthLabel(month),
+        icon = AppIcons.CalendarMonth,
+        enabled = enabled,
+        containerColor = LocalAtmosphere.current.panel,
+    ) {
+        focus.clearFocus()
+        choosing = true
+    }
+    if (choosing) {
+        var year by rememberSaveable { mutableIntStateOf(month.year) }
+        val options = Month.values().map { option ->
+            YearMonth.of(year, option).toString() to
+                option.getDisplayName(DateTextStyle.FULL_STANDALONE, Locale.getDefault())
+        }
+        EntrySelectionSheet(
+            title = "Choose budget month",
+            selected = month.toString(),
+            options = options,
+            enabled = enabled,
+            dismiss = { choosing = false },
+            choose = { choose(YearMonth.parse(it)) },
+            header = {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    IconButton(onClick = { year-- }, enabled = enabled && year > Year.MIN_VALUE) {
+                        Icon(AppIcons.ChevronLeft, "Previous year")
+                    }
+                    Text(year.toString(), style = MaterialTheme.typography.titleMedium)
+                    IconButton(onClick = { year++ }, enabled = enabled && year < Year.MAX_VALUE - 1) {
+                        Icon(AppIcons.ChevronRight, "Next year")
+                    }
+                }
+            },
+        )
+    }
 }
 
 @Composable private fun ConfirmDeletion(title: String, text: String, close: () -> Unit, confirm: () -> Unit) {

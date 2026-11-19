@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Poros</string>
+    <string name="backup_filename_prefix" translatable="false">poros</string>
+    <item name="poros_splash_icon" type="drawable">@drawable/ic_poros_foreground</item>
 </resources>

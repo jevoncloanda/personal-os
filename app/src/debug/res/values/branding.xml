@@ -1,8 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Poros DEV</string>
+    <string name="backup_filename_prefix" translatable="false">poros-dev</string>
+    <item name="poros_splash_icon" type="drawable">@drawable/ic_poros_dev_foreground</item>
     <string name="budget_widget_title">Poros DEV Budget Tracker</string>
     <string name="today_widget_title">Poros DEV Today Overview</string>
     <string name="schedule_widget_title">Poros DEV Upcoming Schedule</string>
     <string name="quick_expense_title">Poros DEV Quick Expense</string>
+    <color name="widget_surface">#FBEBE1</color>
+    <color name="widget_panel">#F5DFD2</color>
+    <color name="widget_text">#301C16</color>
+    <color name="widget_muted">#664A3F</color>
+    <color name="widget_accent">#823C26</color>
+    <color name="widget_action_surface">#8B422B</color>
+    <color name="widget_on_action">#FFF8F2</color>
+    <color name="widget_progress_track">#D5B2A2</color>
+    <color name="widget_feedback_surface">#F7DBCB</color>
 </resources>

@@ -13,11 +13,10 @@ fun PersonalDatabase.observeMoney(month: YearMonth, kind: String, account: Strin
     invalidationTracker.createFlow(*moneyTables, "subscription_payments").map {
         withTransaction {
             val dao = personalDao()
-            val start = month.atDay(1).toEpochDay()
-            val end = month.plusMonths(1).atDay(1).toEpochDay()
-            MoneySnapshot(dao.balances(), dao.categories(), dao.budgetProjections(start), dao.totals(start, end),
+            val (start, end) = BudgetPeriod.forMonth(month)
+            MoneySnapshot(dao.balances(), dao.categories(), dao.budgetProjections(start, end), dao.totals(start, end),
                 dao.history(start, end, kind, account, category, currency, search, 51, page * 50), dao.entryCount(start, end),
-                dao.history(start, end, "", "", "", "", "", 5, 0), dao.categorySpending(start, end),
+                dao.history(start, end, "EXPENSE", "", "", "", "", 5, 0), dao.categorySpending(start, end),
                 dao.subscriptionPayments().associate { it.entryId to it.subscriptionId })
         }
     }

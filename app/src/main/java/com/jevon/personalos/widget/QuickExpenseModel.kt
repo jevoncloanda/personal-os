@@ -5,6 +5,8 @@ import com.jevon.personalos.data.CategoryEntity
 import com.jevon.personalos.data.EntryEntity
 import com.jevon.personalos.data.EntryKind
 import com.jevon.personalos.data.currencyDigits
+import com.jevon.personalos.data.DEFAULT_CURRENCY
+import com.jevon.personalos.data.isBudgetAccountId
 import java.time.LocalDateTime
 import java.util.UUID
 import com.google.gson.annotations.SerializedName
@@ -13,6 +15,7 @@ data class QuickExpenseCatalog(
     val state: QuickExpenseState,
     val accounts: List<AccountEntity>,
     val categories: List<CategoryEntity>,
+    val preferredCurrency: String = DEFAULT_CURRENCY,
 )
 
 data class ExpensePreset(
@@ -30,10 +33,12 @@ data class ExpensePreset(
         require(id.isNotBlank() && name.isNotBlank()) { "Enter a preset name" }
         require(amountMinor > 0) { "Amount must be greater than zero" }
         currencyDigits(currencyCode)
-        require(account != null && account.id == accountId && !account.archived) {
-            "Choose an active account in Configure"
+        if (!isBudgetAccountId(accountId, currencyCode)) {
+            require(account != null && account.id == accountId && !account.archived) {
+                "Choose an active account in Configure"
+            }
+            require(account.currencyCode == currencyCode) { "Account currency changed. Edit this preset" }
         }
-        require(account.currencyCode == currencyCode) { "Account currency changed. Edit this preset" }
         require(category != null && category.id == categoryId && !category.archived &&
             (category.kind == null || category.kind == "EXPENSE")) {
             "Choose an active expense category in Configure"

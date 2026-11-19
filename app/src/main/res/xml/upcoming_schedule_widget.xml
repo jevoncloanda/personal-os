@@ -9,5 +9,7 @@
     android:resizeMode="horizontal|vertical"
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/dashboard_widget_loading"
+    android:previewLayout="@layout/upcoming_schedule_preview"
+    android:previewImage="@drawable/upcoming_schedule_preview_image"
     android:description="@string/schedule_widget_description"
     android:widgetCategory="home_screen" />

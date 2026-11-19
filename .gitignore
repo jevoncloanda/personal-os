@@ -21,6 +21,7 @@ docs/screenshots/
 backups/
 exports/
 personal-os-*.json
+poros-*.json
 *.db
 *.db-shm
 *.db-wal

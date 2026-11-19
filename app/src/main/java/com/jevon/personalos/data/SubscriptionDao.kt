@@ -35,7 +35,7 @@ abstract class SubscriptionDao : MoneyDao() {
         require(renewalOnOrAfter(value, value.nextDueEpochDay) == value.nextDueEpochDay) { "Next renewal must belong to the billing schedule and precede its end" }
         value.accountId?.let { id ->
             val a = requireNotNull(findAccount(id)) { "Payment account no longer exists" }
-            require(a.currencyCode == value.currencyCode && (!a.archived || old?.accountId == id)) { "Choose an active account in the subscription currency" }
+            require(!a.isBudgetOnly && a.currencyCode == value.currencyCode && (!a.archived || old?.accountId == id)) { "Choose an active account in the subscription currency" }
         }
         value.categoryId?.let { id ->
             val c = requireNotNull(findCategory(id)) { "Expense category no longer exists" }

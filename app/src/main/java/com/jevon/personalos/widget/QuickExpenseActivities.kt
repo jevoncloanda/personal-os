@@ -27,6 +27,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.UUID
+import java.util.Locale
 
 class QuickExpenseViewModel(application: Application) : AndroidViewModel(application) {
     private val app = application as PersonalOsApplication
@@ -39,9 +40,10 @@ class QuickExpenseViewModel(application: Application) : AndroidViewModel(applica
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     val catalog = revision.flatMapLatest {
         combine(app.quickExpenses.state,
-            app.database.invalidationTracker.createFlow("accounts", "categories")) { state, _ ->
+            app.database.invalidationTracker.createFlow("accounts", "categories"),
+            app.settings.settings) { state, _, settings ->
             QuickExpenseCatalog(state, app.database.personalDao().balances().map { it.account },
-                app.database.personalDao().categories())
+                app.database.personalDao().categories(), settings.preferredCurrency)
         }.map<QuickExpenseCatalog, Result<QuickExpenseCatalog>> { Result.success(it) }
             .catch { emit(Result.failure(it)) }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
@@ -227,7 +229,6 @@ private fun PresetConfiguration(
         }
         error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         if (catalog.state.presets.isEmpty()) Text("Create a preset for an expense you record often.")
-        if (catalog.accounts.none { !it.archived }) Text("Add an account in Money to create a preset.")
         if (catalog.categories.none { !it.archived && it.kind != "INCOME" }) {
             Text("Add an expense category in Money to create a preset.")
         }
@@ -315,15 +316,18 @@ private fun PresetEditor(
     var amount by rememberSaveable { mutableStateOf(old?.let {
         moneyInput(it.amountMinor, it.currencyCode)
     }.orEmpty()) }
-    var account by rememberSaveable { mutableStateOf(old?.accountId.orEmpty()) }
+    var account by rememberSaveable {
+        mutableStateOf(old?.takeUnless { isBudgetAccountId(it.accountId, it.currencyCode) }?.accountId.orEmpty())
+    }
+    var budgetCurrency by rememberSaveable { mutableStateOf(old?.currencyCode ?: catalog.preferredCurrency) }
     var category by rememberSaveable { mutableStateOf(old?.categoryId.orEmpty()) }
     var note by rememberSaveable { mutableStateOf(old?.note.orEmpty()) }
     var confirm by rememberSaveable { mutableStateOf(old?.confirm ?: false) }
-    val currency = catalog.accounts.find { it.id == account }?.currencyCode
+    val currency = if (account.isBlank()) budgetCurrency else catalog.accounts.find { it.id == account }?.currencyCode
     EditorFrame(if (old == null) "Create preset" else "Edit preset", busy, error, close, save = {
         val code = requireNotNull(currency) { "Choose an active account" }
         val preset = ExpensePreset(id, name.trim(), parseMoney(amount, code), code,
-            account, category, note.trim(), confirm)
+            account.ifBlank { budgetAccountId(code) }, category, note.trim(), confirm)
         preset.validate(catalog.accounts.find { it.id == account },
             catalog.categories.find { it.id == category })
         save(preset)
@@ -331,6 +335,9 @@ private fun PresetEditor(
         Field("Preset name", name, !busy) { name = it }
         AmountField("Amount", amount, !busy, currency = currency) { amount = it }
         ExpenseChoices(catalog, account, category, !busy, { account = it }, { category = it })
+        if (account.isBlank()) Field("Currency (ISO code)", budgetCurrency, !busy) {
+            budgetCurrency = it.trim().uppercase(Locale.ROOT)
+        }
         Field("Note (optional)", note, !busy) { note = it }
         FormToggle("Confirm before recording", confirm, !busy) { confirm = it }
     }
@@ -345,11 +352,17 @@ private fun ExpenseChoices(
     selectAccount: (String) -> Unit,
     selectCategory: (String) -> Unit,
 ) {
-    FinancialChoice("Account", account, catalog.accounts.filter { !it.archived }
-        .map { it.id to "${it.name} · ${it.currencyCode}" }, enabled, selectAccount)
     FinancialChoice("Category", category, catalog.categories.filter {
         !it.archived && it.kind != "INCOME"
     }.map { it.id to it.name }, enabled, selectCategory)
+    val accounts = catalog.accounts.filter { !it.archived }
+    if (accounts.isNotEmpty() || account.isNotBlank()) {
+        FinancialChoice(
+            "Record against", account,
+            listOf("" to BUDGET_ONLY_LABEL) + accounts.map { it.id to "${it.name} · ${it.currencyCode}" },
+            enabled, selectAccount,
+        )
+    }
 }
 
 @Composable
@@ -368,6 +381,7 @@ private fun CustomExpense(
     var account by rememberSaveable { mutableStateOf(catalog.state.lastAccount.takeIf { id ->
         catalog.accounts.any { it.id == id && !it.archived }
     }.orEmpty()) }
+    var budgetCurrency by rememberSaveable { mutableStateOf(catalog.preferredCurrency) }
     var category by rememberSaveable { mutableStateOf(catalog.state.lastCategory.takeIf { id ->
         catalog.categories.any { it.id == id && !it.archived && it.kind != "INCOME" }
     }.orEmpty()) }
@@ -408,18 +422,20 @@ private fun CustomExpense(
         }
         return
     }
-    val currency = catalog.accounts.find { it.id == account }?.currencyCode
+    val currency = if (account.isBlank()) budgetCurrency else catalog.accounts.find { it.id == account }?.currencyCode
     EditorFrame("Quick Expense", busy, error, close, save = {
         val code = requireNotNull(currency) { "Choose an active account" }
         val draft = ExpensePreset(requestId, "Custom expense", parseMoney(amount, code), code,
-            account, category, note.trim())
+            account.ifBlank { budgetAccountId(code) }, category, note.trim())
         draft.validate(catalog.accounts.find { it.id == account },
             catalog.categories.find { it.id == category })
         model.record(widgetId, null, requestId, draft)
     }, moneyKind = EntryKind.EXPENSE, saveLabel = "Save expense") {
         AmountField("Amount", amount, !busy, currency = currency, autoFocus = true) { amount = it }
         ExpenseChoices(catalog, account, category, !busy, { account = it }, { category = it })
-        if (catalog.accounts.none { !it.archived }) Text("Add an account in Money first.")
+        if (account.isBlank()) Field("Currency (ISO code)", budgetCurrency, !busy) {
+            budgetCurrency = it.trim().uppercase(Locale.ROOT)
+        }
         if (catalog.categories.none { !it.archived && it.kind != "INCOME" }) {
             Text("Add an expense category in Money first.")
         }

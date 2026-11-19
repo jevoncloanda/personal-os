@@ -39,9 +39,8 @@ fun MoneyScreen(model: MoneyViewModel, requested: String?, handled: () -> Unit, 
     var editId by rememberSaveable { mutableStateOf<String?>(null) }
     var newKind by rememberSaveable { mutableStateOf("EXPENSE") }
     var showFilters by rememberSaveable { mutableStateOf(false) }
-    var showTestReview by rememberSaveable { mutableStateOf(false) }
-    var expandedCandidate by rememberSaveable { mutableStateOf<String?>(null) }
     var overviewCurrency by rememberSaveable(preferredCurrency) { mutableStateOf(preferredCurrency) }
+    var selectedAccountCurrency by rememberSaveable(preferredCurrency) { mutableStateOf(preferredCurrency) }
     val moneyListState = rememberLazyListState()
     LaunchedEffect(section) { moneyListState.scrollToItem(0) }
     fun edit(type: String, id: String? = null) { model.clearError(); editId = id; editor = if (type == "entry" && id != null) "detail" else type }
@@ -55,7 +54,11 @@ fun MoneyScreen(model: MoneyViewModel, requested: String?, handled: () -> Unit, 
         is MoneyState.Ready -> {
             val data = s.snapshot
             val currencyBalances = activeCurrencyBalances(data.accounts)
-            val displayCurrency = overviewCurrency.takeIf { code -> currencyBalances.any { it.code == code } } ?: currencyBalances.firstOrNull()?.code ?: preferredCurrency
+            val budgetCurrencies = (listOf(preferredCurrency, overviewCurrency) + data.budgets.map { it.budget.currencyCode } +
+                data.totals.map { it.currencyCode } + currencyBalances.map { it.code }).distinct().sorted()
+            val displayCurrency = overviewCurrency
+            val accountCurrency = selectedAccountCurrency.takeIf { code -> currencyBalances.any { it.code == code } }
+                ?: currencyBalances.firstOrNull()?.code ?: preferredCurrency
             LazyColumn(
                 modifier = Modifier.fillMaxSize().testTag("MoneyList"),
                 state = moneyListState,
@@ -99,11 +102,11 @@ fun MoneyScreen(model: MoneyViewModel, requested: String?, handled: () -> Unit, 
                         }
                     }
                 }
-                if (section == "Overview") item {
+                if (section == "Accounts") item {
                     BalanceHeader(
                         data,
-                        displayCurrency,
-                        { overviewCurrency = it },
+                        accountCurrency,
+                        { selectedAccountCurrency = it },
                         { edit("account") },
                         { kind ->
                             newKind = kind
@@ -111,15 +114,25 @@ fun MoneyScreen(model: MoneyViewModel, requested: String?, handled: () -> Unit, 
                         },
                     )
                 }
-                if (section in listOf("Accounts", "History", "Budgets", "Categories")) item {
-                    TextButton(onClick = { showTestReview = true }) { Text("Review possible test records") }
+                if (section == "Accounts" && currencyBalances.isNotEmpty()) item {
+                    MonthSelector(s.month,
+                        { model.setFilter(filter.copy(month = s.month.minusMonths(1), page = 0)) },
+                        { model.setFilter(filter.copy(month = s.month.plusMonths(1), page = 0)) })
+                    MoneyCashFlow(data, accountCurrency)
                 }
+                developerMoneyTools(section) { section = it }
                 if (section in listOf("History", "Budgets")) item { MonthSelector(filter.month,
                     { model.setFilter(filter.copy(month = filter.month.minusMonths(1), page = 0)) }, { model.setFilter(filter.copy(month = filter.month.plusMonths(1), page = 0)) }) }
                 if (error != null && editor == null) item { Text(error!!, color = MaterialTheme.colorScheme.error) }
                 when (section) {
-                    "Overview" -> moneyOverview(data, displayCurrency, filter.month, { type, id -> edit(type, id) },
-                        { section = it }, { model.setFilter(filter.copy(month = it, page = 0)) }, subscriptions)
+                    "Overview" -> moneyOverview(
+                        data, displayCurrency, budgetCurrencies, { overviewCurrency = it }, s.month,
+                        addExpense = { newKind = "EXPENSE"; edit("entry") },
+                        edit = { type, id -> edit(type, id) },
+                        section = { section = it },
+                        changeMonth = { model.setFilter(filter.copy(month = it, page = 0)) },
+                        subscriptions = subscriptions,
+                    )
                     "Accounts" -> {
                         item {
                             SectionHeading("Accounts", "Create account", { edit("account") })
@@ -163,12 +176,25 @@ fun MoneyScreen(model: MoneyViewModel, requested: String?, handled: () -> Unit, 
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                        if (data.budgets.isEmpty()) item { FinancialEmptyState("No budgets this month", "Create an overall plan or a category limit for ${filter.month}.") }
-                        val overall = data.budgets.filter { it.budget.categoryId == null }
-                        val categories = data.budgets.filter { it.budget.categoryId != null }
-                        items(overall, key = { it.budget.id }) { BudgetBlock(it, data.categories) { edit("budget", it.budget.id) } }
-                        if (categories.isNotEmpty()) item { SectionTitle("Category limits") }
-                        items(categories, key = { it.budget.id }) { BudgetBlock(it, data.categories) { edit("budget", it.budget.id) } }
+                        if (s.month != filter.month) {
+                            item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
+                        } else if (data.budgets.isEmpty()) {
+                            item {
+                                FinancialEmptyState(
+                                    "No budgets this month",
+                                    "Create an overall plan or a category limit for ${monthLabel(filter.month)}.",
+                                )
+                            }
+                        } else {
+                            val (overall, categoryLimits) = data.budgets.partition { it.budget.categoryId == null }
+                            items(overall, key = { it.budget.id }) {
+                                BudgetBlock(it, data.categories) { edit("budget", it.budget.id) }
+                            }
+                            if (categoryLimits.isNotEmpty()) item { SectionTitle("Category limits") }
+                            items(categoryLimits, key = { it.budget.id }) {
+                                BudgetBlock(it, data.categories) { edit("budget", it.budget.id) }
+                            }
+                        }
                     }
                     "History" -> {
                         item {
@@ -225,42 +251,6 @@ fun MoneyScreen(model: MoneyViewModel, requested: String?, handled: () -> Unit, 
                     }
                 }
             }
-            if (showTestReview) ModalBottomSheet(onDismissRequest = { showTestReview = false }) {
-                val review by model.testReview.collectAsStateWithLifecycle()
-                LazyColumn(Modifier.fillMaxWidth().testTag("TestRecordReviewList"), contentPadding = PaddingValues(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    item {
-                        Text("Possible test records", style = MaterialTheme.typography.titleLarge)
-                        Text("Only exact P1 test / P15 restore labels from earlier device tests are flagged. A label is a hint, not proof. Related records may be personal. Nothing is deleted here.")
-                        Text("Use the existing editors to archive accounts/categories or review individual deletions. Subscription payments must be corrected in Subscriptions. There is no bulk cleanup.", style = MaterialTheme.typography.bodyMedium)
-                    }
-                    val result = review
-                    when {
-                        result == null -> item { CircularProgressIndicator() }
-                        result.isFailure -> item { Text("Could not load the review. Close and reopen it to try again. Your records are unchanged.") }
-                        result.getOrThrow().isEmpty() -> item { Text("No records with these known development labels.") }
-                        else -> result.getOrThrow().forEach { candidate ->
-                            val candidateKey = "${candidate.section}/${candidate.id}"
-                            item(key = candidateKey) {
-                                Text(candidate.title, style = MaterialTheme.typography.titleMedium)
-                                Text("${candidate.section} · ${candidate.id}", style = MaterialTheme.typography.bodySmall)
-                                TextButton(onClick = { expandedCandidate = if (expandedCandidate == candidateKey) null else candidateKey }) {
-                                    Text(if (expandedCandidate == candidateKey) "Hide details" else "Review details and relationships (${candidate.details.size})")
-                                }
-                            }
-                            if (expandedCandidate == candidateKey) {
-                                items(candidate.details.size, key = { "$candidateKey/detail/$it" }) { index ->
-                                    Text(candidate.details[index], style = MaterialTheme.typography.bodyMedium)
-                                }
-                                item(key = "$candidateKey/open") {
-                                    TextButton(onClick = { section = candidate.section; showTestReview = false }) { Text("Open ${candidate.section}") }
-                                }
-                            }
-                            item(key = "$candidateKey/divider") { HorizontalDivider() }
-                        }
-                    }
-                    item { TextButton(onClick = { showTestReview = false }) { Text("Close review") } }
-                }
-            }
             val close = { editor = null; editId = null; model.clearError() }
             if (editor != null) key(editor, editId) {
                 val id = rememberSaveable { editId ?: UUID.randomUUID().toString() }
@@ -277,10 +267,29 @@ fun MoneyScreen(model: MoneyViewModel, requested: String?, handled: () -> Unit, 
                 else when (editor) {
                     "account" -> AccountEditor(oldAccount, id, busy, error, close, model::account, preferredCurrency)
                     "entry" -> EntryEditor(oldEntry, id, EntryKind.valueOf(newKind), data, busy, error, close, model::entry, model::deleteEntry,
-                        model.lastEntryAccount(EntryKind.valueOf(newKind)), model.lastEntryCategory(EntryKind.valueOf(newKind)))
+                        model.lastEntryAccount(EntryKind.valueOf(newKind)), model.lastEntryCategory(EntryKind.valueOf(newKind)),
+                        preferredCurrency = if (section == "Overview") displayCurrency else preferredCurrency)
                     "detail" -> oldEntry?.let { EntryDetail(it, data, busy, error, close, { editor = "entry" }, model::deleteEntry, openSubscription) }
                     "category" -> CategoryEditor(oldCategory, id, busy, error, close, model::category)
-                    "budget" -> BudgetEditor(oldBudget, id, filter.month, data.categories, data.accounts.map { it.account.currencyCode }.distinct().sorted(), busy, error, close, model::budget, model::deleteBudget, preferredCurrency)
+                    "budget" -> BudgetEditor(
+                        old = oldBudget,
+                        id = id,
+                        selectedMonth = if (section == "Overview") s.month else filter.month,
+                        categories = data.categories,
+                        busy = busy,
+                        error = error,
+                        close = close,
+                        save = { value, create ->
+                            model.budget(value, create) {
+                                if (value.period != oldBudget?.period) {
+                                    model.setFilter(model.filter.value.copy(month = value.period.startMonth, page = 0))
+                                }
+                                close()
+                            }
+                        },
+                        delete = model::deleteBudget,
+                        preferredCurrency = if (section == "Overview") displayCurrency else preferredCurrency,
+                    )
                 }
             }
         }
@@ -288,10 +297,6 @@ fun MoneyScreen(model: MoneyViewModel, requested: String?, handled: () -> Unit, 
 }
 
 @Composable internal fun MoneyHeading(text: String) { Text(text, Modifier.padding(top = 12.dp, bottom = 4.dp).semantics { heading() }, style = MaterialTheme.typography.titleLarge) }
-@Composable internal fun AccountRow(balance: AccountBalance, edit: () -> Unit) {
-    LedgerRow(when (balance.account.type) { "CASH" -> AppIcons.Payments; "BANK" -> AppIcons.AccountBalance; "INVESTMENT" -> AppIcons.TrendingUp; else -> AppIcons.AccountBalanceWallet },
-        balance.account.name, "${balance.account.type.lowercase().replace('_', ' ')} · ${balance.account.currencyCode}${if (balance.account.archived) " · Archived" else ""}", formatMoney(balance.balance, balance.account.currencyCode), onClick = edit)
-}
 @Composable
 internal fun EntryRow(
     entry: EntryEntity,
@@ -300,7 +305,8 @@ internal fun EntryRow(
     edit: () -> Unit,
 ) {
     val accounts = listOfNotNull(entry.fromAccountId, entry.toAccountId).map { id ->
-        data.accounts.firstOrNull { it.account.id == id }?.account?.name ?: "Account"
+        if (isBudgetAccountId(id, entry.currencyCode)) BUDGET_ONLY_LABEL
+        else data.accounts.firstOrNull { it.account.id == id }?.account?.name ?: "Account"
     }
     val category = data.categories.firstOrNull { it.id == entry.categoryId }?.name
     val kind = entry.kind.name.lowercase().replaceFirstChar(Char::uppercase)
@@ -342,10 +348,18 @@ internal fun EntryRow(
                 Text(value.budget.name, style = MaterialTheme.typography.titleSmall)
                 Text(
                     value.budget.categoryId?.let { id -> categories.firstOrNull { it.id == id }?.name ?: "Category" }
-                        ?: "Overall monthly budget",
+                        ?: "Overall budget",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                val period = value.budget.period
+                if (period != BudgetPeriod.forMonth(period.startMonth)) {
+                    Text(
+                        budgetPeriodLabel(period),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
             Text("Edit", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
         }
@@ -357,6 +371,13 @@ internal fun EntryRow(
             color = if (over) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
         )
     }
+}
+
+internal fun budgetPeriodLabel(period: BudgetPeriod): String {
+    val dateFormat = DateTimeFormatter.ofPattern("d MMM uuuu")
+    val start = LocalDate.ofEpochDay(period.startEpochDay).format(dateFormat)
+    val end = LocalDate.ofEpochDay(period.endExclusiveEpochDay - 1).format(dateFormat)
+    return "$start – $end"
 }
 
 @Composable

@@ -66,7 +66,6 @@ fun PersonalOsApp(
         BackupViewModel(application.database, application.contentResolver, BuildConfig.VERSION_NAME)
     } })
     val state by model.state.collectAsStateWithLifecycle()
-    val mode by model.mode.collectAsStateWithLifecycle()
     val settingsError by model.settingsError.collectAsStateWithLifecycle()
     val nav = rememberNavController()
     val backDispatcher = androidx.activity.compose.LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
@@ -76,7 +75,6 @@ fun PersonalOsApp(
     val snackbars = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var quickAdd by rememberSaveable { mutableStateOf(false) }
-    var showDeveloper by rememberSaveable { mutableStateOf(false) }
     var requestedMoney by rememberSaveable { mutableStateOf<String?>(null) }
     var requestedSubscription by rememberSaveable { mutableStateOf<String?>(null) }
     var requestedLibrary by rememberSaveable { mutableStateOf<String?>(null) }
@@ -165,7 +163,7 @@ fun PersonalOsApp(
                     }, colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                         navigationIcon = { if (nested) IconButton(onClick = { backDispatcher?.onBackPressed() }) { Icon(AppIcons.ArrowBack, "Back") } },
                         actions = {
-                            if (DemoCatalog.available) IconButton(onClick = { showDeveloper = true }) { Icon(AppIcons.Code, "Developer previews") }
+                            DeveloperPreviewAction(model)
                             if (route != "settings") IconButton(onClick = { navigate("settings") }) { Icon(AppIcons.Settings, "Settings") }
                         })
                 },
@@ -190,7 +188,7 @@ fun PersonalOsApp(
                 snackbarHost = { SnackbarHost(snackbars) },
             ) { padding ->
                 Column(Modifier.fillMaxSize().padding(padding)) {
-                    if (DemoCatalog.available && mode != DataMode.PERSONAL && route == "today") Text("Developer preview · sample data, never saved", Modifier.padding(horizontal = 24.dp), style = MaterialTheme.typography.labelMedium)
+                    if (route == "today") DeveloperPreviewBanner(model)
                     NavHost(navController = nav, startDestination = "today", modifier = Modifier.weight(1f)) {
                         composable("today") { TodayScreen(state, model::retry, ::navigate, selectBudget = model::setTodayBudget) {schedule.complete(it,!it.completed)} }
                         composable("money") { MoneyScreen(money, requestedMoney, { requestedMoney = null }, { nav.navigate("subscriptions") }, settings.preferredCurrency, { navigate("subscription/$it") }) }
@@ -211,21 +209,5 @@ fun PersonalOsApp(
         quickAdd = false
         if (destination in listOf("EXPENSE", "INCOME", "TRANSFER")) { requestedMoney = destination; navigate("money") }
         else navigate(destination)
-    }
-    if (showDeveloper && DemoCatalog.available) AlertDialog(onDismissRequest = { showDeveloper = false }, title = { Text("Developer previews") },
-        text = { DemoControls(mode) { model.setMode(it); showDeveloper = false } }, confirmButton = { TextButton(onClick = { showDeveloper = false }) { Text("Done") } })
-}
-
-@Composable
-private fun DemoControls(mode: DataMode, setMode: (DataMode) -> Unit) {
-    Surface(color = MaterialTheme.colorScheme.secondaryContainer) {
-        Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp)) {
-            Text(if (mode == DataMode.PERSONAL) "Personal data" else "Demo · sample data, never saved", style = MaterialTheme.typography.labelMedium)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf(DataMode.DEMO to "Populated", DataMode.EMPTY_DEMO to "Empty", DataMode.PERSONAL to "Personal").forEach { (value, label) ->
-                    FilterChip(selected = mode == value, onClick = { setMode(value) }, label = { Text(label) })
-                }
-            }
-        }
     }
 }

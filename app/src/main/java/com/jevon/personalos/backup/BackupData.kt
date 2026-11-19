@@ -44,7 +44,15 @@ internal data class BackupData(
         identities(subscriptions) { it.id }; identities(payments) { it.id }; identities(library) { it.id }
         val accountMap = accounts.associateBy { it.id }; val categoryMap = categories.associateBy { it.id }
         val entryMap = entries.associateBy { it.id }; val subscriptionMap = subscriptions.associateBy { it.id }
-        accounts.forEach { text(it.name, true); text(it.notes); currency(it.currencyCode); require(it.type in accountTypes) { "Invalid account type." } }
+        accounts.forEach {
+            text(it.name, true); text(it.notes); currency(it.currencyCode)
+            require(it.type in accountTypes) { "Invalid account type." }
+            if (it.isBudgetOnly) {
+                require(!it.archived && it.openingBalanceMinor == 0L && it.type == "OTHER") {
+                    "Invalid budget-only bookkeeping account."
+                }
+            }
+        }
         categories.forEach { text(it.name, true); require(it.kind == null || it.kind in listOf("EXPENSE", "INCOME")) { "Invalid category type." } }
         val totals = HashMap<Pair<String, EntryKind>, BigInteger>()
         val incoming = HashMap<String, BigInteger>(); val outgoing = HashMap<String, BigInteger>()
@@ -62,6 +70,9 @@ internal data class BackupData(
             }) { "Invalid transaction accounts." }
             listOfNotNull(entry.fromAccountId, entry.toAccountId).forEach { id ->
                 require(accountMap[id]?.currencyCode == entry.currencyCode) { "A transaction has a missing or mismatched account." }
+                require(accountMap[id]?.isBudgetOnly != true || entry.kind == EntryKind.EXPENSE) {
+                    "Budget-only bookkeeping can only record expenses."
+                }
             }
             entry.categoryId?.let { id ->
                 val category = requireNotNull(categoryMap[id]) { "A transaction category is missing." }
@@ -108,7 +119,11 @@ internal data class BackupData(
         subscriptions.forEach { s ->
             text(s.name, true); text(s.description); text(s.notes); currency(s.currencyCode)
             require(s.amountMinor > 0); day(s.nextDueEpochDay); recurrence(s.recurrence)
-            s.accountId?.let { require(accountMap[it]?.currencyCode == s.currencyCode) { "Subscription account is missing or has another currency." } }
+            s.accountId?.let {
+                require(accountMap[it]?.currencyCode == s.currencyCode && accountMap[it]?.isBudgetOnly != true) {
+                    "Subscription account is missing or has another currency."
+                }
+            }
             s.categoryId?.let { require(categoryMap.containsKey(it) && categoryMap[it]?.kind != "INCOME") { "Subscription expense category is missing or incompatible." } }
         }
         val paymentPeriods = HashSet<Pair<String, Long>>(); val paymentEntries = HashSet<String>()

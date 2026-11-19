@@ -11,12 +11,11 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.YearMonth
-import androidx.room.withTransaction
 
 data class MoneyFilter(val month: YearMonth = YearMonth.now(), val kind: String = "", val account: String = "", val category: String = "", val currency: String = "", val search: String = "", val page: Int = 0)
 sealed interface MoneyState {
     data object Loading : MoneyState
-    data class Ready(val snapshot: MoneySnapshot) : MoneyState
+    data class Ready(val snapshot: MoneySnapshot, val month: YearMonth) : MoneyState
     data object Error : MoneyState
 }
 
@@ -30,16 +29,9 @@ class MoneyViewModel @JvmOverloads constructor(app: Application, private val sav
         currency = saved["money-currency"] ?: "", search = saved["money-search"] ?: "", page = saved["money-page"] ?: 0))
     val busy = MutableStateFlow(false)
     val error = MutableStateFlow<String?>(null)
-    val testReview = db.invalidationTracker.createFlow("accounts", "entries", "categories", "budgets", "subscriptions", "subscription_payments").map {
-        db.withTransaction {
-            val dao = db.backupDao()
-            reviewTestRecords(dao.accounts(), dao.entries(), dao.categories(), dao.budgets(), dao.subscriptions(), dao.payments())
-        }
-    }.map<List<TestRecordCandidate>, Result<List<TestRecordCandidate>>> { Result.success(it) }
-        .catch { emit(Result.failure(it)) }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(0), null)
     val state: StateFlow<MoneyState> = combine(filter, revision) { f, _ -> f }.flatMapLatest { f ->
         db.observeMoney(f.month, f.kind, f.account, f.category, f.currency, f.search, f.page)
-            .map<MoneySnapshot, MoneyState> { MoneyState.Ready(it) }
+            .map<MoneySnapshot, MoneyState> { MoneyState.Ready(it, f.month) }
             .catch { emit(MoneyState.Error) }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MoneyState.Loading)
 

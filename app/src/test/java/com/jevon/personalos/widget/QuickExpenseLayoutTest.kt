@@ -26,17 +26,21 @@ class QuickExpenseLayoutTest {
     }
 
     @Test
-    fun wideMediumFitsThreePresetsAndCustomAmount() {
-        val layout = quickExpenseLayout(429f, 234f)
-        assertEquals(3, layout.presetCapacity)
-        assertEquals(2, layout.columns)
+    fun fullLayoutsFitThreePresetsAndCustomAmountInTwoRows() {
+        val sizes = listOf(429f to 234f, 429f to 364f, 320f to 480f, 206f to 480f)
+        sizes.forEach { (width, height) ->
+            val layout = quickExpenseLayout(width, height)
+            assertEquals(3, layout.presetCapacity)
+            assertEquals(2, layout.columns)
+        }
     }
 
     @Test
-    fun spaciousAndTallNarrowInstancesRestoreAllPresets() {
+    fun tallInstancesUseCompactTilesOrReduceCapacityWhenTooNarrow() {
         assertFalse(quickExpenseLayout(320f, 480f).compact)
-        val narrow = quickExpenseLayout(206f, 480f)
-        assertEquals(4, narrow.actionSlots)
+        assertTrue(quickExpenseLayout(206f, 480f).compact)
+        val narrow = quickExpenseLayout(140f, 480f)
+        assertEquals(2, narrow.actionSlots)
         assertEquals(1, narrow.columns)
     }
 
