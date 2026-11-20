@@ -1,19 +1,20 @@
 package com.jevon.personalos.widget
 
-import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.datastore.preferences.core.Preferences
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.LocalSize
-import androidx.glance.LocalContext
 import androidx.glance.action.Action
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
@@ -22,7 +23,10 @@ import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.LinearProgressIndicator
 import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.cornerRadius
+import androidx.glance.appwidget.lazy.LazyColumn
+import androidx.glance.appwidget.lazy.items
 import androidx.glance.appwidget.provideContent
+import androidx.glance.appwidget.state.getAppWidgetState
 import androidx.glance.background
 import androidx.glance.currentState
 import androidx.glance.semantics.contentDescription
@@ -39,8 +43,7 @@ import com.jevon.personalos.R
 import com.jevon.personalos.schedule.RecordTarget
 import com.jevon.personalos.today.BudgetSummary
 import com.jevon.personalos.today.formatMoney
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.CancellationException
 import java.math.BigInteger
 import java.time.LocalDate
 import java.time.ZonedDateTime
@@ -61,7 +64,7 @@ internal data class DashboardLayout(
     val spacious: Boolean,
     val short: Boolean,
     val showSecondary: Boolean,
-    val scheduleCount: Int,
+    val scrollAgenda: Boolean,
 )
 
 internal fun dashboardLayout(width: Float, height: Float, fontScale: Float): DashboardLayout {
@@ -71,8 +74,7 @@ internal fun dashboardLayout(width: Float, height: Float, fontScale: Float): Das
         spacious = height / scale >= 300,
         short = height / scale < 140,
         showSecondary = height / scale >= 208,
-        scheduleCount = ((height / scale - 44) / if (width / scale >= 280) 88 else 104)
-            .toInt().coerceIn(1, 4),
+        scrollAgenda = height / scale >= 184,
     )
 }
 
@@ -82,14 +84,20 @@ abstract class DashboardWidget internal constructor(private val kind: DashboardK
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val app = context.applicationContext as PersonalOsApplication
+        // A new session must have a result before it can replace the launcher's current views.
+        val initialState = getAppWidgetState(context, PreferencesGlanceStateDefinition, id)
+        val initialRevision = initialState[dashboardRefreshKey]
+        val initialResult = readDashboard(app)
         provideContent {
             val revision = currentState<Preferences>()[dashboardRefreshKey]
-            val source = remember(revision) {
-                flow<Result<DashboardData>?> {
-                    emit(Result.success(loadDashboard(app, kind, ZonedDateTime.now())))
-                }.catch { emit(Result.failure(it)) }
+            var result by remember { mutableStateOf(initialResult) }
+            var loadedRevision by remember { mutableStateOf(initialRevision) }
+            LaunchedEffect(revision) {
+                if (revision != loadedRevision) {
+                    result = readDashboard(app)
+                    loadedRevision = revision
+                }
             }
-            val result by source.collectAsState(initial = null)
             val size = LocalSize.current
             val layout = dashboardLayout(
                 size.width.value, size.height.value, context.resources.configuration.fontScale,
@@ -100,14 +108,12 @@ abstract class DashboardWidget internal constructor(private val kind: DashboardK
                     .clickable(open).semantics { contentDescription = kind.title }
                     .padding(if (layout.short) 10.dp else 16.dp),
             ) {
-                val data = result?.getOrNull()
+                val data = result.getOrNull()
                 if (data == null) {
                     if (!layout.short) WidgetHeader(kind.title)
                     Panel(GlanceModifier.fillMaxWidth().defaultWeight()) {
-                        WidgetText(if (result == null) "Loading…" else "Couldn't load",
-                            size = 20, bold = true)
-                        WidgetText(if (result == null) kind.title else "Open Poros to retry",
-                            color = muted, size = 12, lines = 2)
+                        WidgetText("Couldn't load", size = 20, bold = true)
+                        WidgetText("Open Poros to retry", color = muted, size = 12, lines = 2)
                     }
                 } else when (kind) {
                     DashboardKind.BUDGET -> BudgetContent(data, layout)
@@ -117,32 +123,29 @@ abstract class DashboardWidget internal constructor(private val kind: DashboardK
             }
         }
     }
+
+    private suspend fun readDashboard(app: PersonalOsApplication): Result<DashboardData> = try {
+        Result.success(loadDashboard(app, kind, ZonedDateTime.now()))
+    } catch (cancelled: CancellationException) {
+        throw cancelled
+    } catch (error: Exception) {
+        Result.failure(error)
+    }
 }
 
 class BudgetTrackerWidget : DashboardWidget(DashboardKind.BUDGET)
 class TodayOverviewWidget : DashboardWidget(DashboardKind.TODAY)
 class UpcomingScheduleWidget : DashboardWidget(DashboardKind.SCHEDULE)
 
-abstract class DashboardReceiver : GlanceAppWidgetReceiver() {
-    override fun onUpdate(
-        context: Context,
-        appWidgetManager: AppWidgetManager,
-        appWidgetIds: IntArray,
-    ) {
-        super.onUpdate(context, appWidgetManager, appWidgetIds)
-        DashboardRefresh.request(context)
-    }
-}
-
-class BudgetTrackerReceiver : DashboardReceiver() {
+class BudgetTrackerReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget = BudgetTrackerWidget()
 }
 
-class TodayOverviewReceiver : DashboardReceiver() {
+class TodayOverviewReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget = TodayOverviewWidget()
 }
 
-class UpcomingScheduleReceiver : DashboardReceiver() {
+class UpcomingScheduleReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget = UpcomingScheduleWidget()
 }
 
@@ -154,11 +157,14 @@ private fun dashboardAction(
     val intent = Intent(context, MainActivity::class.java)
         .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         .putExtra("widgetDestination", destination)
+    val identity = Uri.Builder().scheme("poros-widget").authority(destination)
     target?.let {
+        identity.appendPath(it.domain).appendPath(it.id)
+        it.day?.let { day -> identity.appendPath(day.toString()) }
         intent.putExtra("recordDomain", it.domain).putExtra("recordId", it.id)
         it.day?.let { day -> intent.putExtra("occurrenceDay", day) }
     }
-    return actionStartActivity(intent)
+    return actionStartActivity(intent.setData(identity.build()))
 }
 
 @Composable
@@ -244,7 +250,7 @@ private fun BudgetProgress(summary: BudgetSummary) {
 }
 
 @Composable
-private fun ColumnScope.TodayContent(context: Context, data: DashboardData, layout: DashboardLayout) {
+private fun TodayContent(context: Context, data: DashboardData, layout: DashboardLayout) {
     val date = data.today.date
     Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         WidgetText(date.dayOfMonth.toString(), size = if (layout.short) 32 else 44, bold = true)
@@ -254,69 +260,68 @@ private fun ColumnScope.TodayContent(context: Context, data: DashboardData, layo
             WidgetText(date.format(DateTimeFormatter.ofPattern("MMM yyyy")), color = muted, size = 12)
         }
     }
-    val next = data.items.firstOrNull()
+    val agenda = todayAgenda(data.items, date)
     val budget = data.today.budget
-    val renewal = data.renewal
-    Column(GlanceModifier.fillMaxWidth().defaultWeight(),
-        verticalAlignment = Alignment.CenterVertically) {
-        if (next != null) {
-            // Keep the existing priority selection; only its visual prominence changes.
-            Column(GlanceModifier.fillMaxWidth()
-                .clickable(dashboardAction(context, "schedule", next.target)).padding(vertical = 4.dp)) {
-                WidgetText(next.detail, color = indigo, size = 12,
-                    lines = if (layout.short) 1 else 2)
-                WidgetText(next.title, size = if (layout.short) 16 else 22, bold = true,
-                    lines = if (layout.short) 1 else 2)
-            }
-        } else if (renewal != null) {
-            Renewal(context, data, GlanceModifier.fillMaxWidth(), hero = !layout.short)
-        } else {
-            WidgetText("Your day is clear", size = if (layout.short) 16 else 22, bold = true,
-                lines = if (layout.short) 1 else 2)
-            if (layout.showSecondary) {
-                Gap(6)
-                WidgetText("No events or reminders due", color = muted, size = 14, lines = 2)
-            }
+    Gap(6)
+    if (agenda.dueToday.isEmpty()) {
+        WidgetText("Your day is clear", size = if (layout.short) 16 else 20, bold = true)
+        val next = agenda.upNext
+        if (next != null && !layout.short) {
+            Gap(6)
+            val actualDate = requireNotNull(next.date).format(DateTimeFormatter.ofPattern("EEE, d MMM"))
+            TodayItem(context, next, "Up next · $actualDate", titleSize = 14)
+        }
+    } else {
+        agenda.dueToday.take(if (layout.spacious) 2 else 1).forEach { item ->
+            TodayItem(context, item, item.detail, titleSize = if (layout.short) 16 else 20)
         }
     }
-    if (layout.showSecondary) {
-        if (next != null && renewal != null && (!layout.compact || layout.spacious)) {
-            Renewal(context, data, GlanceModifier.fillMaxWidth())
-            Gap(8)
-        }
-        if (budget != null) {
-            Column(GlanceModifier.fillMaxWidth()
-                .clickable(dashboardAction(context, "money-budgets")).padding(vertical = 6.dp)) {
-                WidgetText(budget.budget.name, color = muted, size = 12)
-                val over = budget.remainingMinor < 0
-                WidgetText("${formatMoney(BigInteger.valueOf(budget.remainingMinor).abs(), budget.budget.currencyCode)} " +
-                    if (over) "over budget" else "left", color = if (over) error else positive,
-                    size = 14, bold = true)
-            }
-        } else if (next != null && renewal != null && layout.compact && !layout.spacious) {
-            Renewal(context, data, GlanceModifier.fillMaxWidth())
+    if (data.renewal != null && (layout.showSecondary ||
+            (!layout.short && agenda.dueToday.isEmpty() && agenda.upNext == null))
+    ) {
+        Gap(4)
+        Renewal(context, data)
+    }
+    if (layout.showSecondary && budget != null) {
+        Column(GlanceModifier.fillMaxWidth()
+            .clickable(dashboardAction(context, "money-budgets")).padding(vertical = 4.dp)) {
+            WidgetText(budget.budget.name, color = muted, size = 12)
+            val over = budget.remainingMinor < 0
+            val amount = formatMoney(
+                BigInteger.valueOf(budget.remainingMinor).abs(), budget.budget.currencyCode,
+            )
+            val label = if (over) "over budget" else "left"
+            WidgetText("$amount $label", color = if (over) error else positive, size = 14, bold = true)
         }
     }
 }
 
 @Composable
-private fun Renewal(
+private fun TodayItem(
     context: Context,
-    data: DashboardData,
-    modifier: GlanceModifier,
-    hero: Boolean = false,
+    item: DashboardItem,
+    detail: String,
+    titleSize: Int,
 ) {
+    Column(GlanceModifier.fillMaxWidth()
+        .clickable(dashboardAction(context, "schedule", item.target))) {
+        WidgetText(detail, color = indigo, size = 12)
+        WidgetText(item.title, size = titleSize, bold = true)
+    }
+}
+
+@Composable
+private fun Renewal(context: Context, data: DashboardData) {
     val renewal = requireNotNull(data.renewal)
     val subscription = renewal.subscription
     val due = LocalDate.ofEpochDay(renewal.day)
-    Column(modifier.clickable(dashboardAction(
+    Column(GlanceModifier.fillMaxWidth().clickable(dashboardAction(
         context, "subscriptions", RecordTarget("SUBSCRIPTION", subscription.id)))
-        .padding(vertical = 6.dp)) {
+        .padding(vertical = 4.dp)) {
         WidgetText("Renewal · ${dashboardDate(due, data.today.date)}",
             color = positive, size = 12)
-        WidgetText(subscription.name, bold = true, size = if (hero) 24 else 14,
-            lines = if (hero) 2 else 1)
-        WidgetText(renewalAmount(renewal), size = if (hero) 20 else 13, bold = true)
+        WidgetText(subscription.name, bold = true, size = 14)
+        WidgetText(renewalAmount(renewal), size = 13, bold = true)
     }
 }
 
@@ -334,17 +339,25 @@ private fun ColumnScope.ScheduleContent(context: Context, data: DashboardData, l
                     color = muted, size = 14, lines = 3)
             }
         }
-    } else {
-        val items = data.items.take(layout.scheduleCount)
-        items.forEachIndexed { index, item ->
-            if (index > 0) {
-                Box(GlanceModifier.fillMaxWidth().height(1.dp).background(track)) {}
+    } else if (layout.scrollAgenda) {
+        LazyColumn(GlanceModifier.fillMaxWidth().defaultWeight()) {
+            items(data.items, itemId = { agendaItemId(it.target) }) { item ->
+                Column(GlanceModifier.fillMaxWidth()) {
+                    AgendaRow(context, item, GlanceModifier.fillMaxWidth(),
+                        compact = layout.compact, minimal = false)
+                    Box(GlanceModifier.fillMaxWidth().height(1.dp).background(track)) {}
+                }
             }
-            AgendaRow(context, item, GlanceModifier.fillMaxWidth().defaultWeight(),
-                compact = layout.compact, minimal = layout.short)
         }
+    } else {
+        AgendaRow(context, data.items.first(), GlanceModifier.fillMaxWidth().defaultWeight(),
+            compact = layout.compact, minimal = layout.short)
     }
 }
+
+private fun agendaItemId(target: RecordTarget): Long =
+    java.util.UUID.nameUUIDFromBytes("${target.domain}/${target.id}/${target.day}".toByteArray())
+        .mostSignificantBits and Long.MAX_VALUE
 
 @Composable
 private fun AgendaRow(
@@ -372,17 +385,17 @@ private fun AgendaRow(
     Row(modifier.clickable(dashboardAction(context,
         if (subscription) "subscriptions" else "schedule", item.target)).padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically) {
-        Column(GlanceModifier.width(if (compact) 58.dp else 92.dp)) {
-            WidgetText(date, color = text, size = if (compact) 14 else 16,
+        Column(GlanceModifier.width(if (compact) 62.dp else 92.dp)) {
+            WidgetText(date, color = text, size = if (compact) 13 else 14,
                 bold = true, lines = if (minimal) 1 else 3)
             if (time.isNotEmpty()) WidgetText(time, color = accent, size = 12, bold = true,
                 lines = if (minimal) 1 else 2)
         }
         Spacer(GlanceModifier.width(8.dp))
-        Box(GlanceModifier.width(2.dp).height(if (minimal) 32.dp else 48.dp).background(accent)) {}
+        Box(GlanceModifier.width(2.dp).height(32.dp).background(accent)) {}
         Spacer(GlanceModifier.width(10.dp))
         Column(GlanceModifier.defaultWeight()) {
-            WidgetText(item.title, size = if (compact) 16 else 18, bold = true,
+            WidgetText(item.title, size = if (compact) 15 else 16, bold = true,
                 lines = if (minimal) 1 else 2)
             if (!minimal) WidgetText(kind, color = accent, size = 12,
                 lines = if (compact) 2 else 1)

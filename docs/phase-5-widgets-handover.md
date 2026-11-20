@@ -81,3 +81,16 @@ uninstall/reinstall; all 19 original data/preference files were restored and ver
 visual verification. Widget placements were recreated. No focused data tests were needed because
 selection/calculation code was unchanged. Tall sizes, light mode, larger font scales and
 overspending rendering were not device-verified in this bounded pass. Local evidence is ignored.
+
+## Today, Upcoming and refresh
+
+Today keeps the primary section scoped to today's remaining events and due reminders. If the
+day is clear, the next event appears as a separate dated item when space permits. Upcoming
+uses a fixed header and a scrollable agenda capped at 40 items, with a single compact row for
+short widgets. Dashboard sessions publish a loaded result and retain their visible content while
+a refresh runs. New placements still use the launcher loading layout until the first result.
+
+The DEV debug build and nine focused tests passed. On Samsung SM-S942B, Today showed the next
+event's calendar date, Upcoming scrolled through nine events and opened the selected event, and
+Quick Expense updated Budget without the previous Loading flash. Undo restored the starting
+budget and the temporary DEV records were removed.

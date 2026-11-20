@@ -17,9 +17,9 @@ private `personal-os.db` database. The debug review provider is private and uses
 authority. Manual exports use Android's document picker and suggest `poros-*.json` or
 `poros-dev-*.json`. Either build can inspect a backup the user explicitly selects.
 
-Version `0.1.0` / code `1` remains the baseline in `app/build.gradle.kts`. Increase the checked-in
-integer code for every distributed production release and use a semantic version name. Build the
-same revision on both PCs. DEV adds `-dev` to that name.
+The production version and code are set in `app/build.gradle.kts`. Increase the checked-in integer
+code for every distributed production release and use a semantic version name. Build the same
+revision on both PCs. DEV adds `-dev` to that name.
 
 ## Create the permanent key privately
 

@@ -75,7 +75,7 @@ class DashboardRefreshWorker(context: Context, parameters: WorkerParameters) :
         for (widget in widgets) {
             for (id in manager.getGlanceIds(widget.javaClass)) {
                 updateAppWidgetState(applicationContext, id) {
-                    it[dashboardRefreshKey] = System.currentTimeMillis()
+                    it[dashboardRefreshKey] = (it[dashboardRefreshKey] ?: 0L) + 1L
                 }
                 widget.update(applicationContext, id)
             }

@@ -59,12 +59,47 @@ class DashboardDataTest {
     }
 
     @Test
-    fun compactLayoutsLimitSecondaryContentAndLargerFontsReduceDensity() {
+    fun todayShowsFutureEventsOnlyAsUpNextWhenThereIsNoDatedCommitmentToday() {
+        val futureStart = now.plusDays(2).toInstant().toEpochMilli()
+        val currentStart = now.minusDays(1).toInstant().toEpochMilli()
+        val future = EventOccurrence(
+            EventEntity("future", "Friday event", futureStart, futureStart + 3_600_000, now.zone.id),
+            day + 2, futureStart, futureStart + 3_600_000,
+        )
+        val ongoing = EventOccurrence(
+            EventEntity("ongoing", "Overnight", currentStart, futureStart, now.zone.id),
+            day - 1, currentStart, futureStart,
+        )
+        val overdue = ReminderOccurrence(
+            ReminderEntity("overdue", "Overdue", currentStart), day - 1, currentStart, false,
+        )
+        val undated = ReminderOccurrence(ReminderEntity("anytime", "Anytime", null), null, null, false)
+        val due = ReminderOccurrence(
+            ReminderEntity("due", "Due today", now.toInstant().toEpochMilli()),
+            day, now.toInstant().toEpochMilli(), false,
+        )
+        val empty = todayAgenda(dashboardItems(listOf(future), listOf(overdue, undated), now),
+            now.toLocalDate())
+        assertTrue(empty.dueToday.isEmpty())
+        assertEquals("future", empty.upNext?.target?.id)
+        assertEquals(now.toLocalDate().plusDays(2), empty.upNext?.date)
+
+        val populated = todayAgenda(
+            dashboardItems(listOf(future, ongoing), listOf(overdue, due, undated), now),
+            now.toLocalDate(),
+        )
+        assertEquals(listOf("ongoing", "due"), populated.dueToday.map { it.target.id })
+        assertNull(populated.upNext)
+    }
+
+    @Test
+    fun agendaScrollsWhenTheWidgetHasRoomAtTheCurrentFontScale() {
         assertTrue(dashboardLayout(201f, 103f, 1f).short)
-        assertEquals(1, dashboardLayout(201f, 234f, 1f).scheduleCount)
-        assertEquals(2, dashboardLayout(429f, 234f, 1f).scheduleCount)
-        assertEquals(4, dashboardLayout(315f, 495f, 1f).scheduleCount)
-        assertEquals(1, dashboardLayout(429f, 234f, 1.5f).scheduleCount)
+        assertFalse(dashboardLayout(140f, 110f, 1f).scrollAgenda)
+        assertTrue(dashboardLayout(201f, 234f, 1f).scrollAgenda)
+        assertTrue(dashboardLayout(429f, 234f, 1f).scrollAgenda)
+        assertTrue(dashboardLayout(315f, 495f, 1f).scrollAgenda)
+        assertFalse(dashboardLayout(429f, 234f, 1.5f).scrollAgenda)
         assertFalse(dashboardLayout(201f, 160f, 1f).showSecondary)
         assertTrue(dashboardLayout(140f, 110f, 1f).short)
     }

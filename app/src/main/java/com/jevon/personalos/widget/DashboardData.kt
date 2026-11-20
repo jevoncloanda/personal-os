@@ -31,7 +31,13 @@ internal data class DashboardItem(
     val detail: String,
     val target: RecordTarget,
     val sortAt: Long?,
+    val date: LocalDate?,
     val amount: String? = null,
+)
+
+internal data class TodayAgenda(
+    val dueToday: List<DashboardItem>,
+    val upNext: DashboardItem?,
 )
 
 internal data class DashboardData(
@@ -40,6 +46,21 @@ internal data class DashboardData(
     val items: List<DashboardItem>,
     val renewal: RenewalForecast? = null,
 )
+
+internal fun todayAgenda(items: List<DashboardItem>, today: LocalDate): TodayAgenda {
+    val dueToday = items.filter { item ->
+        val date = item.date ?: return@filter false
+        when (item.target.domain) {
+            "EVENT" -> date <= today // Ended events were already excluded by dashboardItems.
+            "REMINDER" -> date == today
+            else -> false
+        }
+    }
+    val upNext = if (dueToday.isEmpty()) {
+        items.firstOrNull { it.target.domain == "EVENT" && it.date != null && it.date > today }
+    } else null
+    return TodayAgenda(dueToday, upNext)
+}
 
 internal fun dashboardRenewal(
     forecasts: List<RenewalForecast>,
@@ -91,6 +112,7 @@ internal fun dashboardItems(
             "Event · ${dashboardDate(start.toLocalDate(), now.toLocalDate())} · $time",
             RecordTarget("EVENT", occurrence.event.id, occurrence.day),
             occurrence.start,
+            start.toLocalDate(),
         )
     }
     val reminderItems = reminders.distinctBy { it.key }.filterNot { it.completed }.map { occurrence ->
@@ -110,6 +132,7 @@ internal fun dashboardItems(
             "Reminder · ${if (overdue) "Overdue · " else ""}$timing",
             RecordTarget("REMINDER", occurrence.reminder.id, occurrence.day),
             occurrence.due,
+            date,
         )
     }
     val renewalItems = forecasts
@@ -125,6 +148,7 @@ internal fun dashboardItems(
                 "Subscription · ${dashboardDate(date, now.toLocalDate())} · Forecast",
                 RecordTarget("SUBSCRIPTION", renewal.subscription.id, renewal.day),
                 date.atStartOfDay(now.zone).toInstant().toEpochMilli(),
+                date,
                 renewalAmount(renewal),
             )
         }
@@ -154,8 +178,11 @@ internal suspend fun loadDashboard(
         } else null
         val items = if (kind == DashboardKind.SCHEDULE && schedule != null) {
             dashboardItems(schedule.events, schedule.overdue + schedule.reminders, now,
-                schedule.forecasts)
-        } else dashboardItems(today.scheduleEvents, today.scheduleReminders, now)
+                schedule.forecasts).take(40)
+        } else if (kind == DashboardKind.TODAY) {
+            // The app's Today reminder summary can be filled entirely by older overdue items.
+            dashboardItems(today.scheduleEvents, schedule?.reminders.orEmpty(), now)
+        } else emptyList()
         DashboardData(today, budget, items,
             dashboardRenewal(schedule?.forecasts.orEmpty(), now.toLocalDate()))
     }
